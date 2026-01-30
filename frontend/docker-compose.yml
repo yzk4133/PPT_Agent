@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgresdb
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: welcome
+      POSTGRES_DB: presentation_ai
+
+  app:
+    build: .
+    container_name: nextjs_app
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:welcome@db:5432/presentation_ai
+      A2A_AGENT_OUTLINE_URL: http://127.0.0.1:10001
+      A2A_AGENT_SLIDES_URL: http://127.0.0.1:10012
+    command: ["pnpm", "start"]  # 如果你用于本地开发
+    # command: ["pnpm", "start"] # 如果你 build 之后运行
+
+volumes:
+  postgres_data:

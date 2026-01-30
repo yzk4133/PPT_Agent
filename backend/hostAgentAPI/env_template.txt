@@ -1,0 +1,6 @@
+DEEPSEEK_API_KEY=sk-xxx
+GOOGLE_API_KEY=xxx
+MODEL_PROVIDER=deepseek
+LLM_MODEL=deepseek-chat
+#MODEL_PROVIDER=google
+#LLM_MODEL=gemini-2.0-flash

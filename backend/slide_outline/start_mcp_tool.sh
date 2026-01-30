@@ -1,0 +1,1 @@
+fastmcp run --transport sse mcpserver/rag_tool.py
