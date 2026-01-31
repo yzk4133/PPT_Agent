@@ -1,5 +1,41 @@
 version: "3.8"
 services:
+  # PostgreSQL 数据库服务（持久化记忆）
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: multiagent_postgres
+    environment:
+      POSTGRES_DB: multiagent_ppt
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: multiagent_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: always
+
   ppt_agent:
     container_name: ppt_agent
     build:
@@ -9,6 +45,11 @@ services:
       - "10011:10011"
       - "10012:10012"
     env_file: ./slide_agent/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
 
   ppt_outline:
@@ -19,9 +60,11 @@ services:
     ports:
       - "10001:10001"
     env_file: ./slide_outline/.env
-    restart: always
     depends_on:
       - rag_tool
+      - postgres
+      - redis
+    restart: always
 
   rag_tool:
     container_name: mcp_rag_tool
@@ -46,3 +89,10 @@ services:
     ports:
       - "6688:6688"
     restart: always
+
+# 持久化卷
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

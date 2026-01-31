@@ -11,6 +11,19 @@ from google.adk.tools.agent_tool import AgentTool
 import time
 from datetime import datetime
 import random
+import os
+import sys
+import asyncio
+
+# 导入向量记忆服务（可选）
+try:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+    from persistent_memory import VectorMemoryService
+    vector_service = VectorMemoryService(enable_cache=True)
+    VECTOR_MEMORY_AVAILABLE = vector_service.is_available()
+except ImportError:
+    vector_service = None
+    VECTOR_MEMORY_AVAILABLE = False
 
 # 模拟数据库存储的文档
 Documents = [
@@ -125,19 +138,82 @@ async def DocumentSearch(
     tool_context: ToolContext,
 ):
     """
-    根据关键词搜索文档
+    根据关键词搜索文档，集成向量记忆服务
     :param keyword: str, 搜索的相关文档的关键词
     :param number: int, 搜索文档的数量
     :return: 返回每篇文档数据
     """
     agent_name = tool_context.agent_name
-    print(f"Agent{agent_name}正在调用工具：DocumentSearch: " + keyword)
-    print("文档检索: " + keyword)
+    print(f"Agent{agent_name}正在调用工具：DocumentSearch: {keyword}")
+    print(f"文档检索: {keyword}, 数量: {number}")
+    
+    documents = []
+    
+    # 1. 先尝试使用向量记忆服务搜索
+    if VECTOR_MEMORY_AVAILABLE and vector_service:
+        try:
+            # 从向量数据库搜索
+            results = await vector_service.search(
+                query=keyword,
+                namespace=VectorMemoryService.NS_RESEARCH,
+                k=number,
+                similarity_threshold=0.75  # 降低阈值提高召回
+            )
+            
+            if results:
+                print(f"✅ 向量检索命中: 找到{len(results)}条相关结果")
+                for result in results[:number]:
+                    documents.append({
+                        "content": result['content'],
+                        "similarity": result['similarity'],
+                        "source": "vector_cache",
+                        "metadata": result.get('metadata', {})
+                    })
+            else:
+                print(f"⚠️ 向量检索未命中，使用默认数据")
+                
+        except Exception as e:
+            print(f"⚠️ 向量检索失败: {e}，降级到默认数据")
+    
+    # 2. 如果向量搜索未命中或不可用，使用默认数据
+    if not documents:
+        for doc_content in Documents[:number]:
+            documents.append({
+                "content": doc_content,
+                "source": "default_data"
+            })
+        
+        # 尝试将搜索结果存入向量数据库以便下次使用
+        if VECTOR_MEMORY_AVAILABLE and vector_service:
+            try:
+                for doc in documents:
+                    await vector_service.store(
+                        content=doc['content'],
+                        namespace=VectorMemoryService.NS_RESEARCH,
+                        metadata={
+                            "keyword": keyword,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    )
+                print(f"✅ 已将{len(documents)}条结果存入向量数据库")
+            except Exception as e:
+                print(f"⚠️ 存入向量数据库失败: {e}")
+    
+    # 构建返回结果
     result = ""
-    for i, doc in enumerate(Documents):
-        result += f"# 文档id:{i}\n {doc}\n\n"
-
-    tool_context.state["references"] = [
+    for i, doc in enumerate(documents):
+        result += f"# 文档id:{i}\n {doc['content']}\n\n"
+    
+    # 保存引用信息
+    references = []
+    for i, doc in enumerate(documents):
+        references.append({
+            "id": i,
+            "title": f"Document {i}",
+            "content": doc['content'][:200] + "...",
+            "source": doc.get('source', 'unknown'),
+            "similarity": doc.get('similarity')
+        })
         "1. China's Economic Growth Slows Amid Global Headwinds. Source: BBC News.",
         "2. AI Technology Revolutionizing Healthcare in 2025. Source: The New York Times.",
         "3. Global Climate Report Warns of Accelerating Warming. Source: Reuters.",

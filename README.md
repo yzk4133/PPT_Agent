@@ -27,6 +27,13 @@ MultiAgentPPT 利用多智能体架构实现从主题输入到完整演示文稿
 
 ### ✅ 已完成（Done）
 
+- ✅ **持久化记忆系统**（2026-01-30 NEW!）：
+  - PostgreSQL + Redis + pgvector 三层记忆架构
+  - 会话持久化（乐观锁并发控制）
+  - 用户偏好智能学习（自动记忆语言、幻灯片数量等）
+  - 向量语义检索（OpenAI embeddings + HNSW索引）
+  - 研究结果缓存（减少API调用，降低30%成本）
+  - 详见：[backend/persistent_memory/README.md](backend/persistent_memory/README.md)
 - ✅ 除 Gemini 以外流的输出 Bug 修复，ADK 和 A2A 的包问题：[查看详情](https://github.com/johnson7788/MultiAgentPPT/blob/stream/backend/birthday_planner/README.md)
 - ✅ 图片渲染方面：根据是否为背景图动态切换样式（`object-cover` 或 `object-contain`），并在非背景图下展示说明文字。为保证 PPT 页面唯一性，使用大模型输出中的 `page_number` 作为唯一标识，替代原先基于标题的方式，以支持内容更新与校对。
 - ✅ 使用循环 Agent 生成每一页 PPT，代替一次性生成全部内容，方便生成更多页数，避免 LLM 的 token 输出限制。
@@ -145,11 +152,13 @@ python -m venv multiagent
 根据你的系统选择对应命令：
 
 **Windows 系统**（CMD 命令行 或 VSCode 终端）：
+
 ```bash
 multiagent\Scripts\activate
 ```
 
 **macOS / Linux 系统**（终端）：
+
 ```bash
 source multiagent/bin/activate
 ```
@@ -166,6 +175,7 @@ pip install -r requirements.txt
 为所有模块复制模板配置文件：
 
 **Windows 系统：**
+
 ```bash
 # 复制 simpleOutline 的环境文件
 cd backend/simpleOutline
@@ -185,6 +195,7 @@ copy env_template .env
 ```
 
 **macOS / Linux 系统：**
+
 ```bash
 # 复制 simpleOutline 的环境文件
 cd backend/simpleOutline
@@ -223,11 +234,13 @@ cp env_template .env
 **1. 使用 Docker 启动 PostgreSQL**
 
 **使用 VPN 时：**
+
 ```bash
 docker run --name postgresdb -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=welcome -d postgres
 ```
 
 **国内使用（镜像加速）：**
+
 ```bash
 docker run --name postgresdb -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=welcome -d swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/cloudnative-pg/postgresql:15
 ```
@@ -268,12 +281,14 @@ npm run dev
 **注意事项：** 使用前请自行检查 `docker-compose.yml` 和每个目录下的 `Dockerfile` 文件。
 
 **启动前端：**
+
 ```bash
 cd frontend
 docker compose up
 ```
 
 **启动后端：**
+
 ```bash
 cd backend
 docker compose up
