@@ -1,0 +1,56 @@
+# MultiAgent PPT System - Python Dependencies
+
+# Web框架
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# AI/LLM
+anthropic==0.18.0
+openai==1.10.0  # 可选
+
+# 数据处理
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# PPT生成
+python-pptx==0.6.23
+
+# 任务队列
+celery==5.3.4
+redis==5.0.1
+
+# 数据库
+sqlalchemy==2.0.25
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# 工具库
+httpx==0.26.0
+aiofiles==23.2.1
+python-dateutil==2.8.2
+pyyaml==6.0.1
+
+# 日志和监控
+loguru==0.7.2
+prometheus-client==0.19.0
+
+# 测试
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# 代码质量
+black==24.1.1
+isort==5.13.2
+flake8==7.0.0
+mypy==1.8.0
+
+# 安全
+bandit==1.7.6
+safety==2.3.5
+
+# 性能
+orjson==3.9.12
