@@ -31,7 +31,10 @@
       "Bash(xcopy:*)",
       "Bash(robocopy:*)",
       "mcp__web-search-prime__webSearchPrime",
-      "mcp__web-reader__webReader"
+      "mcp__web-reader__webReader",
+      "Bash(findstr /R \"^│   └\")",
+      "Bash(findstr:*)",
+      "Bash(wc:*)"
     ]
   }
 }
