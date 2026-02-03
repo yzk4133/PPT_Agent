@@ -1,7 +1,37 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "mcp__zread__get_repo_structure",
+      "Bash(cd:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(python -m skill_framework.tests.test_skill_framework:*)",
+      "Bash(python:*)",
+      "Bash(dir:*)",
+      "Bash(migrate_backend:*)",
+      "Bash(if [ -d \"backend/super_agent\" ])",
+      "Bash(then mv backend/super_agent backend/archive/)",
+      "Bash(else echo \"⚠️ super_agent/ 不存在\")",
+      "Bash(fi:*)",
+      "Bash(if:*)",
+      "Bash(then mv backend/ppt_api backend/archive/)",
+      "Bash(else echo \"⚠️ ppt_api/ 不存在\")",
+      "Bash(then mv backend/skills backend/archive/)",
+      "Bash(else echo \"⚠️ skills/ 不存在\")",
+      "Bash(then mv backend/simplePPT backend/archive/)",
+      "Bash(else:*)",
+      "Bash(then mv backend/simpleOutline backend/archive/)",
+      "Bash(else echo \"⚠️ simpleOutline/ 不存在\")",
+      "Bash([:*)",
+      "Bash(then cp backend/flat_slide_agent/adk_agent_executor.py backend/common/)",
+      "Bash(then cp backend/slide_agent/a2a_client.py backend/common/)",
+      "Bash(ls:*)",
+      "Bash(git restore:*)",
+      "Bash(xcopy:*)",
+      "Bash(robocopy:*)",
+      "mcp__web-search-prime__webSearchPrime",
+      "mcp__web-reader__webReader"
     ]
   }
 }

@@ -1,6 +1,0 @@
-requests
-urllib3
-lxml==4.9.3
-PyMuPDF
-python-pptx
-uvicorn
