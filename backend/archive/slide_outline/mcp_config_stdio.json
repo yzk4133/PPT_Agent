@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "SearchPaper": {
+      "command": "/Users/admin/miniforge3/envs/a2a/bin/fastmcp",
+      "args": [
+        "run",
+        "mcpserver/rag_tool.py"
+      ]
+    }
+  }
+}

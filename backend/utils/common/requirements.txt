@@ -1,0 +1,5 @@
+# Common infrastructure dependencies
+pydantic>=2.0.0  # 配置管理
+pydantic-settings>=2.0.0  # Settings support
+tenacity>=8.2.0  # 重试和熔断
+httpx>=0.25.0  # HTTP 客户端（用于健康检查）

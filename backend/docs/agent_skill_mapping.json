@@ -1,0 +1,27 @@
+{
+  "outline_agent": {
+    "categories": ["document", "search"],
+    "tags": ["document", "search"],
+    "description": "Agent for generating presentation outlines"
+  },
+  "slide_agent": {
+    "categories": ["generation", "search"],
+    "tags": ["ppt", "slide", "generation"],
+    "description": "Agent for generating presentation slides"
+  },
+  "research_agent": {
+    "categories": ["search", "document"],
+    "tags": ["research", "web"],
+    "description": "Agent for researching topics"
+  },
+  "ppt_writer_agent": {
+    "categories": ["generation"],
+    "tags": ["ppt", "slide"],
+    "description": "Agent for writing PPT content"
+  },
+  "split_topic_agent": {
+    "categories": ["analysis"],
+    "tags": ["analysis"],
+    "description": "Agent for splitting topics"
+  }
+}
