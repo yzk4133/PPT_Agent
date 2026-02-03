@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-httpx
-google-genai
-python-dotenv
-lxml
-BeautifulSoup4

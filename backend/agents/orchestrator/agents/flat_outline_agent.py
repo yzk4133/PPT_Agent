@@ -17,7 +17,7 @@ import asyncio
 import logging
 from typing import Dict, Any, List, Optional
 from google.adk.agents import BaseAgent, LlmAgent, SequentialAgent, ParallelAgent
-from google.adk.agents.context import AgentContext
+from google.adk.agents.invocation_context import InvocationContext as AgentContext
 from google.adk.models.lite_llm import LiteLlm
 
 # 导入通用基础设施
@@ -30,7 +30,6 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 from infrastructure.config.common_config import get_config
-from infrastructure.config.settings import get_agent_config
 from infrastructure.llm.common_model_factory import ModelFactory
 from infrastructure.tools.tool_manager import UnifiedToolManager
 from infrastructure.llm.fallback import JSONFallbackParser, PartialSuccessHandler, FallbackChain

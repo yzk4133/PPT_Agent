@@ -2,7 +2,16 @@
 
 ## 概述
 
-Backend工具系统是一个统一的、可扩展的工具和技能管理框架，为MultiAgentPPT项目的所有Agent提供工具支持。该系统集成了原生ADK工具、MCP（Model Context Protocol）工具、向量搜索、媒体搜索等多种类型的工具，并通过统一的注册中心进行管理。
+Backend工具系统是一个统一的、可扩展的工具和技能管理框架，为MultiAgentPPT项目的所有Agent提供工具支持。该系统集成了：
+
+- **MCP 工具**（6个）- 外部 API 集成
+- **Skills 框架** - 可复用能力封装
+  - 提示词型 Skills（5个 Markdown 文件）
+  - 函数型 Skills（4个 Python 类）
+- **向量搜索** - 语义检索
+- **统一注册中心** - 工具和技能管理
+
+> **🎉 最新更新（2025-02-03）**: 完成大规模重构，引入 MCP 工具体系和扩展的 Skills 框架。详见 [变更日志](./REFACTORING_CHANGELOG.md) 和 [快速参考](./QUICK_REFERENCE.md)。
 
 ## 系统架构图
 
@@ -110,19 +119,29 @@ class SkillCategory(Enum):
 - **职责**: 使用工具执行任务，调用工具完成具体操作
 
 ### 2. 管理层 (Management Layer)
-- **组件**: `SkillManager`, `UnifiedToolManager`, `UnifiedToolRegistry`
-- **职责**: 工具的注册、发现、管理和分发
+- **组件**: `SkillManager`, `UnifiedToolRegistry`
+- **职责**: 工具和技能的注册、发现、管理和分发
 
 ### 3. 技能框架层 (Skill Framework Layer)
 - **组件**: `SkillRegistry`, `SkillWrapper`, `SkillAdapter`
+- **提示词型 Skills**: Markdown 文件（位于 `skills/prompts/`）
+- **函数型 Skills**: Python 类（位于 `skills/functions/`）
 - **职责**: 技能的定义、包装和适配
 
 ### 4. 工具层 (Tool Layer)
-- **组件**: 各类具体工具实现
-- **职责**: 提供具体的功能实现
+- **MCP 工具** (NEW):
+  - `web_search` - Bing 网络搜索
+  - `fetch_url` - 网页内容抓取
+  - `search_images` - 图片搜索（Unsplash/Pexels）
+  - `create_pptx` - PowerPoint 生成
+  - `state_store` - 状态存储
+  - `vector_search` - 向量搜索
+- **废弃工具**（保留但标记 DEPRECATED）:
+  - `DocumentSearch` - 请使用 `web_search` 或 `vector_search`
+  - `SearchImage` - 请使用 `search_images`
 
 ### 5. 基础设施层 (Infrastructure Layer)
-- **组件**: 向量记忆服务、MCP集成
+- **组件**: 向量记忆服务、MCP 集成
 - **职责**: 提供底层支持
 
 ## 核心组件关系图
@@ -171,21 +190,42 @@ erDiagram
 
 ## 快速开始指南
 
-### 基础使用 - 使用现有工具
+### 基础使用 - 使用 MCP 工具
 
 ```python
-from agents.tools.registry.unified_registry import get_unified_registry
+from backend.agents.tools.mcp import web_search, fetch_url
+import json
+
+# 网络搜索
+result = await web_search(query="人工智能", num_results=5)
+data = json.loads(result)
+
+if data["success"]:
+    for item in data["result"]["results"]:
+        print(f"{item['title']}: {item['url']}")
+
+# 抓取网页内容
+content = await fetch_url(url="https://example.com")
+content_data = json.loads(content)
+print(content_data["result"]["text_content"])
+```
+
+### 使用统一注册中心
+
+```python
+from backend.agents.tools.registry.unified_registry import get_unified_registry
 
 # 获取全局注册中心
 registry = get_unified_registry()
 
-# 列出所有可用工具
+# 查看统计信息
+stats = registry.get_stats()
+print(f"总工具数: {stats['total_tools']}")
+print(f"总Skills数: {stats['total_skills']}")
+
+# 列出所有工具
 tools = registry.list_tools()
 print(f"可用工具: {tools}")
-
-# 获取特定工具
-doc_search = registry.get_tool("DocumentSearch")
-print(f"文档搜索工具: {doc_search.metadata.description}")
 
 # 按类别获取工具
 search_tools = registry.get_tools_by_category(ToolCategory.SEARCH)
@@ -297,7 +337,32 @@ tools = skill_manager.get_tools_for_agent(skill_ids=["custom_search"])
 
 ## 相关文档
 
-- [工具系统架构详解](tools_architecture.md) - 详细的架构设计和实现说明
-- [工具参考手册](tools_reference.md) - 所有可用工具的完整列表
-- [技能框架指南](skills_framework.md) - 技能框架使用详解
-- [工具开发指南](tools_development.md) - 创建新工具的开发指南
+### 核心文档
+- [📝 变更日志](./REFACTORING_CHANGELOG.md) - 重构的详细变化记录
+- [⚡ 快速参考](./QUICK_REFERENCE.md) - 常用代码片段和速查表
+- [🏗️ 工具系统架构详解](./tools_architecture.md) - 详细的架构设计和实现说明
+- [📖 工具参考手册](./tools_reference.md) - 所有可用工具的完整列表
+- [🛠️ 工具开发指南](./tools_development.md) - 创建新工具的开发指南
+
+### Skills 文档
+- [🎭 技能框架指南](./skills_framework.md) - 技能框架使用详解
+- [💡 Prompt 设计指南](./prompt_design_guide.md) - 如何编写有效的提示词
+- [📚 外部工具设计指南](./external_tools_guide.md) - MCP 工具设计规范
+
+### 其他文档
+- [📁 主 README](../../backend/agents/tools/README.md) - 工具系统详细文档
+
+## 版本信息
+
+- **当前版本**: v2.0.0
+- **最后更新**: 2025-02-03
+- **维护团队**: MultiAgentPPT Team
+
+## 快速链接
+
+| 文档 | 说明 |
+|------|------|
+| [变更日志](./REFACTORING_CHANGELOG.md) | 详细的变更记录 |
+| [快速参考](./QUICK_REFERENCE.md) | 常用代码片段 |
+| [工具架构](./tools_architecture.md) | 架构设计 |
+| [开发指南](./tools_development.md) | 如何开发新工具 |

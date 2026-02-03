@@ -102,29 +102,31 @@ class MasterCoordinatorAgent(BaseAgent):
             **kwargs
         )
 
-        self.retry_limit = 3
-        self.progress_tracker = get_progress_tracker()
-        self.checkpoint_manager = checkpoint_manager
-        self.enable_page_pipeline = enable_page_pipeline and PAGE_PIPELINE_AVAILABLE
-        self.page_pipeline_config = page_pipeline_config or (PagePipelineConfig() if PagePipelineConfig else None)
+        # 使用 object.__setattr__ 避免 Pydantic 的字段检查
+        object.__setattr__(self, 'retry_limit', 3)
+        object.__setattr__(self, 'progress_tracker', get_progress_tracker())
+        object.__setattr__(self, 'checkpoint_manager', checkpoint_manager)
+        object.__setattr__(self, 'enable_page_pipeline', enable_page_pipeline and PAGE_PIPELINE_AVAILABLE)
+        object.__setattr__(self, 'page_pipeline_config', page_pipeline_config or (PagePipelineConfig() if PagePipelineConfig else None))
 
         # 子智能体映射
-        self._sub_agents = {
+        object.__setattr__(self, '_sub_agents', {
             "requirement_parser": requirement_parser_agent,
             "framework_designer": framework_designer_agent,
             "research": optimized_research_agent,
             "content_material": content_material_agent,
             "template_renderer": template_renderer_agent
-        }
+        })
 
         # 页面流水线（如果启用）
-        self.page_pipeline = None
+        page_pipeline = None
         if self.enable_page_pipeline and PagePipeline:
-            self.page_pipeline = PagePipeline(
+            page_pipeline = PagePipeline(
                 research_agent=optimized_research_agent,
                 content_agent=content_material_agent,
                 config=self.page_pipeline_config
             )
+        object.__setattr__(self, 'page_pipeline', page_pipeline)
 
         logger.info(
             f"MasterCoordinatorAgent initialized: "

@@ -32,11 +32,11 @@ from google.adk.agents.parallel_agent import (
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from infrastructure.config.common_config import get_config
 
-# 导入工具
-from agents.tools.search.document_search import DocumentSearch
+# 导入新的 MCP 工具
+from agents.tools.mcp import web_search, vector_search
 
 # 导入PromptManager
-from cognition.prompts import PromptManager
+from prompts import PromptManager
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +148,7 @@ class OptimizedResearchAgent(ParallelAgent):
                     name=f"research_page_{page_no}",
                     description=f"Research agent for page {page_no}",
                     instruction=custom_instruction,
-                    tools=[DocumentSearch],
+                    tools=[web_search, vector_search],  # 使用新的 MCP 工具
                     output_key=f"research_page_{page_no}",
                     before_model_callback=research_agent_before_model_callback,
                 )
@@ -335,7 +335,7 @@ class OptimizedResearchAgent(ParallelAgent):
                 name=f"research_page_{page_no}",
                 description=f"Research agent for page {page_no}",
                 instruction=prompt,
-                tools=[DocumentSearch],
+                tools=[web_search, vector_search],  # 使用新的 MCP 工具
                 output_key=f"research_page_{page_no}",
                 before_model_callback=research_agent_before_model_callback,
             )

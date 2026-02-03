@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, AsyncIterator
 
 from google.adk.agents.base_agent import BaseAgent
 from google.adk.agents.callback_context import CallbackContext
-from google.adk.runners.invocation_context import InvocationContext
+from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event, EventActions
 
 # 导入基础设施
@@ -27,9 +27,9 @@ from infrastructure.llm.fallback import JSONFallbackParser, PartialSuccessHandle
 from infrastructure.llm.retry_decorator import async_retry_with_fallback, RetryableError
 
 # 从共享的 agents 模块导入（Phase 1 迁移）
-from agents.planning.topic_splitter_agent import split_topic_agent
-from agents.research.parallel_research_agent import parallel_search_agent
-from agents.generation.slide_writer_agent import ppt_generator_loop_agent
+from agents.core.planning.topic_splitter_agent import split_topic_agent
+from agents.core.research.parallel_research_agent import parallel_search_agent
+from agents.core.generation.slide_writer_agent import ppt_generator_loop_agent
 
 # 导入用户偏好服务
 try:
@@ -58,10 +58,10 @@ class FlatPPTGenerationAgent(BaseAgent):
     
     def __init__(self, name: str = "FlatPPTGenerationAgent", **kwargs):
         super().__init__(name=name, **kwargs)
-        self.config = get_config()
-        self._semaphore = asyncio.Semaphore(
-            self.config.research_agent.max_concurrency
-        )
+        # 使用 object.__setattr__ 避免 Pydantic 的字段检查
+        config = get_config()
+        object.__setattr__(self, 'config', config)
+        object.__setattr__(self, '_semaphore', asyncio.Semaphore(config.research_agent.max_concurrency))
         logger.info(f" {name} initialized with flat architecture")
     
     async def _run_async_impl(self, ctx: InvocationContext) -> AsyncIterator[Event]:

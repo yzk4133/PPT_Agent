@@ -1,8 +1,11 @@
 """
 Unified Tool and Skill Registry
 
-This module provides a centralized registry for both tools and skills,
-merging the functionality of tool_registry.py and skill_registry.py.
+This module provides a centralized registry for both tools and skills.
+Manages MCP tools, Skills framework, and provides unified access to all capabilities.
+
+Note: The old tool_registry.py has been removed (2025-02-03).
+All functionality has been consolidated into this unified registry.
 """
 
 from typing import Dict, List, Any, Callable, Optional, Type
@@ -71,8 +74,8 @@ class UnifiedToolRegistry:
     """
     Unified Registry for both tools and skills.
 
-    Merges functionality from tool_registry.py and skill_registry.py
-    to provide a single source of truth for all agent-callable tools.
+    Provides a single source of truth for all agent-callable tools,
+    including MCP tools and the Skills framework.
     """
 
     def __init__(self):
@@ -395,36 +398,115 @@ def _register_builtin_tools(registry: UnifiedToolRegistry) -> None:
 
     Args:
         registry: 工具注册中心
+
+    Note:
+        - Legacy tools (DocumentSearch, SearchImage) have been removed (2025-02-03)
+        - All agents have been migrated to MCP tools
     """
+    # Register MCP tools
     try:
-        from ..search.document_search import DocumentSearch
-        from ..media.image_search import SearchImage
+        from ..mcp import web_search, fetch_url, search_images, create_pptx, state_store, vector_search, weixin_search, xml_converter
 
-        # 注册文档搜索工具
+        # Web Search
         registry.register(
             metadata=ToolMetadata(
-                name="DocumentSearch",
+                name="web_search",
                 category=ToolCategory.SEARCH,
-                description="根据关键词搜索文档资料",
+                description="Execute web search using Bing Search API",
                 version="1.0.0",
                 author="MultiAgentPPT"
             ),
-            tool_func=DocumentSearch
+            tool_func=web_search
         )
 
-        # 注册图片搜索工具
+        # Fetch URL
         registry.register(
             metadata=ToolMetadata(
-                name="SearchImage",
-                category=ToolCategory.MEDIA,
-                description="根据关键词搜索图片",
+                name="fetch_url",
+                category=ToolCategory.SEARCH,
+                description="Fetch and extract content from URLs",
                 version="1.0.0",
                 author="MultiAgentPPT"
             ),
-            tool_func=SearchImage
+            tool_func=fetch_url
         )
+
+        # Search Images
+        registry.register(
+            metadata=ToolMetadata(
+                name="search_images",
+                category=ToolCategory.MEDIA,
+                description="Search images using Unsplash/Pexels API",
+                version="1.0.0",
+                author="MultiAgentPPT"
+            ),
+            tool_func=search_images
+        )
+
+        # Create PPT
+        registry.register(
+            metadata=ToolMetadata(
+                name="create_pptx",
+                category=ToolCategory.UTILITY,
+                description="Create PowerPoint files from structured data",
+                version="1.0.0",
+                author="MultiAgentPPT"
+            ),
+            tool_func=create_pptx
+        )
+
+        # State Store
+        registry.register(
+            metadata=ToolMetadata(
+                name="state_store",
+                category=ToolCategory.DATABASE,
+                description="Store and retrieve agent execution state",
+                version="1.0.0",
+                author="MultiAgentPPT"
+            ),
+            tool_func=state_store
+        )
+
+        # Vector Search
+        registry.register(
+            metadata=ToolMetadata(
+                name="vector_search",
+                category=ToolCategory.VECTOR,
+                description="Semantic vector search in knowledge base",
+                version="1.0.0",
+                author="MultiAgentPPT"
+            ),
+            tool_func=vector_search
+        )
+
+        # WeChat Search
+        registry.register(
+            metadata=ToolMetadata(
+                name="weixin_search",
+                category=ToolCategory.SEARCH,
+                description="Search WeChat official account articles via Sogou",
+                version="1.0.0",
+                author="MultiAgentPPT"
+            ),
+            tool_func=weixin_search
+        )
+
+        # XML Converter
+        registry.register(
+            metadata=ToolMetadata(
+                name="xml_converter",
+                category=ToolCategory.UTILITY,
+                description="Convert XML format PPT data to JSON format",
+                version="1.0.0",
+                author="MultiAgentPPT"
+            ),
+            tool_func=xml_converter
+        )
+
+        print("Registered 8 MCP tools")
+
     except ImportError as e:
-        print(f"Warning: Could not import built-in tools: {e}")
+        print(f"Warning: Could not import MCP tools: {e}")
 
 
 # Convenience functions

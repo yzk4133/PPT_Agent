@@ -15,7 +15,7 @@ import os
 import sys
 import json
 import logging
-from typing import AsyncGenerator, Optional, Dict, Any
+from typing import AsyncGenerator, Optional, Dict, Any, List
 from datetime import datetime
 
 from google.adk.agents.base_agent import BaseAgent
@@ -54,12 +54,12 @@ class TemplateRendererAgent(BaseAgent):
         # 导入PresentationGenerator（延迟导入以避免依赖问题）
         try:
             from utils.save_ppt.ppt_generator import PresentationGenerator
-            self.generator = PresentationGenerator()
-            self.generator_available = True
+            object.__setattr__(self, 'generator', PresentationGenerator())
+            object.__setattr__(self, 'generator_available', True)
         except ImportError as e:
             logger.warning(f"PresentationGenerator not available: {e}")
-            self.generator = None
-            self.generator_available = False
+            object.__setattr__(self, 'generator', None)
+            object.__setattr__(self, 'generator_available', False)
 
     async def _run_async_impl(
         self, ctx: InvocationContext

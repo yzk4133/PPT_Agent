@@ -41,17 +41,17 @@ class ResearchAgentWithMemory(AgentMemoryMixin, OptimizedResearchAgent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # 配置
-        self.research_cache_ttl_days = int(os.getenv("RESEARCH_CACHE_TTL_DAYS", "7"))
-        self.enable_semantic_search = os.getenv("ENABLE_SEMANTIC_SEARCH", "true").lower() == "true"
+        # 配置 - 使用 object.__setattr__ 避免 Pydantic 的字段检查
+        object.__setattr__(self, 'research_cache_ttl_days', int(os.getenv("RESEARCH_CACHE_TTL_DAYS", "7")))
+        object.__setattr__(self, 'enable_semantic_search', os.getenv("ENABLE_SEMANTIC_SEARCH", "true").lower() == "true")
 
         # 统计信息
-        self.stats = {
+        object.__setattr__(self, 'stats', {
             "cache_hits": 0,
             "cache_misses": 0,
             "shared_reuse": 0,
             "new_research": 0,
-        }
+        })
 
         logger.info(
             f"[{self.agent_name}] 初始化完成: "

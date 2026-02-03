@@ -1,11 +1,60 @@
+# FastAPI 统一网关依赖
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Google ADK 依赖
 google-genai
 google-adk==1.5.0
+
+# HTTP 客户端
 httpx
 a2a-sdk==0.2.10
+
+# LLM 相关
 litellm
+
+# 配置管理
 python-dotenv
+
+# MCP 工具
 fastmcp==2.2.5
+
+# 命令行工具
 asyncclick
-pytest
 click
+
+# 数据处理
 BeautifulSoup4
+
+# 测试
+pytest
+
+# Redis 缓存
+redis>=5.0.0
+
+# ===========================================
+# Authentication & Security Dependencies
+# ===========================================
+
+# JWT Token handling
+python-jose[cryptography]>=3.3.0
+
+# Password hashing
+passlib[bcrypt]>=1.7.4
+
+# Email validation
+email-validator>=2.0.0
+
+# Database
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+psycopg2-binary>=2.9.0
+asyncpg>=0.28.0
+
+# MCP Tools Dependencies
+readability-lxml>=0.8.1      # Web content extraction
+html2text>=2020.1.16          # HTML to text conversion
+python-pptx>=0.6.21           # PowerPoint generation
+lxml>=4.9.0                   # XML processing (required by readability)

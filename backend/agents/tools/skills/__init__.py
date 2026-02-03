@@ -18,6 +18,14 @@ from .skill_loaders import (
 )
 from .skill_registry import SkillRegistry
 
+# Function-based Skills
+from .functions import (
+    ResearchTopicSkill,
+    SelectSlideLayoutSkill,
+    TaskSchedulerSkill,
+    RetryWithBackoffSkill,
+)
+
 __all__ = [
     # Metadata
     "SkillMetadata",
@@ -39,4 +47,9 @@ __all__ = [
     "CompositeSkillLoader",
     # Registry
     "SkillRegistry",
+    # Function-based Skills
+    "ResearchTopicSkill",
+    "SelectSlideLayoutSkill",
+    "TaskSchedulerSkill",
+    "RetryWithBackoffSkill",
 ]

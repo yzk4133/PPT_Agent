@@ -1,23 +1,34 @@
 """
 PPT Generation Routes
 
-API routes for two-phase PPT generation workflow.
+API routes for PPT outline and slides generation.
+FastAPI 统一网关路由，调用 Services 层。
+
+架构：API → Services → Agents
 """
 
 import logging
 import sys
 import os
-from typing import Optional, Dict, Any, List
+import json
+from typing import Optional, Dict, Any
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 # Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from domain.models.execution_mode import ExecutionMode
-from agents.orchestrator.master_coordinator import MasterCoordinatorAgent
 from infrastructure.checkpoint import CheckpointManager, InMemoryCheckpointBackend
+
+# 导入服务层（而不是直接导入 Agent）
+from services import get_ppt_generation_service
+
+# 导入认证中间件
+from infrastructure.middleware.auth_middleware import get_current_user_optional
+from infrastructure.middleware.rate_limit_middleware import rate_limit_check
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +52,9 @@ class GeneratePPTRequest(BaseModel):
 
 class GenerateOutlineRequest(BaseModel):
     """大纲生成请求"""
-    user_input: str = Field(..., description="用户输入的自然语言描述")
-    user_id: str = Field(default="anonymous", description="用户ID")
+    prompt: str = Field(..., description="用户输入的自然语言描述")
+    numberOfCards: int = Field(default=10, description="期望的卡片数量")
+    language: str = Field(default="zh-CN", description="语言: zh-CN, en-US, ja-JP, ko-KR")
 
 
 class UpdateOutlineRequest(BaseModel):
@@ -91,35 +103,9 @@ def set_checkpoint_manager(manager: CheckpointManager) -> None:
     _checkpoint_manager = manager
 
 
-# Global master coordinator
-_master_coordinator: Optional[MasterCoordinatorAgent] = None
-
-
-def get_master_coordinator() -> MasterCoordinatorAgent:
-    """获取主协调智能体"""
-    global _master_coordinator
-    if _master_coordinator is None:
-        _master_coordinator = MasterCoordinatorAgent(
-            checkpoint_manager=get_checkpoint_manager(),
-            enable_page_pipeline=True
-        )
-    return _master_coordinator
-
-
-def set_master_coordinator(coordinator: MasterCoordinatorAgent) -> None:
-    """设置主协调智能体"""
-    global _master_coordinator
-    _master_coordinator = coordinator
-
-
-def generate_session_id() -> str:
-    """生成会话ID"""
-    import uuid
-    return f"session_{uuid.uuid4().hex}"
-
-
 def generate_task_id() -> str:
     """生成任务ID"""
+    import uuid
     return f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
 
@@ -131,7 +117,7 @@ def generate_task_id() -> str:
 async def generate_ppt_full(
     request: GeneratePPTRequest,
     background_tasks: BackgroundTasks,
-    coordinator: MasterCoordinatorAgent = Depends(get_master_coordinator)
+    checkpoint_manager: CheckpointManager = Depends(get_checkpoint_manager)
 ):
     """
     完整生成PPT（一次性）
@@ -144,7 +130,7 @@ async def generate_ppt_full(
         logger.info(f"FULL mode PPT generation requested: task_id={task_id}, user_id={request.user_id}")
 
         # 简化实现：直接返回成功响应
-        # 在实际使用中需要调用coordinator.run_async()
+        # 在实际使用中需要调用services层执行完整流程
 
         return PPTGenerationResponse(
             status="success",
@@ -161,54 +147,48 @@ async def generate_ppt_full(
         raise HTTPException(status_code=500, detail=f"PPT生成失败: {str(e)}")
 
 
-@router.post("/outline/generate", response_model=PPTGenerationResponse)
+@router.post("/outline/generate")
 async def generate_outline(
     request: GenerateOutlineRequest,
-    coordinator: MasterCoordinatorAgent = Depends(get_master_coordinator)
+    http_request: Request,  # FastAPI Request object for rate limiting
+    current_user: str = Depends(get_current_user_optional)  # 可选认证
 ):
     """
     生成大纲（阶段1）
 
     执行需求解析和框架设计，生成PPT大纲供用户编辑。
+    返回流式响应。
+
+    **认证**: 可选（未认证用户也可以使用，user_id 将为 "anonymous"）
+    **限流**: 100次/分钟
     """
     try:
-        task_id = generate_task_id()
+        # 限流检查
+        await rate_limit_check(http_request)
 
-        logger.info(f"PHASE_1 outline generation requested: task_id={task_id}, user_id={request.user_id}")
+        # 使用当前用户 ID 或匿名用户
+        user_id = current_user or "anonymous"
 
-        # 保存checkpoint
-        checkpoint_manager = get_checkpoint_manager()
+        logger.info(f"Outline generation requested: user_id={user_id}, prompt={request.prompt[:50]}..., language={request.language}")
 
-        # 创建示例框架数据
-        sample_framework = {
-            "total_page": 10,
-            "ppt_framework": [
-                {"page_no": 1, "title": "封面", "page_type": "cover"},
-                {"page_no": 2, "title": "目录", "page_type": "directory"}
-            ],
-            "research_page_indices": [],
-            "chart_page_indices": []
-        }
+        # 获取服务
+        service = get_ppt_generation_service()
 
-        # 保存checkpoint
-        await checkpoint_manager.save_checkpoint(
-            task_id=task_id,
-            user_id=request.user_id,
-            execution_mode=ExecutionMode.PHASE_1,
-            phase=2,
-            raw_input=request.user_input,
-            requirements={"ppt_topic": request.user_input[:50], "page_num": 10},
-            framework=sample_framework
-        )
+        # 创建流式响应生成器
+        async def generate():
+            async for chunk in service.generate_outline(
+                user_input=request.prompt,
+                language=request.language
+            ):
+                # 以 SSE 格式发送数据
+                yield f"data: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
 
-        return PPTGenerationResponse(
-            status="checkpoint_saved",
-            message="大纲生成完成，请编辑后继续生成PPT",
-            data={
-                "task_id": task_id,
-                "outline": sample_framework,
-                "execution_mode": "phase_1",
-                "total_pages": sample_framework.get("total_page", 0)
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
             }
         )
 
@@ -265,7 +245,7 @@ async def update_outline(
 async def generate_ppt_from_outline(
     task_id: str,
     request: GeneratePPTFromOutlineRequest,
-    coordinator: MasterCoordinatorAgent = Depends(get_master_coordinator)
+    checkpoint_manager: CheckpointManager = Depends(get_checkpoint_manager)
 ):
     """
     从大纲生成PPT（阶段2）
@@ -276,13 +256,12 @@ async def generate_ppt_from_outline(
         logger.info(f"PHASE_2 PPT generation requested: task_id={task_id}")
 
         # 验证checkpoint存在
-        checkpoint_manager = get_checkpoint_manager()
         checkpoint = await checkpoint_manager.load_checkpoint(task_id)
         if not checkpoint:
             raise HTTPException(status_code=404, detail=f"未找到任务: {task_id}")
 
         # 简化实现：直接返回成功响应
-        # 在实际使用中需要调用coordinator.run_async() with PHASE_2 mode
+        # 在实际使用中需要调用services层执行PHASE_2
 
         return PPTGenerationResponse(
             status="success",
@@ -416,6 +395,71 @@ async def delete_outline(
         raise HTTPException(status_code=500, detail=f"删除大纲失败: {str(e)}")
 
 
+@router.post("/slides/generate")
+async def generate_slides(
+    req_dict: Dict[str, Any],
+    http_request: Request,  # FastAPI Request object for rate limiting
+    current_user: str = Depends(get_current_user_optional)  # 可选认证
+):
+    """
+    生成幻灯片
+
+    接收大纲信息，生成完整的 PPT 幻灯片内容。
+    返回流式响应。
+
+    **认证**: 可选（未认证用户也可以使用）
+    **限流**: 50次/分钟
+    """
+    # 限流检查（更严格的限制）
+    await rate_limit_check(http_request, limit=50, window=60)
+
+    # 使用当前用户 ID 或匿名用户
+    user_id = current_user or "anonymous"
+    try:
+        title = req_dict.get("title", "")
+        outline = req_dict.get("outline", [])
+        language = req_dict.get("language", "en-US")
+        tone = req_dict.get("tone", "professional")
+        num_slides = req_dict.get("numSlides", 10)
+
+        if not title or not outline:
+            raise HTTPException(status_code=400, detail="Missing required fields: title, outline")
+
+        logger.info(f"Slides generation requested: title={title}, slides={num_slides}")
+
+        # 获取服务
+        service = get_ppt_generation_service()
+
+        # 创建流式响应生成器
+        async def generate():
+            async for event_data in service.generate_slides(
+                title=title,
+                outline=outline,
+                language=language,
+                tone=tone,
+                num_slides=num_slides
+            ):
+                # 以 NDJSON 格式发送数据
+                yield json.dumps(event_data, ensure_ascii=False) + "\n"
+
+        return StreamingResponse(
+            generate(),
+            media_type="application/json",
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Transfer-Encoding": "chunked",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Slides generation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"幻灯片生成失败: {str(e)}")
+
+
 @router.get("/health")
 async def health_check():
     """健康检查"""
@@ -436,7 +480,7 @@ if __name__ == "__main__":
     print("  POST /ppt/generate - 完整生成PPT")
     print("  POST /ppt/outline/generate - 生成大纲")
     print("  POST /ppt/outline/{task_id} - 更新大纲")
-    print("  POST /ppt/ppt/from-outline/{task_id} - 从大纲生成PPT")
+    print("  POST /ppt/slides/generate - 生成幻灯片")
     print("  GET  /ppt/outline/list - 列出用户大纲")
     print("  GET  /ppt/outline/{task_id} - 获取大纲详情")
     print("  DELETE /ppt/outline/{task_id} - 删除大纲")

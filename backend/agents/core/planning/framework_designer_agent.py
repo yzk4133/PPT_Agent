@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from infrastructure.llm.fallback import JSONFallbackParser
 
 # 导入PromptManager
-from cognition.prompts import PromptManager
+from prompts import PromptManager
 
 # 导入领域模型
 from domain.models import PPTFramework, PageDefinition, PageType, ContentType, Requirement

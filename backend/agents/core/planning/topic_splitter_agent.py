@@ -18,7 +18,7 @@ from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import create_model_with_fallback, create_model_with_fallback_simple
 
 # 导入PromptManager用于获取提示词模板
-from cognition.prompts import PromptManager
+from prompts import PromptManager
 
 # 使用PromptManager获取提示词模板
 SPLIT_TOPIC_AGENT_PROMPT = PromptManager.get_split_topic_prompt()

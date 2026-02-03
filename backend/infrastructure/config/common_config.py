@@ -135,6 +135,22 @@ class AppConfig(BaseSettings):
     debug: bool = Field(False, description="调试模式")
     log_level: str = Field("INFO", description="日志级别")
 
+    # 认证配置
+    jwt_secret_key: str = Field("your-secret-key-change-in-production", description="JWT 密钥")
+    jwt_algorithm: str = Field("HS256", description="JWT 算法")
+    access_token_expire_minutes: int = Field(30, description="访问令牌过期时间（分钟）")
+    refresh_token_expire_days: int = Field(30, description="刷新令牌过期时间（天）")
+
+    # CORS 配置
+    cors_allowed_origins: list = Field(
+        default=["http://localhost:3000", "http://localhost:5173"],
+        description="允许的 CORS 来源"
+    )
+
+    # 限流配置
+    rate_limit_enabled: bool = Field(True, description="是否启用限流")
+    rate_limit_per_minute: int = Field(100, description="每分钟请求限制")
+
     # API 密钥
     openai_api_key: Optional[str] = Field(None, description="OpenAI API Key")
     deepseek_api_key: Optional[str] = Field(None, description="DeepSeek API Key")

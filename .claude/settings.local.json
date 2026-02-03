@@ -34,7 +34,10 @@
       "mcp__web-reader__webReader",
       "Bash(findstr /R \"^│   └\")",
       "Bash(findstr:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(git mv:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

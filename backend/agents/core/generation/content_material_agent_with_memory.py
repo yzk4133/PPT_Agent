@@ -43,17 +43,17 @@ class ContentMaterialAgentWithMemory(AgentMemoryMixin, ContentMaterialAgent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # 配置
-        self.enable_content_cache = os.getenv("ENABLE_CONTENT_CACHE", "true").lower() == "true"
-        self.content_cache_ttl_hours = int(os.getenv("CONTENT_CACHE_TTL_HOURS", "24"))
+        # 配置 - 使用 object.__setattr__ 避免 Pydantic 的字段检查
+        object.__setattr__(self, 'enable_content_cache', os.getenv("ENABLE_CONTENT_CACHE", "true").lower() == "true")
+        object.__setattr__(self, 'content_cache_ttl_hours', int(os.getenv("CONTENT_CACHE_TTL_HOURS", "24")))
 
         # 统计信息
-        self.stats = {
+        object.__setattr__(self, 'stats', {
             "shared_research_used": 0,
             "cache_hits": 0,
             "cache_misses": 0,
             "new_generation": 0,
-        }
+        })
 
         logger.info(
             f"[{self.agent_name}] 初始化完成: "

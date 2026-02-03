@@ -1,8 +1,4 @@
-// route.ts
 import { NextResponse } from "next/server";
-import { A2AClient, Message } from "@a2a-js/sdk";
-import crypto from "node:crypto";
-import { languages } from "prismjs";
 
 interface SlidesRequest {
   title: string;
@@ -12,63 +8,67 @@ interface SlidesRequest {
   numSlides: number;
 }
 
-function generateId() {
-  return crypto.randomUUID();
-}
+// FastAPI 统一网关 URL
+const FASTAPI_URL = process.env.FASTAPI_URL ?? "http://localhost:8000";
 
-const A2A_AGENT_SERVER_URL = process.env.A2A_AGENT_SLIDES_URL ?? "http://localhost:10011";
-
-async function* generateSlidesStream(
-  serverUrl: string,
-  slidesRequest: SlidesRequest,
-): AsyncGenerator<string> {
-  const client = new A2AClient(serverUrl);
-  const messageId = generateId();
-  const content = `Please generate a presentation with the following details:
-Title: ${slidesRequest.title}
-Language: ${slidesRequest.language}
-Tone for images: ${slidesRequest.tone}
-
-Outline:
-${slidesRequest.outline.map((item, index) => `${index + 1}. ${item}`).join("\n")}
-`;
-
-  const message: Message = {
-    messageId,
-    kind: "message",
-    role: "user",
-    parts: [{ kind: "text", text: content }],
-    metadata: {language: slidesRequest.language, tone: slidesRequest.tone, numSlides: slidesRequest.numSlides}
-  };
-
+async function* generateSlidesStream(serverUrl: string, slidesRequest: SlidesRequest): AsyncGenerator<string> {
   try {
-    const stream = client.sendMessageStream({ message });
-    for await (const event of stream) {
-      console.log("收到后端的event", event)
-      if (
-        event.kind === "status-update" &&
-        event.status?.message?.parts
-      ) {
-        for (const part of event.status.message.parts) {
-          if (part.kind === "text") {
-            const metadata = event.status.message.metadata ?? "";
-            yield JSON.stringify({ type: "status-update", data: part.text, metadata }) + "\n";
-          }
-        }
-      } else if (
-        event.kind === "artifact-update" &&
-        event.artifact?.parts
-      ) {
-        for (const part of event.artifact.parts) {
-          if (part.kind === "text") {
-            const metadata = event.artifact.metadata ?? "";
-            yield JSON.stringify({ type: "artifact-update", data: part.text, metadata }) + "\n";
+    const response = await fetch(`${serverUrl}/api/ppt/slides/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: slidesRequest.title,
+        outline: slidesRequest.outline,
+        language: slidesRequest.language,
+        tone: slidesRequest.tone,
+        numSlides: slidesRequest.numSlides,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("FastAPI error response:", errorText);
+      yield JSON.stringify({ type: "error", data: `Failed to generate slides. Status: ${response.status}` }) + "\n";
+      return;
+    }
+
+    // 处理 NDJSON 流式响应
+    const reader = response.body?.getReader();
+    if (!reader) {
+      yield JSON.stringify({ type: "error", data: "No response body" }) + "\n";
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.trim()) {
+          try {
+            // 直接透传 NDJSON 行
+            const parsed = JSON.parse(line);
+            console.log("Received event:", parsed);
+            yield line + "\n";
+          } catch (e) {
+            // 如果不是 JSON，直接透传
+            console.log("Non-JSON line:", line);
+            yield line + "\n";
           }
         }
       }
     }
   } catch (error) {
-    console.error("Error communicating with A2A client:", error);
+    console.error("Error communicating with FastAPI gateway:", error);
     yield JSON.stringify({ type: "error", data: (error as Error).message }) + "\n";
   }
 }
@@ -83,12 +83,12 @@ export async function POST(req: Request) {
 
     const stream = new ReadableStream({
       async start(controller) {
-        const generator = generateSlidesStream(A2A_AGENT_SERVER_URL, {
+        const generator = generateSlidesStream(FASTAPI_URL, {
           title,
           outline,
           language,
           tone,
-          numSlides
+          numSlides,
         });
 
         for await (const chunk of generator) {
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
     return new Response(stream, {
       headers: {
-        "Content-Type": "application/json; charset=utf-8", // NDJSON but keep JSON-type
+        "Content-Type": "application/json; charset=utf-8",
         "Transfer-Encoding": "chunked",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",

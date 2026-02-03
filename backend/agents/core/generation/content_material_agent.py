@@ -27,11 +27,11 @@ from google.adk.events.event import Event
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from infrastructure.llm.fallback import JSONFallbackParser
 
-# 导入工具
-from agents.tools.media.image_search import SearchImage
+# 导入新的 MCP 工具
+from agents.tools.mcp import search_images
 
 # 导入PromptManager
-from cognition.prompts import PromptManager
+from prompts import PromptManager
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class ContentMaterialAgent(LlmAgent):
             description="负责生成PPT的文字内容、图表和配图素材",
             instruction=XML_PPT_AGENT_PROMPT,
             output_key="content_material",
-            tools=[SearchImage],
+            tools=[search_images],  # 使用新的 MCP 工具
             **kwargs
         )
 

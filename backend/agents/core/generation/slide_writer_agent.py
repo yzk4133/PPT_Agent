@@ -22,11 +22,14 @@ from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import create_model_with_fallback, create_model_with_fallback_simple
 from infrastructure.utils.context_compressor import ContextCompressor
 
-# 导入工具（从tools模块）
-from agents.tools.media.image_search import SearchImage
+# 导入新的 MCP 工具
+from agents.tools.mcp import search_images
 
 # 导入PromptManager用于获取提示词模板
-from cognition.prompts import PromptManager
+from prompts import PromptManager
+
+# 导入CHECKER_AGENT_PROMPT
+from prompts.templates.generation import CHECKER_AGENT_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +233,7 @@ ppt_writer_sub_agent = PPTWriterSubAgent(
     after_agent_callback=my_after_agent_callback,
     before_model_callback=my_before_model_callback,
     after_model_callback=my_after_model_callback,
-    tools=[SearchImage],
+    tools=[search_images],  # 使用新的 MCP 工具
 )
 
 

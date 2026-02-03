@@ -1,7 +1,0 @@
-# 持久化记忆系统依赖
-sqlalchemy>=2.0.0
-psycopg2-binary>=2.9.0
-redis>=5.0.0
-pgvector>=0.2.0
-openai>=1.0.0
-alembic>=1.12.0  # 数据库迁移工具

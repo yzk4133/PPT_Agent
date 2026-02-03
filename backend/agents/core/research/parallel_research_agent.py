@@ -29,11 +29,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import create_model_with_fallback, create_model_with_fallback_simple
 
-# 导入工具（从tools模块）
-from agents.tools.search.document_search import DocumentSearch
+# 导入新的 MCP 工具
+from agents.tools.mcp import web_search, vector_search
 
 # 导入PromptManager用于获取提示词模板
-from cognition.prompts import PromptManager
+from prompts import PromptManager
 
 # 使用PromptManager获取研究提示词模板
 RESEARCH_TOPIC_AGENT_PROMPT = PromptManager.get_research_topic_prompt()
@@ -131,7 +131,7 @@ class DynamicParallelSearchAgent(ParallelAgent):
                 name=f"research_agent_{topic_id}",
                 description="Medical expert for a specific topic.",
                 instruction=custom_instruction,
-                tools=[DocumentSearch],
+                tools=[web_search, vector_search],  # 使用新的 MCP 工具
                 output_key=f"research_agent_{topic_id}",
                 before_model_callback=research_agent_before_model_callback,
             )
