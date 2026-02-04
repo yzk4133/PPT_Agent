@@ -179,6 +179,103 @@ def create_checkpoint_saved_event(
     )
 
 
+def create_stage_started_event(
+    version: int,
+    task_id: str,
+    stage_name: str
+) -> TaskEvent:
+    """创建阶段开始事件"""
+    return TaskEvent(
+        event_type=TaskEventType.TASK_STARTED,  # Using TASK_STARTED for stage start
+        version=version,
+        data={
+            "task_id": task_id,
+            "stage": stage_name,
+            "status": "started"
+        },
+        timestamp=datetime.now(),
+        correlation_id=task_id
+    )
+
+
+def create_stage_completed_event(
+    version: int,
+    task_id: str,
+    stage_name: str,
+    result_data: Optional[Dict[str, Any]] = None
+) -> TaskEvent:
+    """创建阶段完成事件"""
+    return TaskEvent(
+        event_type=TaskEventType.TASK_COMPLETED,  # Using TASK_COMPLETED for stage completion
+        version=version,
+        data={
+            "task_id": task_id,
+            "stage": stage_name,
+            "status": "completed",
+            "result": result_data or {}
+        },
+        timestamp=datetime.now(),
+        correlation_id=task_id
+    )
+
+
+def create_stage_failed_event(
+    version: int,
+    task_id: str,
+    stage_name: str,
+    error: str
+) -> TaskEvent:
+    """创建阶段失败事件"""
+    return TaskEvent(
+        event_type=TaskEventType.TASK_FAILED,
+        version=version,
+        data={
+            "task_id": task_id,
+            "stage": stage_name,
+            "status": "failed",
+            "error": error
+        },
+        timestamp=datetime.now(),
+        correlation_id=task_id
+    )
+
+
+def create_task_failed_event(
+    version: int,
+    task_id: str,
+    error: str
+) -> TaskEvent:
+    """创建任务失败事件"""
+    return TaskEvent(
+        event_type=TaskEventType.TASK_FAILED,
+        version=version,
+        data={
+            "task_id": task_id,
+            "status": "failed",
+            "error": error
+        },
+        timestamp=datetime.now(),
+        correlation_id=task_id
+    )
+
+
+def create_task_completed_event(
+    version: int,
+    task_id: str
+) -> TaskEvent:
+    """创建任务完成事件"""
+    return TaskEvent(
+        event_type=TaskEventType.TASK_COMPLETED,
+        version=version,
+        data={
+            "task_id": task_id,
+            "status": "completed"
+        },
+        timestamp=datetime.now(),
+        correlation_id=task_id
+    )
+
+
 if __name__ == "__main__":
     # 测试代码
     print("Testing Task Events")

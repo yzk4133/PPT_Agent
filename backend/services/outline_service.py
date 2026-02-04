@@ -12,7 +12,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from domain.interfaces import IAgentFactory, AgentContext, AgentResult
+from domain.interfaces import IAgentFactory, IIAgentContext, IAgentResult
 
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class OutlineService:
         user_id: str = "anonymous",
         language: str = "EN-US",
         metadata: Optional[Dict[str, Any]] = None
-    ) -> AgentResult:
+    ) -> IAgentResult:
         """
         生成大纲
 
@@ -60,7 +60,7 @@ class OutlineService:
             AgentResult实例
         """
         # 创建上下文
-        context = AgentContext(
+        context = IAgentContext(
             session_id=f"outline_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             user_id=user_id,
             state={
@@ -79,7 +79,7 @@ class OutlineService:
 
             # 这里应该调用专门的大纲生成Agent
             # 暂时返回模拟结果
-            result = AgentResult(
+            result = IAgentResult(
                 success=True,
                 content=f"# {topic}\n\n这是生成的大纲内容..."
             )
@@ -88,14 +88,14 @@ class OutlineService:
 
         except Exception as e:
             logger.error(f"大纲生成失败: {e}")
-            result = AgentResult(
+            result = IAgentResult(
                 success=False,
                 error=str(e)
             )
 
         return result
 
-    async def _load_user_preferences(self, context: AgentContext) -> None:
+    async def _load_user_preferences(self, context: IAgentContext) -> None:
         """
         加载用户偏好
 

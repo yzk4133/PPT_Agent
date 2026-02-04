@@ -15,13 +15,14 @@
 
 ```
 utils/
-├── save_ppt/                   # PPT文件操作工具
-│   ├── main_api.py             # PPT生成API
-│   ├── ppt_generator.py        # PPT生成器
+├── context_compressor.py        # 上下文压缩工具
+├── save_ppt/                    # PPT文件操作工具
+│   ├── main_api.py              # PPT生成API
+│   ├── ppt_generator.py         # PPT生成器
 │   └── look_master.py          # 样式管理
-├── common/                     # ⚠️ 已弃用（已迁移到 infrastructure）
-│   └── __init__.py             # 仅保留向后兼容
-└── README.md                   # 本文档
+├── common/                      # ⚠️ 已弃用（仅保留向后兼容）
+│   └── __init__.py             # 重新导出到 infrastructure 和 utils
+└── README.md                    # 本文档
 ```
 
 ## 与 Infrastructure 的区别
@@ -36,20 +37,17 @@ utils/
 
 ## 迁移说明
 
-`utils/common` 模块已迁移到 `infrastructure` 层。
+`utils/common` 模块已迁移到 `infrastructure` 层和 `utils` 根目录。
 
 ### 导入路径迁移对照表
 
 | 旧路径 | 新路径 |
 |--------|--------|
 | `from utils.common import get_config` | `from infrastructure.config import get_config` |
-| `from utils.common.model_factory import create_model_with_fallback` | `from infrastructure.llm import create_model_with_fallback` |
-| `from utils.common.tool_manager import UnifiedToolManager` | `from infrastructure.tools import UnifiedToolManager` |
-| `from utils.common.context_compressor import ContextCompressor` | `from infrastructure.utils import ContextCompressor` |
-| `from utils.common.retry_decorator import retry_with_exponential_backoff` | `from infrastructure.llm import retry_with_exponential_backoff` |
-| `from utils.common.fallback import JSONFallbackParser` | `from infrastructure.llm.fallback import JSONFallbackParser` |
-
-详细迁移路径请参考 `utils/common/__init__.py` 中的文档。
+| `from utils.common.model_factory import ...` | `from infrastructure.llm import ...` |
+| `from utils.common.context_compressor import ...` | `from utils import ContextCompressor` |
+| `from utils.common.retry_decorator import ...` | `from infrastructure.llm import ...` |
+| `from utils.common.fallback import ...` | `from infrastructure.llm.fallback import ...` |
 
 ## 添加新工具
 
@@ -63,7 +61,7 @@ utils/
 ### 示例
 
 ```python
-# utils/text_processing/text_utils.py
+# utils/text_processing.py
 from typing import str
 
 def truncate_text(text: str, max_length: int = 100, suffix: str = "...") -> str:

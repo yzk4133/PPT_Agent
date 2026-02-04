@@ -68,27 +68,37 @@ class AgentMemoryMixin:
         # 检查环境变量
         use_memory = os.getenv("USE_AGENT_MEMORY", "true").lower() == "true"
 
-        # 初始化记忆服务
-        self.memory_enabled = _MEMORY_AVAILABLE and use_memory
+        # 初始化记忆服务（使用object.__setattr__绕过Pydantic验证）
+        memory_enabled = _MEMORY_AVAILABLE and use_memory
 
-        if self.memory_enabled:
+        if memory_enabled:
             try:
-                self.memory_manager = _memory_services["manager"]()
-                self.MemoryScope = _memory_services["MemoryScope"]
-                self.shared_workspace = _memory_services["SharedWorkspaceService"](
+                memory_manager = _memory_services["manager"]()
+                MemoryScope = _memory_services["MemoryScope"]
+                shared_workspace = _memory_services["SharedWorkspaceService"](
                     enable_cache=True
                 )
-                self.user_pref_service = _memory_services["UserPreferenceService"](
+                user_pref_service = _memory_services["UserPreferenceService"](
                     enable_cache=True
                 )
-                self.decision_service = _memory_services["AgentDecisionService"]()
-                self.DecisionRecord = _memory_services["DecisionRecord"]
+                decision_service = _memory_services["AgentDecisionService"]()
+                DecisionRecord = _memory_services["DecisionRecord"]
+
+                # 使用object.__setattr__绕过Pydantic验证
+                object.__setattr__(self, 'memory_manager', memory_manager)
+                object.__setattr__(self, 'MemoryScope', MemoryScope)
+                object.__setattr__(self, 'shared_workspace', shared_workspace)
+                object.__setattr__(self, 'user_pref_service', user_pref_service)
+                object.__setattr__(self, 'decision_service', decision_service)
+                object.__setattr__(self, 'DecisionRecord', DecisionRecord)
+                object.__setattr__(self, 'memory_enabled', True)
 
                 logger.info(f"[{self.__class__.__name__}] 记忆服务初始化成功")
             except Exception as e:
                 logger.warning(f"[{self.__class__.__name__}] 记忆服务初始化失败: {e}")
-                self.memory_enabled = False
+                object.__setattr__(self, 'memory_enabled', False)
         else:
+            object.__setattr__(self, 'memory_enabled', False)
             if not _MEMORY_AVAILABLE:
                 logger.debug(f"[{self.__class__.__name__}] 记忆系统不可用，无记忆模式")
             else:
@@ -96,11 +106,11 @@ class AgentMemoryMixin:
                     f"[{self.__class__.__name__}] 记忆功能已禁用（USE_AGENT_MEMORY=false）"
                 )
 
-        # Agent标识
-        self.agent_name = self.__class__.__name__
-        self.task_id: Optional[str] = None
-        self.user_id: Optional[str] = None
-        self.session_id: Optional[str] = None
+        # Agent标识（使用object.__setattr__绕过Pydantic验证）
+        object.__setattr__(self, 'agent_name', self.__class__.__name__)
+        object.__setattr__(self, 'task_id', None)
+        object.__setattr__(self, 'user_id', None)
+        object.__setattr__(self, 'session_id', None)
 
     # ========================================================================
     # 基础记忆方法
@@ -590,11 +600,11 @@ class AgentMemoryMixin:
             session_id: 会话ID
         """
         if user_id is not None:
-            self.user_id = user_id
+            object.__setattr__(self, 'user_id', user_id)
         if task_id is not None:
-            self.task_id = task_id
+            object.__setattr__(self, 'task_id', task_id)
         if session_id is not None:
-            self.session_id = session_id
+            object.__setattr__(self, 'session_id', session_id)
 
         logger.debug(
             f"[{self.agent_name}] 上下文更新: user_id={user_id}, task_id={task_id}, session_id={session_id}"

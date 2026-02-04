@@ -22,9 +22,6 @@ from google.adk.runners import Runner
 # 导入工厂
 from agents.factory import get_agent_factory
 
-# 导入工具管理器
-from infrastructure.tools.tool_manager import UnifiedToolManager
-
 # 导入配置
 from infrastructure.config.common_config import get_config
 
@@ -70,12 +67,14 @@ class PptGenerationService:
             return
 
         try:
-            # 加载 MCP 工具
-            mcp_config_path = os.path.join(
-                os.path.dirname(__file__), "..", "archive", "slide_outline", "mcp_config.json"
+            # 使用UnifiedToolRegistry获取MCP工具
+            from agents.tools.registry.unified_registry import get_unified_registry, ToolCategory
+
+            registry = get_unified_registry()
+            mcp_tools = registry.get_adk_tools(
+                categories=[ToolCategory.SEARCH, ToolCategory.MEDIA],
+                include_skills=False
             )
-            tool_manager = UnifiedToolManager()
-            mcp_tools = tool_manager.load_tools_from_config(mcp_config_path)
 
             # 创建 Agent
             self._outline_agent = self.agent_factory.create_outline_agent(

@@ -5,8 +5,8 @@ Agent网关层
 """
 
 from typing import Optional, Callable
-from domain.models.agent_context import AgentContext, AgentStage
-from domain.models.agent_result import AgentResult, ResultStatus
+from domain.communication.agent_context import AgentContext, AgentStage
+from domain.communication.agent_result import AgentResult, ResultStatus
 import logging
 import time
 

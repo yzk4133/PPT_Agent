@@ -12,9 +12,9 @@ from .agent import (
     ISlideWriterAgent,
     IQualityCheckerAgent,
     IAgentFactory,
-    AgentConfig,
-    AgentContext,
-    AgentResult
+    IAgentConfig,
+    IAgentContext,
+    IAgentResult
 )
 from .repository import (
     IRepository,
@@ -36,9 +36,9 @@ __all__ = [
     "IAgentFactory",
 
     # Agent Data Classes
-    "AgentConfig",
-    "AgentContext",
-    "AgentResult",
+    "IAgentConfig",
+    "IAgentContext",
+    "IAgentResult",
 
     # Repository Interfaces
     "IRepository",

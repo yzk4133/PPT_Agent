@@ -12,9 +12,9 @@ from typing import List, Dict, Any, Optional, Type, Callable
 from google.adk.tools import BaseTool
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
 
-from ..core.skill_registry import SkillRegistry
-from ..core.skill_metadata import SkillCategory, SkillMetadata, MarkdownSkillMetadata
-from ..core.skill_wrapper import SkillWrapper
+from ..skill_registry import SkillRegistry
+from ..skill_metadata import SkillCategory, SkillMetadata, MarkdownSkillMetadata
+from ..skill_wrapper import SkillWrapper
 
 
 class SkillManager:

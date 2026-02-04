@@ -9,6 +9,7 @@ from .database_backend import (
     ICheckpointBackend,
     InMemoryCheckpointBackend,
     DatabaseCheckpointBackend,
+    PostgresCheckpointBackend,
     get_checkpoint_backend,
     set_checkpoint_backend,
     DatabaseConfig
@@ -24,6 +25,7 @@ __all__ = [
     "ICheckpointBackend",
     "InMemoryCheckpointBackend",
     "DatabaseCheckpointBackend",
+    "PostgresCheckpointBackend",
     "get_checkpoint_backend",
     "set_checkpoint_backend",
     "DatabaseConfig",

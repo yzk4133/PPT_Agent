@@ -1,13 +1,12 @@
 """
-⚠️ DEPRECATED: utils.common 已迁移到 infrastructure
+⚠️ DEPRECATED: utils.common 已迁移到 infrastructure 和 utils
 
 此模块仅为向后兼容保留，将在未来版本移除。
 
 迁移路径对照表：
 - from utils.common import get_config → from infrastructure.config import get_config
 - from utils.common.model_factory import ... → from infrastructure.llm import ...
-- from utils.common.tool_manager import ... → from infrastructure.tools import ...
-- from utils.common.context_compressor import ... → from infrastructure.utils import ...
+- from utils.common.context_compressor import ... → from utils import ContextCompressor
 - from utils.common.retry_decorator import ... → from infrastructure.llm import ...
 - from utils.common.fallback import ... → from infrastructure.llm.fallback import ...
 
@@ -19,7 +18,7 @@ import sys
 
 # 发出弃用警告
 warnings.warn(
-    "utils.common is deprecated. Use 'infrastructure' module instead. "
+    "utils.common is deprecated. Use 'infrastructure' or 'utils' module instead. "
     "See module docstring for migration paths.",
     DeprecationWarning,
     stacklevel=2
@@ -35,18 +34,13 @@ from infrastructure.llm.common_model_factory import (
     create_model_with_fallback_simple,
     ModelType,
 )
-from infrastructure.utils.context_compressor import ContextCompressor
+from utils.context_compressor import ContextCompressor
 from infrastructure.llm.retry_decorator import (
     retry_with_exponential_backoff,
     async_retry_with_fallback,
     RetryableError,
 )
 from infrastructure.llm.fallback import JSONFallbackParser, PartialSuccessHandler, FallbackChain
-
-# tool_manager 暂时注释，存在 AgentTool 导入问题
-# from infrastructure.tools.tool_manager import UnifiedToolManager, get_tool_manager
-UnifiedToolManager = None
-get_tool_manager = None
 
 __all__ = [
     "AppConfig",
@@ -55,8 +49,6 @@ __all__ = [
     "create_model_with_fallback",
     "create_model_with_fallback_simple",
     "ModelType",
-    # "UnifiedToolManager",  # Commented due to AgentTool import issues
-    # "get_tool_manager",  # Commented due to AgentTool import issues
     "ContextCompressor",
     "retry_with_exponential_backoff",
     "async_retry_with_fallback",

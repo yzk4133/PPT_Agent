@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 @Skill(
     name="ResearchTopicSkill",
     version="1.0.0",
-    category=SkillCategory.RESEARCH,
+    category=SkillCategory.SEARCH,
     tags=["research", "web", "synthesis"],
     description="Execute comprehensive research on a topic using web search and content extraction",
     author="MultiAgentPPT",
@@ -233,7 +233,7 @@ class ResearchTopicSkill:
             skill_id="research_topic",
             name="ResearchTopicSkill",
             version="1.0.0",
-            category=SkillCategory.RESEARCH,
+            category=SkillCategory.SEARCH,
             tags=["research", "web", "synthesis"],
             description="Execute comprehensive research on a topic",
             enabled=True

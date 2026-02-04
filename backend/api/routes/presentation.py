@@ -184,8 +184,8 @@ async def _generate_presentation_background(presentation):
         logger.info(f"开始后台生成演示文稿: {presentation.id}")
 
         # 获取上下文
-        from domain.interfaces import AgentContext
-        context = AgentContext(
+        from domain.interfaces import IAgentContext
+        context = IAgentContext(
             session_id=presentation.id,
             user_id=presentation.metadata.user_id if presentation.metadata else "anonymous"
         )

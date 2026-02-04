@@ -19,9 +19,9 @@ from google.adk.tools.mcp_tool.mcp_toolset import (
     SseConnectionParams,
 )
 
-from ..core.skill_metadata import SkillCategory
-from ..core.skill_wrapper import McpSkillAdapter
-from ..managers.skill_manager import SkillManager
+from ..skills.skill_metadata import SkillCategory
+from ..skills.skill_wrapper import McpSkillAdapter
+from ..skills.managers.skill_manager import SkillManager
 
 
 def load_mcp_config_from_file(config_path: str = "mcp_config.json") -> dict:

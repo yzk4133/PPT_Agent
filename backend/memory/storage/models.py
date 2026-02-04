@@ -43,7 +43,7 @@ class Session(Base):
     )
 
     # 会话元数据
-    metadata = Column(JSONB, default=dict)
+    session_metadata = Column(JSONB, default=dict)
 
     __table_args__ = (
         # 复合唯一索引：同一个app下user的session唯一
@@ -62,7 +62,7 @@ class Session(Base):
             "version": self.version,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
-            "metadata": self.metadata,
+            "metadata": self.session_metadata,
         }
 
 
@@ -128,7 +128,7 @@ class VectorMemory(Base):
 
     # 内容和元数据
     content = Column(Text, nullable=False)
-    metadata = Column(JSONB, default=dict)
+    memory_metadata = Column(JSONB, default=dict)
 
     # 向量字段（1536维 - OpenAI text-embedding-3-small）
     embedding = Column(Vector(1536)) if Vector else Column(Text)
@@ -154,7 +154,7 @@ class VectorMemory(Base):
             "id": str(self.id),
             "namespace": self.namespace,
             "content": self.content,
-            "metadata": self.metadata,
+            "metadata": self.memory_metadata,
             "access_count": self.access_count,
             "last_accessed_at": (
                 self.last_accessed_at.isoformat() if self.last_accessed_at else None
@@ -180,7 +180,7 @@ class ConversationHistory(Base):
     content = Column(Text, nullable=False)
 
     # 元数据（附加信息）
-    metadata = Column(JSONB, default=dict)
+    message_metadata = Column(JSONB, default=dict)
 
     # 时间戳
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
@@ -195,7 +195,7 @@ class ConversationHistory(Base):
             "user_id": self.user_id,
             "role": self.role,
             "content": self.content,
-            "metadata": self.metadata,
+            "metadata": self.message_metadata,
             "created_at": self.created_at.isoformat(),
         }
 

@@ -25,6 +25,7 @@ from .state_store import state_store
 from .vector_search import vector_search
 from .weixin_search import weixin_search
 from .xml_converter import xml_converter
+from .a2a_client_tool import a2a_client
 
 __all__ = [
     # MCP Integration
@@ -45,4 +46,5 @@ __all__ = [
     "vector_search",
     "weixin_search",
     "xml_converter",
+    "a2a_client",
 ]

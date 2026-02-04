@@ -321,6 +321,7 @@ class UnifiedToolRegistry:
         categories: Optional[List[ToolCategory]] = None,
         tool_names: Optional[List[str]] = None,
         include_skills: bool = True,
+        as_agent_tools: bool = False
     ) -> List[Any]:
         """
         Get ADK tools matching the given criteria.
@@ -329,6 +330,7 @@ class UnifiedToolRegistry:
             categories: Filter by categories
             tool_names: Specific tool names to include
             include_skills: Whether to include skills
+            as_agent_tools: Whether to convert to AgentTool type (default: False for backward compatibility)
 
         Returns:
             List of tools ready for use with Agent
@@ -345,12 +347,26 @@ class UnifiedToolRegistry:
         else:
             registrations = list(self._tools.values())
 
-        # Extract tool functions and classes
-        for registration in registrations:
-            if registration.tool_func:
-                tools.append(registration.tool_func)
-            elif registration.tool_class:
-                tools.append(registration.tool_class)
+        # Convert to ADK tools
+        if as_agent_tools:
+            from ..adapters.mcp_to_adk_adapter import mcp_to_agent_tool
+
+            for registration in registrations:
+                if registration.tool_func:
+                    tools.append(mcp_to_agent_tool(
+                        mcp_func=registration.tool_func,
+                        name=registration.metadata.name,
+                        description=registration.metadata.description
+                    ))
+                elif registration.tool_class:
+                    tools.append(registration.tool_class)
+        else:
+            # Original logic: return functions directly
+            for registration in registrations:
+                if registration.tool_func:
+                    tools.append(registration.tool_func)
+                elif registration.tool_class:
+                    tools.append(registration.tool_class)
 
         # Add skills if requested
         if include_skills:
@@ -405,7 +421,7 @@ def _register_builtin_tools(registry: UnifiedToolRegistry) -> None:
     """
     # Register MCP tools
     try:
-        from ..mcp import web_search, fetch_url, search_images, create_pptx, state_store, vector_search, weixin_search, xml_converter
+        from ..mcp import web_search, fetch_url, search_images, create_pptx, state_store, vector_search, weixin_search, xml_converter, a2a_client
 
         # Web Search
         registry.register(
@@ -503,10 +519,30 @@ def _register_builtin_tools(registry: UnifiedToolRegistry) -> None:
             tool_func=xml_converter
         )
 
-        print("Registered 8 MCP tools")
+        # A2A Client
+        registry.register(
+            metadata=ToolMetadata(
+                name="a2a_client",
+                category=ToolCategory.UTILITY,
+                description="A2A客户端工具，用于与其他Agent进行通信",
+                version="1.0.0",
+                author="MultiAgentPPT"
+            ),
+            tool_func=a2a_client
+        )
+
+        print("Registered 9 MCP tools")
 
     except ImportError as e:
         print(f"Warning: Could not import MCP tools: {e}")
+
+    # Auto-discover MCP tools
+    try:
+        from ..mcp import auto_discovery
+        count = auto_discovery.auto_register_tools(registry)
+        print(f"Auto-discovery registered {count} additional MCP tools")
+    except Exception as e:
+        print(f"Warning: Auto-discovery failed: {e}")
 
 
 # Convenience functions

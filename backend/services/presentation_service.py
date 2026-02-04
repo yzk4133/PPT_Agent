@@ -23,7 +23,7 @@ from domain.models import (
     ResearchResults,
     SlideList
 )
-from domain.interfaces import IAgentFactory, AgentContext
+from domain.interfaces import IAgentFactory, IIAgentContext
 
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class PresentationService:
         self._master_coordinator = None
         if use_master_coordinator:
             try:
-                from agents.orchestrator.master_coordinator import master_coordinator_agent
+                from agents.orchestrator.agents.master_coordinator import master_coordinator_agent
                 self._master_coordinator = master_coordinator_agent
                 logger.info("Using Master Coordinator architecture")
             except ImportError as e:
@@ -96,7 +96,7 @@ class PresentationService:
         )
 
         # 创建上下文
-        context = AgentContext(
+        context = IAgentContext(
             session_id=session_id or presentation_id,
             user_id=request.user_id,
             state={
@@ -115,7 +115,7 @@ class PresentationService:
     async def generate_presentation(
         self,
         presentation: Presentation,
-        context: AgentContext
+        context: IAgentContext
     ) -> Presentation:
         """
         生成演示文稿
@@ -167,7 +167,7 @@ class PresentationService:
 
         return presentation
 
-    async def _load_user_preferences(self, context: AgentContext) -> None:
+    async def _load_user_preferences(self, context: IAgentContext) -> None:
         """
         加载用户偏好
 
@@ -192,7 +192,7 @@ class PresentationService:
     async def _stage1_split_topics(
         self,
         presentation: Presentation,
-        context: AgentContext
+        context: IAgentContext
     ) -> TopicList:
         """
         Stage 1: 主题拆分
@@ -223,7 +223,7 @@ class PresentationService:
     async def _stage2_parallel_research(
         self,
         presentation: Presentation,
-        context: AgentContext,
+        context: IAgentContext,
         topics: TopicList
     ) -> ResearchResults:
         """
@@ -268,7 +268,7 @@ class PresentationService:
     async def _stage3_generate_ppt(
         self,
         presentation: Presentation,
-        context: AgentContext,
+        context: IAgentContext,
         research_results: ResearchResults
     ) -> None:
         """
@@ -330,7 +330,7 @@ async def create_presentation_from_request(
     presentation = await service.create_presentation(request)
 
     # 创建上下文
-    context = AgentContext(
+    context = IAgentContext(
         session_id=presentation.id,
         user_id=request.user_id
     )

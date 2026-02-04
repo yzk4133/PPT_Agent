@@ -71,7 +71,6 @@ from .components.revision_handler import (
 from .components.page_pipeline import (
     PagePipeline,
     PagePipelineConfig,
-    create_ppt_pipeline_stages,
 )
 
 # =====================================
@@ -80,13 +79,12 @@ from .components.page_pipeline import (
 # from .deprecated.workflow_executor import WorkflowExecutor, AgentOrchestrator
 # from .deprecated.parallel_executor import ParallelExecutionStrategy
 
-__all__ = [
+# Build __all__ conditionally based on what was imported
+_all_exports = [
     # ========== Main Agents ==========
     # Master Coordinator (Recommended)
     "master_coordinator_agent",
     "MasterCoordinatorAgent",
-    "master_coordinator_agent_with_memory",
-    "MasterCoordinatorAgentWithMemory",
     "AgentGateway",
 
     # Flat Architecture (Deprecated - use Master Coordinator instead)
@@ -114,11 +112,23 @@ __all__ = [
     # Page pipeline
     "PagePipeline",
     "PagePipelineConfig",
-    "create_ppt_pipeline_stages",
 
     # ========== Helper Functions ==========
     "get_master_coordinator_agent",
 ]
+
+# Add memory versions if they were imported successfully
+try:
+    master_coordinator_agent_with_memory
+    MasterCoordinatorAgentWithMemory
+    _all_exports.extend([
+        "master_coordinator_agent_with_memory",
+        "MasterCoordinatorAgentWithMemory",
+    ])
+except NameError:
+    pass
+
+__all__ = _all_exports
 
 
 def get_master_coordinator_agent():

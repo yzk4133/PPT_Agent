@@ -21,9 +21,9 @@ from datetime import datetime
 from domain.models import Task, TaskStatus
 
 # 导入Master Coordinator
-from agents.orchestrator.master_coordinator import master_coordinator_agent
-from agents.orchestrator.progress_tracker import get_progress_tracker
-from agents.orchestrator.revision_handler import (
+from agents.orchestrator.agents.master_coordinator import master_coordinator_agent
+from agents.orchestrator.components.progress_tracker import get_progress_tracker
+from agents.orchestrator.components.revision_handler import (
     get_revision_handler,
     RevisionType,
     RevisionResult

@@ -9,7 +9,7 @@ from .models import (
     SharedWorkspaceMemory,
     VectorMemory,
     AgentDecision,
-    ToolFeedback,
+    ToolExecutionFeedback,
 )
 
 __all__ = [
@@ -20,5 +20,5 @@ __all__ = [
     "SharedWorkspaceMemory",
     "VectorMemory",
     "AgentDecision",
-    "ToolFeedback",
+    "ToolExecutionFeedback",
 ]

@@ -10,7 +10,12 @@ from .task_events import (
     create_task_created_event,
     create_requirement_parsed_event,
     create_framework_designed_event,
-    create_checkpoint_saved_event
+    create_checkpoint_saved_event,
+    create_stage_started_event,
+    create_stage_completed_event,
+    create_stage_failed_event,
+    create_task_failed_event,
+    create_task_completed_event,
 )
 
 __all__ = [
@@ -25,4 +30,9 @@ __all__ = [
     "create_requirement_parsed_event",
     "create_framework_designed_event",
     "create_checkpoint_saved_event",
+    "create_stage_started_event",
+    "create_stage_completed_event",
+    "create_stage_failed_event",
+    "create_task_failed_event",
+    "create_task_completed_event",
 ]

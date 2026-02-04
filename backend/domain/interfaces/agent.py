@@ -10,9 +10,9 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AgentConfig:
+class IAgentConfig:
     """
-    Agent配置基类
+    Agent配置接口
 
     Attributes:
         name: Agent名称
@@ -33,9 +33,9 @@ class AgentConfig:
 
 
 @dataclass
-class AgentContext:
+class IAgentContext:
     """
-    Agent执行上下文
+    Agent执行上下文接口
 
     Attributes:
         session_id: 会话ID
@@ -65,9 +65,9 @@ class AgentContext:
 
 
 @dataclass
-class AgentResult:
+class IAgentResult:
     """
-    Agent执行结果
+    Agent执行结果接口
 
     Attributes:
         success: 是否成功
@@ -110,9 +110,9 @@ class IAgent(ABC):
     @abstractmethod
     async def run(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         input_data: Any
-    ) -> AgentResult:
+    ) -> IAgentResult:
         """
         执行Agent任务
 
@@ -121,14 +121,14 @@ class IAgent(ABC):
             input_data: 输入数据
 
         Returns:
-            AgentResult: 执行结果
+            IAgentResult: 执行结果
         """
         pass
 
     @abstractmethod
     async def run_stream(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         input_data: Any
     ) -> AsyncIterator[Any]:
         """
@@ -154,7 +154,7 @@ class ITopicSplitterAgent(IAgent):
     @abstractmethod
     async def split_topics(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         outline: str
     ) -> List[Dict[str, Any]]:
         """
@@ -180,7 +180,7 @@ class IResearchAgent(IAgent):
     @abstractmethod
     async def research_topic(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         topic: Dict[str, Any]
     ) -> str:
         """
@@ -198,7 +198,7 @@ class IResearchAgent(IAgent):
     @abstractmethod
     async def research_topics_parallel(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         topics: List[Dict[str, Any]]
     ) -> List[str]:
         """
@@ -224,7 +224,7 @@ class IContentGeneratorAgent(IAgent):
     @abstractmethod
     async def generate_content(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         research_data: Any
     ) -> str:
         """
@@ -250,7 +250,7 @@ class ISlideWriterAgent(IContentGeneratorAgent):
     @abstractmethod
     async def generate_slide(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         page_number: int,
         research_content: str
     ) -> str:
@@ -270,7 +270,7 @@ class ISlideWriterAgent(IContentGeneratorAgent):
     @abstractmethod
     async def generate_presentation(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         research_contents: List[str]
     ) -> str:
         """
@@ -296,7 +296,7 @@ class IQualityCheckerAgent(IAgent):
     @abstractmethod
     async def check_quality(
         self,
-        context: AgentContext,
+        context: IAgentContext,
         content: str,
         reference_content: str = ""
     ) -> Dict[str, Any]:
@@ -323,31 +323,31 @@ class IAgentFactory(ABC):
     """
 
     @abstractmethod
-    def create_topic_splitter(self, config: AgentConfig) -> ITopicSplitterAgent:
+    def create_topic_splitter(self, config: IAgentConfig) -> ITopicSplitterAgent:
         """创建主题拆分Agent"""
         pass
 
     @abstractmethod
-    def create_research_agent(self, config: AgentConfig) -> IResearchAgent:
+    def create_research_agent(self, config: IAgentConfig) -> IResearchAgent:
         """创建研究Agent"""
         pass
 
     @abstractmethod
-    def create_slide_writer(self, config: AgentConfig) -> ISlideWriterAgent:
+    def create_slide_writer(self, config: IAgentConfig) -> ISlideWriterAgent:
         """创建幻灯片写入Agent"""
         pass
 
     @abstractmethod
-    def create_quality_checker(self, config: AgentConfig) -> IQualityCheckerAgent:
+    def create_quality_checker(self, config: IAgentConfig) -> IQualityCheckerAgent:
         """创建质量检查Agent"""
         pass
 
 
 if __name__ == "__main__":
     # 测试代码
-    config = AgentConfig(name="test_agent")
-    context = AgentContext(session_id="test_123")
-    result = AgentResult(success=True, content="测试结果")
+    config = IAgentConfig(name="test_agent")
+    context = IAgentContext(session_id="test_123")
+    result = IAgentResult(success=True, content="测试结果")
     print(config)
     print(context)
     print(result)

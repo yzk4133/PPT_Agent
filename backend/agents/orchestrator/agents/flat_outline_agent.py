@@ -31,7 +31,6 @@ if backend_path not in sys.path:
 
 from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import ModelFactory
-from infrastructure.tools.tool_manager import UnifiedToolManager
 from infrastructure.llm.fallback import JSONFallbackParser, PartialSuccessHandler, FallbackChain
 from infrastructure.llm.retry_decorator import retry_with_exponential_backoff
 
@@ -402,7 +401,11 @@ class FlatSlideOutlineAgent(SequentialAgent):
 
 # 工厂函数：用于 main_api.py 创建 agent
 def create_flat_outline_agent(
-    model_name: str, provider: str, mcp_tools: List[Any], max_concurrency: int = 3
+    model_name: str,
+    provider: str,
+    mcp_tools: Optional[List[Any]] = None,
+    max_concurrency: int = 3,
+    include_skills: bool = True
 ) -> FlatSlideOutlineAgent:
     """
     创建扁平化大纲生成 Agent
@@ -410,12 +413,22 @@ def create_flat_outline_agent(
     Args:
         model_name: 模型名称
         provider: 模型提供方
-        mcp_tools: MCP 工具列表
+        mcp_tools: MCP 工具列表（可选，默认从UnifiedToolRegistry获取）
         max_concurrency: 最大并发数
+        include_skills: 是否包含Skills框架
 
     Returns:
         FlatSlideOutlineAgent 实例
     """
+    # 如果未提供mcp_tools，从UnifiedToolRegistry获取
+    if mcp_tools is None:
+        from backend.agents.tools.registry.unified_registry import get_unified_registry, ToolCategory
+        registry = get_unified_registry()
+        mcp_tools = registry.get_adk_tools(
+            categories=[ToolCategory.SEARCH, ToolCategory.MEDIA],
+            include_skills=include_skills
+        )
+
     return FlatSlideOutlineAgent(
         model_name=model_name,
         provider=provider,

@@ -20,7 +20,7 @@ from google.adk.models import LlmRequest, LlmResponse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import create_model_with_fallback, create_model_with_fallback_simple
-from infrastructure.utils.context_compressor import ContextCompressor
+from utils.context_compressor import ContextCompressor
 
 # 导入新的 MCP 工具
 from agents.tools.mcp import search_images
