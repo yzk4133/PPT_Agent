@@ -19,7 +19,6 @@ from .skill_metadata import SkillMetadata, SkillCategory, MarkdownSkillMetadata
 from .skill_wrapper import SkillWrapper, McpSkillAdapter
 from .skill_loaders import CompositeSkillLoader
 
-
 class SkillRegistry:
     """
     Central registry for managing all Skills.

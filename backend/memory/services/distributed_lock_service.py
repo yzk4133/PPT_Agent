@@ -39,7 +39,6 @@ from redis.exceptions import RedisError
 
 logger = logging.getLogger(__name__)
 
-
 # ============================================================================
 # 锁异常类
 # ============================================================================
@@ -48,21 +47,17 @@ class LockError(Exception):
     """锁基础异常"""
     pass
 
-
 class LockAcquisitionError(LockError):
     """获取锁失败"""
     pass
-
 
 class LockReleaseError(LockError):
     """释放锁失败"""
     pass
 
-
 class LockAlreadyHeldError(LockError):
     """锁已被持有"""
     pass
-
 
 # ============================================================================
 # 配置
@@ -80,7 +75,6 @@ class LockConfig:
 
     # 锁续期配置
     AUTO_RENEWAL_THRESHOLD = 0.7  # 当剩余时间 < 70% TTL时自动续期
-
 
 # ============================================================================
 # 分布式锁
@@ -198,7 +192,6 @@ class DistributedLock:
         """退出上下文时自动释放锁"""
         await self.release()
         return False
-
 
 # ============================================================================
 # 分布式锁服务
@@ -530,13 +523,11 @@ class DistributedLockService:
         except RedisError:
             return False
 
-
 # ============================================================================
 # 全局实例
 # ============================================================================
 
 _global_lock_service: Optional[DistributedLockService] = None
-
 
 def get_lock_service() -> DistributedLockService:
     """获取全局分布式锁服务实例"""
@@ -544,7 +535,6 @@ def get_lock_service() -> DistributedLockService:
     if _global_lock_service is None:
         _global_lock_service = DistributedLockService()
     return _global_lock_service
-
 
 # ============================================================================
 # 装饰器

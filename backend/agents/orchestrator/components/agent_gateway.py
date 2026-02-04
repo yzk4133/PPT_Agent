@@ -12,7 +12,6 @@ import time
 
 logger = logging.getLogger(__name__)
 
-
 class AgentGateway:
     """
     Agent网关

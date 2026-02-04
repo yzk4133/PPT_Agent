@@ -20,11 +20,9 @@ import re
 
 logger = logging.getLogger(__name__)
 
-
 # Prometheus metric name validation
 METRIC_NAME_RE = re.compile(r'^[a-zA-Z_:][a-zA-Z0-9_:]*$')
 LABEL_NAME_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
-
 
 @dataclass
 class MetricValue:
@@ -34,7 +32,6 @@ class MetricValue:
     value: float
     labels: Dict[str, str] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
-
 
 class Counter:
     """
@@ -133,7 +130,6 @@ class Counter:
         label_pairs = [f'{k}="{v}"' for k, v in labels.items()]
         return "{" + ",".join(label_pairs) + "}"
 
-
 class Gauge:
     """
     仪表
@@ -228,7 +224,6 @@ class Gauge:
 
         label_pairs = [f'{k}="{v}"' for k, v in labels.items()]
         return "{" + ",".join(label_pairs) + "}"
-
 
 class Histogram:
     """
@@ -358,7 +353,6 @@ class Histogram:
 
         label_pairs = [f'{k}="{v}"' for k, v in labels.items()]
         return "{" + ",".join(label_pairs) + "}"
-
 
 class MetricsCollector:
     """
@@ -499,10 +493,8 @@ class MetricsCollector:
             self._histograms.clear()
             self._register_default_metrics()
 
-
 # 全局单例
 _global_collector: Optional[MetricsCollector] = None
-
 
 def get_metrics_collector() -> MetricsCollector:
     """
@@ -516,13 +508,11 @@ def get_metrics_collector() -> MetricsCollector:
         _global_collector = MetricsCollector()
     return _global_collector
 
-
 def reset_metrics_collector():
     """重置全局指标收集器（用于测试）"""
     global _global_collector
     if _global_collector:
         _global_collector.reset()
-
 
 # 装饰器
 def count_exceptions(
@@ -564,7 +554,6 @@ def count_exceptions(
 
     return decorator
 
-
 def measure_time(
     histogram_name: str = "function_duration_seconds",
     labels: Optional[List[str]] = None,
@@ -604,7 +593,6 @@ def measure_time(
         return wrapper
 
     return decorator
-
 
 if __name__ == "__main__":
     # 测试指标收集器

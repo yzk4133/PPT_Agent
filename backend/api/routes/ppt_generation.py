@@ -18,7 +18,6 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from domain.models.execution_mode import ExecutionMode
 from infrastructure.checkpoint import CheckpointManager, InMemoryCheckpointBackend
@@ -38,7 +37,6 @@ router = APIRouter(
     tags=["ppt_generation"]
 )
 
-
 # ============================================================================
 # Request/Response Models
 # ============================================================================
@@ -49,23 +47,19 @@ class GeneratePPTRequest(BaseModel):
     user_id: str = Field(default="anonymous", description="用户ID")
     enable_page_pipeline: bool = Field(default=True, description="是否启用页面级流水线并行")
 
-
 class GenerateOutlineRequest(BaseModel):
     """大纲生成请求"""
     prompt: str = Field(..., description="用户输入的自然语言描述")
     numberOfCards: int = Field(default=10, description="期望的卡片数量")
     language: str = Field(default="zh-CN", description="语言: zh-CN, en-US, ja-JP, ko-KR")
 
-
 class UpdateOutlineRequest(BaseModel):
     """大纲更新请求"""
     modified_outline: Dict[str, Any] = Field(..., description="修改后的大纲")
 
-
 class GeneratePPTFromOutlineRequest(BaseModel):
     """从大纲生成PPT请求"""
     user_id: str = Field(default="anonymous", description="用户ID")
-
 
 class PPTGenerationResponse(BaseModel):
     """PPT生成响应"""
@@ -73,12 +67,10 @@ class PPTGenerationResponse(BaseModel):
     message: str = Field(..., description="响应消息")
     data: Optional[Dict[str, Any]] = Field(None, description="响应数据")
 
-
 class OutlineListResponse(BaseModel):
     """大纲列表响应"""
     outlines: List[Dict[str, Any]] = Field(..., description="大纲列表")
     total: int = Field(..., description="总数")
-
 
 # ============================================================================
 # Dependencies
@@ -86,7 +78,6 @@ class OutlineListResponse(BaseModel):
 
 # Global checkpoint manager
 _checkpoint_manager: Optional[CheckpointManager] = None
-
 
 def get_checkpoint_manager() -> CheckpointManager:
     """获取checkpoint管理器"""
@@ -96,18 +87,15 @@ def get_checkpoint_manager() -> CheckpointManager:
         _checkpoint_manager = CheckpointManager(backend)
     return _checkpoint_manager
 
-
 def set_checkpoint_manager(manager: CheckpointManager) -> None:
     """设置checkpoint管理器"""
     global _checkpoint_manager
     _checkpoint_manager = manager
 
-
 def generate_task_id() -> str:
     """生成任务ID"""
     import uuid
     return f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
-
 
 # ============================================================================
 # API Endpoints
@@ -145,7 +133,6 @@ async def generate_ppt_full(
     except Exception as e:
         logger.error(f"PPT generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"PPT生成失败: {str(e)}")
-
 
 @router.post("/outline/generate")
 async def generate_outline(
@@ -196,7 +183,6 @@ async def generate_outline(
         logger.error(f"Outline generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"大纲生成失败: {str(e)}")
 
-
 @router.post("/outline/{task_id}", response_model=PPTGenerationResponse)
 async def update_outline(
     task_id: str,
@@ -240,7 +226,6 @@ async def update_outline(
         logger.error(f"Outline update failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"大纲更新失败: {str(e)}")
 
-
 @router.post("/ppt/from-outline/{task_id}", response_model=PPTGenerationResponse)
 async def generate_ppt_from_outline(
     task_id: str,
@@ -277,7 +262,6 @@ async def generate_ppt_from_outline(
     except Exception as e:
         logger.error(f"PPT generation from outline failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"PPT生成失败: {str(e)}")
-
 
 @router.get("/outline/list", response_model=OutlineListResponse)
 async def list_user_outlines(
@@ -326,7 +310,6 @@ async def list_user_outlines(
         logger.error(f"Outline list failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取大纲列表失败: {str(e)}")
 
-
 @router.get("/outline/{task_id}", response_model=PPTGenerationResponse)
 async def get_outline(
     task_id: str,
@@ -364,7 +347,6 @@ async def get_outline(
         logger.error(f"Outline get failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取大纲失败: {str(e)}")
 
-
 @router.delete("/outline/{task_id}", response_model=PPTGenerationResponse)
 async def delete_outline(
     task_id: str,
@@ -393,7 +375,6 @@ async def delete_outline(
     except Exception as e:
         logger.error(f"Outline delete failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"删除大纲失败: {str(e)}")
-
 
 @router.post("/slides/generate")
 async def generate_slides(
@@ -459,7 +440,6 @@ async def generate_slides(
         logger.error(f"Slides generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"幻灯片生成失败: {str(e)}")
 
-
 @router.get("/health")
 async def health_check():
     """健康检查"""
@@ -468,7 +448,6 @@ async def health_check():
         "service": "ppt_generation_api",
         "timestamp": datetime.now().isoformat()
     }
-
 
 if __name__ == "__main__":
     import uvicorn

@@ -16,9 +16,7 @@ from collections import defaultdict, deque
 from ..skill_decorator import Skill
 from ..skill_metadata import SkillCategory
 
-
 logger = logging.getLogger(__name__)
-
 
 @Skill(
     name="TaskSchedulerSkill",
@@ -268,7 +266,6 @@ class TaskSchedulerSkill:
             description="Schedule and execute tasks with dependencies",
             enabled=True
         )
-
 
 # Convenience function
 async def schedule_tasks(

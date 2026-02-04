@@ -7,7 +7,6 @@ Domain model for the requirement parsing stage state.
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Tuple
 
-
 @dataclass
 class RequirementState:
     """
@@ -129,7 +128,6 @@ class RequirementState:
     def summary(self) -> str:
         """获取需求摘要"""
         return f"{self.ppt_topic} ({self.page_num}页, {self.scene})"
-
 
 if __name__ == "__main__":
     # 测试代码

@@ -16,7 +16,6 @@ from ..storage.redis_cache import RedisCache
 
 logger = logging.getLogger(__name__)
 
-
 class SharedWorkspaceService:
     """Multi-Agent协作记忆服务"""
 

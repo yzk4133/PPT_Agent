@@ -30,7 +30,6 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-
 class LongtermMemoryModel:
     """长期内存数据库模型（不使用Base，独立定义）"""
 
@@ -73,7 +72,6 @@ class LongtermMemoryModel:
         Index("idx_importance", "importance"),
         Index("idx_last_accessed", "last_accessed"),
     )
-
 
 class L3LongtermLayer(BaseMemoryLayer):
     """L3 长期内存层"""

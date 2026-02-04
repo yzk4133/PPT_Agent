@@ -9,7 +9,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-
 class ResearchStatus(str, Enum):
     """研究状态枚举"""
     PENDING = "pending"
@@ -17,7 +16,6 @@ class ResearchStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     PARTIAL = "partial"  # 部分成功
-
 
 @dataclass
 class Reference:
@@ -46,7 +44,6 @@ class Reference:
             "source": self.source,
             "doc_id": self.doc_id
         }
-
 
 @dataclass
 class ResearchResult:
@@ -136,7 +133,6 @@ class ResearchResult:
     def __str__(self) -> str:
         return f"ResearchResult(topic_id={self.topic_id}, status={self.status.value})"
 
-
 @dataclass
 class ResearchResults:
     """
@@ -198,7 +194,6 @@ class ResearchResults:
             "success_rate": self.get_success_rate(),
             "metadata": self.metadata
         }
-
 
 if __name__ == "__main__":
     # 测试代码

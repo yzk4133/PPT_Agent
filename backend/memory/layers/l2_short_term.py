@@ -27,7 +27,6 @@ from ..models import (
 
 logger = logging.getLogger(__name__)
 
-
 class L2ShortTermLayer(BaseMemoryLayer):
     """L2 短期内存层 - Redis存储"""
 

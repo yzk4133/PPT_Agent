@@ -48,7 +48,6 @@ __all__ = [
     "get_requirement_parser_agent",
 ]
 
-
 def get_requirement_parser_agent():
     """
     获取需求解析智能体实例

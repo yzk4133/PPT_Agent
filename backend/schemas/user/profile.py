@@ -6,7 +6,6 @@ from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
-
 class UserProfile(BaseModel):
     """用户配置"""
 
@@ -38,7 +37,6 @@ class UserProfile(BaseModel):
             }
         }
 
-
 class UserProfileUpdate(BaseModel):
     """用户配置更新"""
 
@@ -51,7 +49,6 @@ class UserProfileUpdate(BaseModel):
                 "full_name": "John Smith"
             }
         }
-
 
 class UserResponse(BaseModel):
     """用户响应（简化版）"""

@@ -14,9 +14,7 @@ from datetime import datetime
 from enum import Enum
 from abc import ABC, abstractmethod
 
-
 logger = logging.getLogger(__name__)
-
 
 class EventType(str, Enum):
     """Event types for agent execution"""
@@ -55,7 +53,6 @@ class EventType(str, Enum):
     # State events
     STATE_SNAPSHOT = "state_snapshot"
     STATE_RESTORED = "state_restored"
-
 
 @dataclass
 class Event:
@@ -116,7 +113,6 @@ class Event:
             causation_id=data.get("causation_id")
         )
 
-
 class EventStore(ABC):
     """
     Abstract base class for event storage.
@@ -148,7 +144,6 @@ class EventStore(ABC):
     def get_latest_version(self, aggregate_id: str) -> int:
         """Get the latest version number for an aggregate"""
         pass
-
 
 class InMemoryEventStore(EventStore):
     """
@@ -228,7 +223,6 @@ class InMemoryEventStore(EventStore):
             self._events.clear()
             self._event_index.clear()
             self._version_index.clear()
-
 
 class EventSourcedState:
     """
@@ -461,11 +455,9 @@ class EventSourcedState:
 
         logger.info(f"Restored {self._aggregate_id} from snapshot to version {self._version}")
 
-
 # Global event store
 _global_event_store: Optional[EventStore] = None
 _store_lock = threading.Lock()
-
 
 def get_event_store() -> EventStore:
     """Get the global event store instance"""
@@ -475,14 +467,12 @@ def get_event_store() -> EventStore:
             _global_event_store = InMemoryEventStore()
         return _global_event_store
 
-
 def reset_event_store() -> EventStore:
     """Reset the global event store with a new instance"""
     global _global_event_store
     with _store_lock:
         _global_event_store = InMemoryEventStore()
         return _global_event_store
-
 
 if __name__ == "__main__":
     # Test event sourcing

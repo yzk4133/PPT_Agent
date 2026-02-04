@@ -21,7 +21,6 @@ from infrastructure.config.common_config import get_config
 
 logger = logging.getLogger(__name__)
 
-
 async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSONResponse:
     """
     自定义 API 异常处理
@@ -64,7 +63,6 @@ async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSON
         content=response_data,
     )
 
-
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """
     HTTP 异常处理
@@ -104,7 +102,6 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
         status_code=exc.status_code,
         content=response_data,
     )
-
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """
@@ -158,7 +155,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content=response_data,
     )
 
-
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     通用异常处理
@@ -206,7 +202,6 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=response_data,
     )
-
 
 def setup_exception_handlers(app):
     """

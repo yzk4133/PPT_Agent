@@ -16,7 +16,6 @@ import httpx
 
 from .base_mcp_tool import BaseMCPTool
 
-
 # Configuration
 UNSPLASH_ACCESS_KEY = os.getenv("UNSPLASH_ACCESS_KEY", "")
 UNSPLASH_API = "https://api.unsplash.com/search/photos"
@@ -28,7 +27,6 @@ CACHE_DIR = Path(os.getenv("MCP_CACHE_DIR", "./data/mcp_cache"))
 CACHE_ENABLED = os.getenv("MCP_CACHE_ENABLED", "true").lower() == "true"
 
 logger = logging.getLogger(__name__)
-
 
 class SearchImagesTool(BaseMCPTool):
     """Image search tool using Unsplash and Pexels APIs"""
@@ -227,10 +225,8 @@ class SearchImagesTool(BaseMCPTool):
 
         return images
 
-
 # Global instance
 _tool_instance = None
-
 
 def get_tool() -> SearchImagesTool:
     """Get or create the search images tool instance"""
@@ -238,7 +234,6 @@ def get_tool() -> SearchImagesTool:
     if _tool_instance is None:
         _tool_instance = SearchImagesTool()
     return _tool_instance
-
 
 async def search_images(
     query: str,

@@ -21,7 +21,6 @@ from typing import List, Dict, Any, Type, Optional
 from .skill_metadata import SkillMetadata, SkillCategory, MarkdownSkillMetadata
 from .skill_wrapper import SkillWrapper
 
-
 class PythonSkillLoader:
     """
     Loader for Python-based Skills using the @Skill decorator.
@@ -43,7 +42,7 @@ class PythonSkillLoader:
         """Add a directory to Python path if not already present"""
         abs_path = os.path.abspath(directory)
         if abs_path not in sys.path:
-            sys.path.insert(0, abs_path)
+            sys.path.append(abs_path)
 
     def discover_modules(self) -> List[Path]:
         """
@@ -155,7 +154,6 @@ class PythonSkillLoader:
 
         return wrappers
 
-
 class JsonSkillLoader:
     """
     Loader for JSON-based Skill definitions.
@@ -259,7 +257,6 @@ class JsonSkillLoader:
 
         return wrappers
 
-
 class YamlSkillLoader(JsonSkillLoader):
     """
     Loader for YAML-based Skill definitions.
@@ -304,7 +301,6 @@ class YamlSkillLoader(JsonSkillLoader):
                 configs.append(Path(self.config_directory) / file)
 
         return configs
-
 
 class MarkdownSkillLoader:
     """
@@ -502,7 +498,6 @@ class MarkdownSkillLoader:
                 print(f"Loaded Markdown skill: {metadata.skill_id} ({metadata.name})")
 
         return metadata_list
-
 
 class CompositeSkillLoader:
     """

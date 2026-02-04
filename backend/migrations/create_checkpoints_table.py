@@ -12,7 +12,6 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-
 def migrate(database_path: str = "data/checkpoints.db") -> bool:
     """
     Run migration to create checkpoints table
@@ -82,7 +81,6 @@ def migrate(database_path: str = "data/checkpoints.db") -> bool:
         logger.error(f"Migration failed: {e}")
         return False
 
-
 def rollback(database_path: str = "data/checkpoints.db") -> bool:
     """
     Rollback migration by dropping checkpoints table
@@ -115,7 +113,6 @@ def rollback(database_path: str = "data/checkpoints.db") -> bool:
     except Exception as e:
         logger.error(f"Rollback failed: {e}")
         return False
-
 
 def get_migration_status(database_path: str = "data/checkpoints.db") -> dict:
     """
@@ -167,7 +164,6 @@ def get_migration_status(database_path: str = "data/checkpoints.db") -> dict:
         logger.error(f"Failed to get migration status: {e}")
 
     return status
-
 
 if __name__ == "__main__":
     # Configure logging

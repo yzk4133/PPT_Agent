@@ -14,286 +14,149 @@ Infrastructure Layer - 统一技术基础设施
 - 与业务逻辑无关的技术组件
 - 提供可配置的技术能力
 - 可替换的实现（如LLM提供商、数据库）
+
+便捷导入:
+    # 配置
+    from infrastructure import get_config, AppConfig
+
+    # LLM
+    from infrastructure import ModelFactory, create_model_with_fallback
+
+    # 数据库
+    from infrastructure import DatabaseManager, get_db_manager
+
+    # 日志
+    from infrastructure import setup_logger, get_logger
+
+    # 安全
+    from infrastructure import PasswordHandler, JWTHandler
+
+    # 中间件
+    from infrastructure import setup_exception_handlers
 """
 
-# Config
-from .config.common_config import (
-    AppConfig,
-    AgentConfig,
-    DatabaseConfig,
-    FeatureFlags,
-    ModelProvider,
-    Environment,
-    get_config,
-)
-
-# LLM
-from .llm.common_model_factory import (
-    create_model_with_fallback,
-    create_model_with_fallback_simple,
-    get_model_factory,
-    ModelFactory,
-    ModelType,
-)
-
-from .llm.retry_decorator import (
-    retry_with_exponential_backoff,
-    async_retry_with_fallback,
-    RetryableError,
-)
-
-from .llm.fallback import (
-    JSONFallbackParser,
-    PartialSuccessHandler,
-    FallbackChain,
-)
-
-# Database
-from .database import (
-    DatabaseManager,
-    get_db_manager,
-    init_database,
-    close_database,
-)
-
-# Logging
-from .logging import (
-    setup_logger,
-    get_logger,
-    set_request_id,
-    get_request_id,
-    LoggerContext,
-    log_function_call,
-    get_app_logger,
-    get_api_logger,
-    get_agent_logger,
-    get_infrastructure_logger,
-)
-
-# Health
-from .health import (
-    HealthStatus,
-    HealthCheckResult,
-    SystemHealthReport,
-    HealthChecker,
-    get_health_checker,
-    setup_default_checks,
-    check_system_health,
-    check_component_health,
-)
-
-# Metrics
-from .metrics import (
-    Counter,
-    Gauge,
-    Histogram,
-    MetricsCollector,
-    get_metrics_collector,
-    count_exceptions,
-    measure_time,
-)
-
-# Cache
-from .cache import (
-    AgentCache,
-    CacheEntry,
-    CacheStats,
-    get_agent_cache,
-    reset_agent_cache,
-    cached,
-)
-
-# Events
-from .events import (
-    EventType,
-    Event,
-    EventStore,
-    InMemoryEventStore,
-    EventSourcedState,
-    get_event_store,
-    reset_event_store,
-)
-
-# Checkpoint
-from .checkpoint import (
-    CheckpointManager,
-    get_checkpoint_manager,
-    set_checkpoint_manager,
-    ICheckpointBackend,
-    InMemoryCheckpointBackend,
-    DatabaseCheckpointBackend,
-    PostgresCheckpointBackend,
-)
-
-# MCP
-from .mcp.mcp_loader import (
-    load_mcp_config_from_file,
-    load_mcp_tools,
-    load_mcp_tools_from_config,
-    MCPManager,
-    get_mcp_manager
-)
-
-# Security
-from .security import (
-    JWTHandler,
-    PasswordHandler,
-)
-
-# Middleware
-from .middleware import (
-    get_current_user,
-    RateLimiter,
-    setup_exception_handlers,
-)
-
-# Exceptions
+# Exceptions (这些不依赖其他模块，可以安全导入)
 from .exceptions import (
     BaseAPIException,
     AuthenticationException,
     BusinessException,
     ValidationException,
-    DatabaseException,
-    CacheException,
 )
 
-# Dependency Injection
-from .di import (
-    Container,
-    create_container,
-    get_global_container as get_container,
-)
+# 延迟导入函数（避免循环导入）
+def __getattr__(name: str):
+    """延迟导入模块，避免循环依赖"""
+    import importlib
+
+    lazy_imports = {
+        # Config
+        "get_config": ("infrastructure.config.common_config", "get_config"),
+        "AppConfig": ("infrastructure.config.common_config", "AppConfig"),
+        "ModelProvider": ("infrastructure.config.common_config", "ModelProvider"),
+        "Environment": ("infrastructure.config.common_config", "Environment"),
+
+        # LLM
+        "ModelFactory": ("infrastructure.llm.common_model_factory", "ModelFactory"),
+        "create_model_with_fallback": ("infrastructure.llm.common_model_factory", "create_model_with_fallback"),
+        "retry_with_exponential_backoff": ("infrastructure.llm.retry_decorator", "retry_with_exponential_backoff"),
+        "JSONFallbackParser": ("infrastructure.llm.fallback", "JSONFallbackParser"),
+
+        # Database
+        "DatabaseManager": ("infrastructure.database.connection_manager", "DatabaseManager"),
+        "get_db_manager": ("infrastructure.database.connection_manager", "get_db_manager"),
+
+        # Logging
+        "setup_logger": ("infrastructure.logger_config.logger_config", "setup_logger"),
+        "get_logger": ("infrastructure.logger_config.logger_config", "get_logger"),
+
+        # Security
+        "PasswordHandler": ("infrastructure.security.password_handler", "PasswordHandler"),
+        "JWTHandler": ("infrastructure.security.jwt_handler", "JWTHandler"),
+
+        # Middleware
+        "setup_exception_handlers": ("infrastructure.middleware.error_handler", "setup_exception_handlers"),
+
+        # Checkpoint
+        "CheckpointManager": ("infrastructure.checkpoint.checkpoint_manager", "CheckpointManager"),
+        "get_checkpoint_manager": ("infrastructure.checkpoint.checkpoint_manager", "get_checkpoint_manager"),
+    }
+
+    if name in lazy_imports:
+        module_path, attr_name = lazy_imports[name]
+        module = importlib.import_module(module_path)
+        return getattr(module, attr_name)
+
+    raise AttributeError(f"module 'infrastructure' has no attribute '{name}'")
 
 __all__ = [
-    # Config
-    "AppConfig",
-    "AgentConfig",
-    "DatabaseConfig",
-    "FeatureFlags",
-    "ModelProvider",
-    "Environment",
-    "get_config",
-    "get_agent_config",  # Convenience function defined below
-
-    # LLM
-    "create_model_with_fallback",
-    "create_model_with_fallback_simple",
-    "get_model_factory",
-    "ModelFactory",
-    "ModelType",
-
-    # LLM Utils
-    "retry_with_exponential_backoff",
-    "async_retry_with_fallback",
-    "RetryableError",
-    "JSONFallbackParser",
-    "PartialSuccessHandler",
-    "FallbackChain",
-
-    # Database
-    "DatabaseManager",
-    "get_db_manager",
-    "init_database",
-    "close_database",
-
-    # Logging
-    "setup_logger",
-    "get_logger",
-    "set_request_id",
-    "get_request_id",
-    "LoggerContext",
-    "log_function_call",
-    "get_app_logger",
-    "get_api_logger",
-    "get_agent_logger",
-    "get_infrastructure_logger",
-
-    # Health
-    "HealthStatus",
-    "HealthCheckResult",
-    "SystemHealthReport",
-    "HealthChecker",
-    "get_health_checker",
-    "setup_default_checks",
-    "check_system_health",
-    "check_component_health",
-
-    # Metrics
-    "Counter",
-    "Gauge",
-    "Histogram",
-    "MetricsCollector",
-    "get_metrics_collector",
-    "count_exceptions",
-    "measure_time",
-
-    # Cache
-    "AgentCache",
-    "CacheEntry",
-    "CacheStats",
-    "get_agent_cache",
-    "reset_agent_cache",
-    "cached",
-
-    # Events
-    "EventType",
-    "Event",
-    "EventStore",
-    "InMemoryEventStore",
-    "EventSourcedState",
-    "get_event_store",
-    "reset_event_store",
-
-    # Checkpoint
-    "CheckpointManager",
-    "get_checkpoint_manager",
-    "set_checkpoint_manager",
-    "ICheckpointBackend",
-    "InMemoryCheckpointBackend",
-    "DatabaseCheckpointBackend",
-    "PostgresCheckpointBackend",
-
-    # MCP
-    "load_mcp_config_from_file",
-    "load_mcp_tools",
-    "load_mcp_tools_from_config",
-    "MCPManager",
-    "get_mcp_manager",
-
-    # Security
-    "JWTHandler",
-    "PasswordHandler",
-
-    # Middleware
-    "get_current_user",
-    "RateLimiter",
-    "setup_exception_handlers",
-
     # Exceptions
     "BaseAPIException",
     "AuthenticationException",
     "BusinessException",
     "ValidationException",
-    "DatabaseException",
-    "CacheException",
 
-    # Dependency Injection
-    "Container",
-    "create_container",
-    "get_container",
+    # Config
+    "get_config", "AppConfig", "ModelProvider", "Environment",
+
+    # LLM
+    "ModelFactory", "create_model_with_fallback",
+    "retry_with_exponential_backoff", "JSONFallbackParser",
+
+    # Database
+    "DatabaseManager", "get_db_manager",
+
+    # Logging
+    "setup_logger", "get_logger",
+
+    # Security
+    "PasswordHandler", "JWTHandler",
+
+    # Middleware
+    "setup_exception_handlers",
+
+    # Checkpoint
+    "CheckpointManager", "get_checkpoint_manager",
 ]
 
-
-# Convenience function for getting agent config
-def get_agent_config(agent_name: str) -> AgentConfig:
-    """
-    Get agent configuration by name
-
-    Args:
-        agent_name: Name of the agent (split_topic, research, ppt_writer, etc.)
-
-    Returns:
-        AgentConfig instance for the specified agent
-    """
-    config = get_config()
-    return config.get_agent_config(agent_name)
+# 注意：以下导入已注释以避免循环导入问题
+# 请直接从子模块导入：
+#
+# Config:
+#   from infrastructure.config import AppConfig, get_config, ModelProvider, Environment
+#
+# LLM:
+#   from infrastructure.llm.common_model_factory import ModelFactory, create_model_with_fallback
+#   from infrastructure.llm.retry_decorator import retry_with_exponential_backoff
+#
+# Database:
+#   from infrastructure.database import DatabaseManager, get_db_manager
+#
+# Logging:
+#   from infrastructure.logger_config import setup_logger, get_logger
+#
+# Health:
+#   from infrastructure.health import HealthChecker, check_system_health
+#
+# Metrics:
+#   from infrastructure.metrics import MetricsCollector, get_metrics_collector
+#
+# Cache:
+#   from infrastructure.cache import AgentCache, get_agent_cache
+#
+# Events:
+#   from infrastructure.events import EventStore, get_event_store
+#
+# Checkpoint:
+#   from infrastructure.checkpoint import CheckpointManager, get_checkpoint_manager
+#
+# MCP:
+#   from infrastructure.mcp.mcp_loader import MCPManager, load_mcp_tools
+#
+# Security:
+#   from infrastructure.security import JWTHandler, PasswordHandler
+#
+# Middleware:
+#   from infrastructure.middleware import get_current_user, RateLimiter
+#
+# DI:
+#   from infrastructure.di import Container, create_container

@@ -12,7 +12,6 @@ from typing import Optional, Dict, Any, List, Callable
 from datetime import datetime
 
 # Add parent directories to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from google.adk.agents.invocation_context import InvocationContext
 from domain.models.page_state import (
@@ -25,7 +24,6 @@ from domain.models.page_state import (
 from domain.models.framework import PPTFramework, PageDefinition
 
 logger = logging.getLogger(__name__)
-
 
 class PagePipeline:
     """
@@ -359,21 +357,17 @@ class PagePipeline:
         logger.info(f"Pipeline result: {result.to_dict()}")
         return result
 
-
 # 创建全局实例
 _global_pipeline: Optional[PagePipeline] = None
-
 
 def get_page_pipeline() -> Optional[PagePipeline]:
     """获取全局PagePipeline实例"""
     return _global_pipeline
 
-
 def set_page_pipeline(pipeline: PagePipeline) -> None:
     """设置全局PagePipeline实例"""
     global _global_pipeline
     _global_pipeline = pipeline
-
 
 if __name__ == "__main__":
     # 测试代码

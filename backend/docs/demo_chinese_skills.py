@@ -10,10 +10,8 @@ import sys
 import os
 
 # 添加backend到路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from skill_framework import SkillManager, SkillCategory
-
 
 def demo_chinese_skills():
     """演示中文技能的使用"""
@@ -117,7 +115,6 @@ def demo_chinese_skills():
     for skill in zh_skills:
         print(f"  - {skill['name']} ({skill['skill_id']})")
 
-
 def demo_create_chinese_agent():
     """演示如何创建使用中文技能的Agent（伪代码）"""
 
@@ -174,7 +171,6 @@ response = agent.run("请帮我研究2024年人工智能在教育领域的应用
 '''
 
     print(example_code)
-
 
 if __name__ == "__main__":
     # 设置输出编码为UTF-8（Windows控制台）

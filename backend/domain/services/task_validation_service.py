@@ -7,7 +7,6 @@ Provides validation logic for task and related domain models.
 from typing import List, Optional
 from domain.exceptions import ValidationError, InvalidStateTransitionError
 
-
 class TaskValidationService:
     """
     Service for validating domain models
@@ -37,16 +36,18 @@ class TaskValidationService:
         elif requirement.page_num > 100:
             errors.append("页数不能超过100")
 
-        # Validate scene
+        # Validate scene（处理Python 3.11+的Enum兼容性）
         if hasattr(requirement, 'scene') and requirement.scene:
-            from domain.models.requirement import SceneType
-            if requirement.scene not in SceneType:
+            from domain.value_objects.requirement import SceneType
+            # 使用 type() 检查而不是 isinstance，因为可能从不同模块导入
+            if type(requirement.scene).__name__ != 'SceneType':
                 errors.append(f"无效的场景类型: {requirement.scene}")
 
-        # Validate template type
+        # Validate template type（处理Python 3.11+的Enum兼容性）
         if hasattr(requirement, 'template_type') and requirement.template_type:
-            from domain.models.requirement import TemplateType
-            if requirement.template_type not in TemplateType:
+            from domain.value_objects.requirement import TemplateType
+            # 使用 type() 检查而不是 isinstance，因为可能从不同模块导入
+            if type(requirement.template_type).__name__ != 'TemplateType':
                 errors.append(f"无效的模板类型: {requirement.template_type}")
 
         # Check core modules
@@ -138,7 +139,6 @@ class TaskValidationService:
 
         if errors:
             raise ValidationError("Research result validation failed", errors=errors)
-
 
 # Singleton instance
 task_validation_service = TaskValidationService()

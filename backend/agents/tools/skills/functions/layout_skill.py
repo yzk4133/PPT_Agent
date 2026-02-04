@@ -14,9 +14,7 @@ from typing import Optional, Dict, Any
 from ..skill_decorator import Skill
 from ..skill_metadata import SkillCategory
 
-
 logger = logging.getLogger(__name__)
-
 
 @Skill(
     name="SelectSlideLayoutSkill",
@@ -212,7 +210,6 @@ class SelectSlideLayoutSkill:
             description="Select appropriate PowerPoint slide layout",
             enabled=True
         )
-
 
 # Convenience function
 async def select_slide_layout(

@@ -7,7 +7,6 @@ Provides progress calculation logic for tasks.
 from typing import Dict, Any
 from domain.config.task_config import TaskProgressWeights
 
-
 class TaskProgressService:
     """
     Service for calculating task progress
@@ -105,7 +104,6 @@ class TaskProgressService:
                 incomplete.append(stage_name)
 
         return incomplete
-
 
 # Singleton instance with default weights
 task_progress_service = TaskProgressService()

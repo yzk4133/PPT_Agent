@@ -25,33 +25,26 @@ from tenacity import (
 
 from ..config.common_config import get_config
 
-
 logger = logging.getLogger(__name__)
 
-
 # ==================== 异常分类 ====================
-
 
 class RetryableError(Exception):
     """可重试的错误（如临时性网络问题、rate limit）"""
 
     pass
 
-
 class FallbackError(Exception):
     """触发降级的错误（如模型不可用）"""
 
     pass
-
 
 class FatalError(Exception):
     """致命错误，不应重试（如配置错误、认证失败）"""
 
     pass
 
-
 # ==================== 熔断器 ====================
-
 
 class CircuitBreaker:
     """
@@ -145,10 +138,8 @@ class CircuitBreaker:
         self.state = "CLOSED"
         logger.info("Circuit breaker reset to CLOSED state")
 
-
 # 全局熔断器注册表
 _circuit_breakers: dict[str, CircuitBreaker] = {}
-
 
 def get_circuit_breaker(name: str) -> CircuitBreaker:
     """获取或创建熔断器"""
@@ -156,9 +147,7 @@ def get_circuit_breaker(name: str) -> CircuitBreaker:
         _circuit_breakers[name] = CircuitBreaker()
     return _circuit_breakers[name]
 
-
 # ==================== 重试装饰器 ====================
-
 
 def retry_with_exponential_backoff(
     max_attempts: int = 3,
@@ -194,7 +183,6 @@ def retry_with_exponential_backoff(
         return wrapper
 
     return decorator
-
 
 def retry_with_fallback(
     max_attempts: int = 3,
@@ -252,7 +240,6 @@ def retry_with_fallback(
 
     return decorator
 
-
 def retry_with_circuit_breaker(
     circuit_breaker_name: str,
     max_attempts: int = 3,
@@ -302,9 +289,7 @@ def retry_with_circuit_breaker(
 
     return decorator
 
-
 # ==================== 异步版本 ====================
-
 
 def async_retry_with_exponential_backoff(
     max_attempts: int = 3,
@@ -329,7 +314,6 @@ def async_retry_with_exponential_backoff(
         return wrapper
 
     return decorator
-
 
 def async_retry_with_fallback(
     max_attempts: int = 3,
@@ -377,7 +361,6 @@ def async_retry_with_fallback(
 
     return decorator
 
-
 if __name__ == "__main__":
     # 测试重试装饰器
     import time
@@ -388,14 +371,14 @@ if __name__ == "__main__":
     @retry_with_exponential_backoff(max_attempts=3)
     def flaky_function(succeed_on_attempt: int = 3):
         flaky_function.attempt = getattr(flaky_function, "attempt", 0) + 1
-        print(f"Attempt {flaky_function.attempt}")
+        logger.info(f"Attempt {flaky_function.attempt}")
         if flaky_function.attempt < succeed_on_attempt:
             raise RetryableError("Temporary failure")
         return "Success!"
 
-    print("\n=== Test 1: Exponential Backoff ===")
+    logger.info("\n=== Test 1: Exponential Backoff ===")
     result = flaky_function(succeed_on_attempt=2)
-    print(f"Result: {result}")
+    logger.info(f"Result: {result}")
 
     # 测试 2：带降级重试
     def fallback_handler(*args, **kwargs):
@@ -405,9 +388,9 @@ if __name__ == "__main__":
     def always_fail_function():
         raise RetryableError("Always fails")
 
-    print("\n=== Test 2: Retry with Fallback ===")
+    logger.info("\n=== Test 2: Retry with Fallback ===")
     result = always_fail_function()
-    print(f"Result: {result}")
+    logger.info(f"Result: {result}")
 
     # 测试 3：熔断器
     @retry_with_circuit_breaker(circuit_breaker_name="test_breaker", max_attempts=2)
@@ -416,11 +399,11 @@ if __name__ == "__main__":
             raise RetryableError("Circuit breaker test failure")
         return "Success"
 
-    print("\n=== Test 3: Circuit Breaker ===")
+    logger.info("\n=== Test 3: Circuit Breaker ===")
     for i in range(7):
         try:
             result = circuit_breaker_test(fail=True)
-            print(f"Call {i+1}: {result}")
+            logger.info(f"Call {i+1}: {result}")
         except Exception as e:
-            print(f"Call {i+1}: {type(e).__name__} - {e}")
+            logger.info(f"Call {i+1}: {type(e).__name__} - {e}")
         time.sleep(0.5)

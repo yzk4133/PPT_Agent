@@ -16,7 +16,6 @@ from ..skill_registry import SkillRegistry
 from ..skill_metadata import SkillCategory, SkillMetadata, MarkdownSkillMetadata
 from ..skill_wrapper import SkillWrapper
 
-
 class SkillManager:
     """
     High-level API for managing Skills.
@@ -435,7 +434,6 @@ class SkillManager:
         if metadata:
             return metadata.to_dict()
         return None
-
 
 # Convenience function for quick access
 def get_skill_manager(config_path: Optional[str] = None, auto_load: bool = True) -> SkillManager:

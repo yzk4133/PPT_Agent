@@ -50,11 +50,9 @@ from .models import (
 
 logger = logging.getLogger(__name__)
 
-
 # ============================================================================
 # 配置常量
 # ============================================================================
-
 
 class PromotionConfig:
     """提升配置常量"""
@@ -78,11 +76,9 @@ class PromotionConfig:
     ACTIVE_SCOPE_TTL = 3600  # 活跃作用域TTL（1小时）
     MAX_ACTIVE_SCOPES = 1000  # 最大活跃作用域数
 
-
 # ============================================================================
 # 1. 活跃作用域追踪器
 # ============================================================================
-
 
 class ActiveScopeTracker:
     """
@@ -201,11 +197,9 @@ class ActiveScopeTracker:
                 "ttl_seconds": self.ttl_seconds,
             }
 
-
 # ============================================================================
 # 2. 提升规则引擎
 # ============================================================================
-
 
 class PromotionRuleEngine:
     """
@@ -358,11 +352,9 @@ class PromotionRuleEngine:
             f"No promotion rule met: cross_session={cross_session_count}, session_ids={len(metadata.session_ids)}, access_count={metadata.access_count}, importance={metadata.importance:.2f}",
         )
 
-
 # ============================================================================
 # 3. 数据迁移器
 # ============================================================================
-
 
 @dataclass
 class MigrationResult:
@@ -373,7 +365,6 @@ class MigrationResult:
     skipped_count: int = 0
     errors: List[str] = field(default_factory=list)
     duration_seconds: float = 0.0
-
 
 class DataMigrator:
     """
@@ -535,11 +526,9 @@ class DataMigrator:
         """获取迁移统计"""
         return dict(self._migration_stats)
 
-
 # ============================================================================
 # 4. 提升事件记录器
 # ============================================================================
-
 
 @dataclass
 class PromotionEvent:
@@ -578,7 +567,6 @@ class PromotionEvent:
             "success": self.success,
             "error_message": self.error_message,
         }
-
 
 class PromotionEventLogger:
     """
@@ -759,11 +747,9 @@ class PromotionEventLogger:
             if removed > 0:
                 logger.info(f"Cleared {removed} old promotion events (>{days} days)")
 
-
 # ============================================================================
 # 5. 主提升引擎
 # ============================================================================
-
 
 class PromotionEngine:
     """

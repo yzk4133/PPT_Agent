@@ -4,7 +4,6 @@
 
 from typing import Optional, Dict, Any
 
-
 class BaseAPIException(Exception):
     """基础 API 异常"""
 
@@ -29,12 +28,10 @@ class BaseAPIException(Exception):
             "status_code": self.status_code
         }
 
-
 class BusinessException(BaseAPIException):
     """业务逻辑异常"""
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(message, status_code=400, error_code="BUSINESS_ERROR", details=details)
-
 
 class ValidationException(BaseAPIException):
     """输入验证异常"""
@@ -44,7 +41,6 @@ class ValidationException(BaseAPIException):
             details["field"] = field
         super().__init__(message, status_code=422, error_code="VALIDATION_ERROR", details=details)
 
-
 class ResourceNotFoundException(BaseAPIException):
     """资源未找到异常"""
     def __init__(self, resource: str, identifier: str = None):
@@ -53,13 +49,11 @@ class ResourceNotFoundException(BaseAPIException):
             message += f": {identifier}"
         super().__init__(message, status_code=404, error_code="NOT_FOUND")
 
-
 class RateLimitExceededException(BaseAPIException):
     """限流异常"""
     def __init__(self, limit: int, window: int):
         message = f"请求频率超过限制：{limit} 次/{window} 秒"
         super().__init__(message, status_code=429, error_code="RATE_LIMIT_EXCEEDED")
-
 
 class ConflictException(BaseAPIException):
     """资源冲突异常"""

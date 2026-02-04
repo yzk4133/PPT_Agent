@@ -52,7 +52,6 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-
 # ============================================================================
 # 枚举和配置
 # ============================================================================
@@ -62,7 +61,6 @@ class DataTemperature(Enum):
     HOT = "hot"       # 0-30天
     WARM = "warm"     # 30-180天
     COLD = "cold"     # 180天+
-
 
 class LifecycleConfig:
     """生命周期管理配置"""
@@ -84,7 +82,6 @@ class LifecycleConfig:
     # 清理配置
     CLEANUP_INTERVAL = 86400    # 清理间隔（秒，1天）
     MIN_ACCESS_COUNT = 1        # 最低访问次数
-
 
 # ============================================================================
 # 数据模型
@@ -118,7 +115,6 @@ class ArchivedMemory:
             "metadata": self.metadata,
             "archived_at": self.archived_at.isoformat(),
         }
-
 
 # ============================================================================
 # 生命周期管理服务
@@ -586,13 +582,11 @@ class LifecycleManagerService:
             logger.error(f"Failed to promote memory {memory_id}: {e}")
             return False
 
-
 # ============================================================================
 # 全局实例
 # ============================================================================
 
 _global_lifecycle_manager: Optional[LifecycleManagerService] = None
-
 
 def get_lifecycle_manager(db_manager) -> LifecycleManagerService:
     """获取全局生命周期管理器实例"""

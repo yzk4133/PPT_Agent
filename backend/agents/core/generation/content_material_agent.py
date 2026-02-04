@@ -24,7 +24,6 @@ from google.genai import types
 from google.adk.events.event import Event
 
 # 导入基础设施
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from infrastructure.llm.fallback import JSONFallbackParser
 
 # 导入新的 MCP 工具
@@ -40,7 +39,6 @@ content_model = "deepseek-chat"
 
 # 获取XML PPT生成提示词（用于内容生成）
 XML_PPT_AGENT_PROMPT = PromptManager.get_xml_ppt_generation_prompt()
-
 
 class ContentMaterialAgent(LlmAgent):
     """
@@ -501,7 +499,6 @@ class ContentMaterialAgent(LlmAgent):
 
         return material
 
-
 def before_agent_callback(callback_context: CallbackContext) -> None:
     """
     Agent调用前的回调
@@ -518,12 +515,10 @@ def before_agent_callback(callback_context: CallbackContext) -> None:
 
     return None
 
-
 # 创建全局实例
 content_material_agent = ContentMaterialAgent(
     before_agent_callback=before_agent_callback
 )
-
 
 if __name__ == "__main__":
     # 测试代码

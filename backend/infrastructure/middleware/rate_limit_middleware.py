@@ -17,7 +17,6 @@ from infrastructure.exceptions import RateLimitExceededException
 
 logger = logging.getLogger(__name__)
 
-
 class RateLimiter:
     """基于 Redis 的限流器"""
 
@@ -81,10 +80,8 @@ class RateLimiter:
             # Redis 故障时，记录日志但不阻塞请求
             logger.error(f"Rate limiter error: {e}")
 
-
 # 全局限流器实例
 rate_limiter = RateLimiter()
-
 
 # FastAPI 依赖
 async def rate_limit_check(
@@ -113,7 +110,6 @@ async def rate_limit_check(
 
     await rate_limiter.check_rate_limit(user_id, limit, window)
 
-
 async def strict_rate_limit_check(
     request: Request
 ):
@@ -123,7 +119,6 @@ async def strict_rate_limit_check(
     用于高负载端点。
     """
     await rate_limit_check(request, limit=50, window=60)
-
 
 async def loose_rate_limit_check(
     request: Request

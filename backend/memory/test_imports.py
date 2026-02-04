@@ -4,7 +4,6 @@
 用于验证重构后的导入路径是否正确
 """
 
-
 def test_imports():
     """测试所有主要导入路径"""
 
@@ -80,7 +79,6 @@ def test_imports():
     print("   from memory.integration import AgentMemoryMixin")
 
     return True
-
 
 if __name__ == "__main__":
     import sys

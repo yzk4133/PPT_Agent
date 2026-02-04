@@ -8,14 +8,12 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from enum import Enum
 
-
 class Language(str, Enum):
     """支持的语言"""
     EN_US = "EN-US"
     ZH_CN = "ZH-CN"
     JA_JP = "JA-JP"
     KO_KR = "KO-KR"
-
 
 class PresentationCreateRequest(BaseModel):
     """
@@ -40,7 +38,6 @@ class PresentationCreateRequest(BaseModel):
             }
         }
 
-
 class OutlineGenerateRequest(BaseModel):
     """
     大纲生成请求
@@ -60,7 +57,6 @@ class OutlineGenerateRequest(BaseModel):
             }
         }
 
-
 class ProgressQueryRequest(BaseModel):
     """
     进度查询请求
@@ -74,7 +70,6 @@ class ProgressQueryRequest(BaseModel):
                 "presentation_id": "ppt_20250202_120000_user123"
             }
         }
-
 
 class UserPreferencesUpdateRequest(BaseModel):
     """
@@ -95,7 +90,6 @@ class UserPreferencesUpdateRequest(BaseModel):
                 }
             }
         }
-
 
 class HealthCheckRequest(BaseModel):
     """

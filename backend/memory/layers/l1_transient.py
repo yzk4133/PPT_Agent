@@ -25,7 +25,6 @@ from ..models import (
 
 logger = logging.getLogger(__name__)
 
-
 class LRUCache:
     """线程安全的LRU缓存实现"""
 
@@ -87,7 +86,6 @@ class LRUCache:
         """获取当前大小"""
         async with self.lock:
             return len(self.cache)
-
 
 class L1TransientLayer(BaseMemoryLayer):
     """L1 瞬时内存层"""

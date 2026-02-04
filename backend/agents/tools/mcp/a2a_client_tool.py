@@ -15,7 +15,6 @@ from .base_mcp_tool import BaseMCPTool
 
 logger = logging.getLogger(__name__)
 
-
 class A2AClientTool(BaseMCPTool):
     """
     A2A客户端工具
@@ -102,10 +101,8 @@ class A2AClientTool(BaseMCPTool):
             logger.error(f"A2A client error: {e}")
             return self._error(f"A2A调用失败: {str(e)}")
 
-
 # 创建全局实例和导出函数
 _a2a_tool = A2AClientTool()
-
 
 async def a2a_client(
     prompt: str,
@@ -131,7 +128,6 @@ async def a2a_client(
         stream=stream,
         tool_context=tool_context
     )
-
 
 if __name__ == "__main__":
     # 测试A2A客户端工具

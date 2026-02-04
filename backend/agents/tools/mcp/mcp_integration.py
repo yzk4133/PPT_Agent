@@ -9,7 +9,10 @@
 
 import os
 import json
+import logging
 from typing import List, Dict, Any, Optional, Union, Callable
+from contextlib import asynccontextmanager
+from asyncio import Lock
 
 from google.adk.tools import BaseTool
 from google.adk.tools.mcp_tool.mcp_toolset import (
@@ -23,6 +26,7 @@ from ..skills.skill_metadata import SkillCategory
 from ..skills.skill_wrapper import McpSkillAdapter
 from ..skills.managers.skill_manager import SkillManager
 
+logger = logging.getLogger(__name__)
 
 def load_mcp_config_from_file(config_path: str = "mcp_config.json") -> dict:
     """
@@ -43,12 +47,11 @@ def load_mcp_config_from_file(config_path: str = "mcp_config.json") -> dict:
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"错误: {config_path} 未找到。")
+        logger.error(f"MCP config file not found: {config_path}")
         return {}
     except json.JSONDecodeError:
-        print(f"错误: {config_path} 中的 JSON 无效。")
+        logger.error(f"Invalid JSON in MCP config file: {config_path}")
         return {}
-
 
 def load_mcp_tools(
     mcp_config_path: str,
@@ -73,7 +76,7 @@ def load_mcp_tools(
         tools = [tool for mcp_tool in mcp_tools for tool in mcp_tool.get_tools()]
     """
     if not os.path.exists(mcp_config_path):
-        print(f"警告: {mcp_config_path} 未找到")
+        logger.warning(f"MCP config file not found: {mcp_config_path}")
         return []
 
     config = load_mcp_config_from_file(mcp_config_path)
@@ -100,22 +103,21 @@ def load_mcp_tools(
                     )
                 )
             else:
-                print(f"警告: {server_name} 的 MCP 配置无效")
+                logger.warning(f"Invalid MCP configuration for: {server_name}")
                 continue
 
             mcp_tools.append(client)
-            print(f"已加载 MCP 工具: {server_name}")
+            logger.info(f"Loaded MCP tool: {server_name}")
 
         except Exception as e:
-            print(f"警告: 加载 MCP 工具 {server_name} 失败: {e}")
+            logger.error(f"Failed to load MCP tool {server_name}: {e}")
 
     # Auto-register with skill manager if requested
     if auto_register and skill_manager:
         skill_manager.register_mcp_tools(mcp_tools)
 
-    print(f"从 {mcp_config_path} 加载了 {len(mcp_tools)} 个 MCP 工具")
+    logger.info(f"Loaded {len(mcp_tools)} MCP tools from {mcp_config_path}")
     return mcp_tools
-
 
 def mcp_tools_to_skills(
     mcp_toolsets: List[MCPToolset],
@@ -144,7 +146,6 @@ def mcp_tools_to_skills(
         adapters.append(adapter)
 
     return adapters
-
 
 def load_all_tools(
     mcp_config_path: str = "mcp_config.json",
@@ -194,7 +195,6 @@ def load_all_tools(
 
     return tools
 
-
 def get_mcp_tool_info(mcp_toolset: MCPToolset) -> Dict[str, Any]:
     """
     获取 MCP 工具集的信息。
@@ -224,7 +224,6 @@ def get_mcp_tool_info(mcp_toolset: MCPToolset) -> Dict[str, Any]:
 
     return info
 
-
 # Backward compatibility with existing load_mcp.py code
 # This allows existing code to work with minimal changes
 def load_mcp_tools_legacy(mcp_config_path: str = "mcp_config.json") -> List:
@@ -233,7 +232,9 @@ def load_mcp_tools_legacy(mcp_config_path: str = "mcp_config.json") -> List:
 
     此函数镜像 slide_outline/load_mcp.py 中的原始 load_mcp_tools 函数。
     """
-    assert os.path.exists(mcp_config_path), f"{mcp_config_path} 配置文件未找到"
+    if not os.path.exists(mcp_config_path):
+        logger.error(f"MCP config file not found: {mcp_config_path}")
+        raise FileNotFoundError(f"{mcp_config_path} config file not found")
 
     config = load_mcp_config_from_file(mcp_config_path)
     servers_cfg = config.get("mcpServers", {})
@@ -256,9 +257,10 @@ def load_mcp_tools_legacy(mcp_config_path: str = "mcp_config.json") -> List:
                 )
             )
         else:
-            raise ValueError(f"MCP 配置无效: {server_name}")
+            logger.error(f"Invalid MCP configuration for: {server_name}")
+            raise ValueError(f"Invalid MCP configuration: {server_name}")
 
         mcp_tools.append(client)
 
-    print(f"加载了 {len(mcp_tools)} 个 MCP 工具")
+    logger.info(f"Loaded {len(mcp_tools)} MCP tools (legacy mode)")
     return mcp_tools

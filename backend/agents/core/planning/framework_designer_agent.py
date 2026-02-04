@@ -24,7 +24,6 @@ from google.genai import types
 from google.adk.events.event import Event
 
 # 导入基础设施
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from infrastructure.llm.fallback import JSONFallbackParser
 
 # 导入PromptManager
@@ -37,7 +36,6 @@ logger = logging.getLogger(__name__)
 
 # 使用PromptManager获取提示词模板
 FRAMEWORK_DESIGNER_PROMPT = PromptManager.get_framework_designer_prompt()
-
 
 class FrameworkDesignerAgent(LlmAgent):
     """
@@ -258,7 +256,6 @@ class FrameworkDesignerAgent(LlmAgent):
         framework.total_page = len(framework.pages)
         framework._update_indices()
 
-
 def before_model_callback(
     callback_context: CallbackContext, llm_request: LlmRequest
 ) -> Optional[LlmResponse]:
@@ -282,12 +279,10 @@ def before_model_callback(
     logger.info(f"FrameworkDesignerAgent processing requirement: {requirement_dict.get('ppt_topic', 'Unknown')}")
     return None
 
-
 # 创建全局实例
 framework_designer_agent = FrameworkDesignerAgent(
     before_model_callback=before_model_callback
 )
-
 
 if __name__ == "__main__":
     # 测试代码

@@ -157,7 +157,6 @@ CHECKER_AGENT_PROMPT = """
 请审核以上幻灯片并给出明确的审核结果。
 """
 
-
 SLIDE_ENHANCEMENT_PROMPT = """
 ## 角色定位
 

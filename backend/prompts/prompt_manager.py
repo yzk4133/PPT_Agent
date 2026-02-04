@@ -8,7 +8,6 @@ Provides a single source of truth for all agent prompts.
 from typing import Dict, Optional
 import os
 
-
 class PromptManager:
     """
     Centralized prompt management with versioning.
@@ -239,27 +238,22 @@ class PromptManager:
         variables = re.findall(r"\{(\w+)\}", prompt)
         return list(set(variables))
 
-
 # Convenience functions for backward compatibility
 def get_split_topic_agent_prompt() -> str:
     """Get the split topic agent prompt (v1)"""
     return PromptManager.get_split_topic_prompt()
 
-
 def get_research_topic_agent_prompt() -> str:
     """Get the research topic agent prompt (v1)"""
     return PromptManager.get_research_topic_prompt()
-
 
 def get_xml_ppt_agent_prompt(**kwargs) -> str:
     """Get the XML PPT agent prompt (v1) with template variables"""
     return PromptManager.get_xml_ppt_generation_prompt(**kwargs)
 
-
 def get_checker_agent_prompt(**kwargs) -> str:
     """Get the checker agent prompt (v1) with template variables"""
     return PromptManager.get_checker_prompt(**kwargs)
-
 
 if __name__ == "__main__":
     # Test the prompt manager

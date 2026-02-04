@@ -13,7 +13,6 @@ from datetime import datetime
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from domain.models import (
     Presentation,
@@ -23,11 +22,9 @@ from domain.models import (
     ResearchResults,
     SlideList
 )
-from domain.interfaces import IAgentFactory, IIAgentContext
-
+from domain.interfaces import IAgentFactory, IAgentContext
 
 logger = logging.getLogger(__name__)
-
 
 class PresentationService:
     """
@@ -308,7 +305,6 @@ class PresentationService:
         lines = outline.strip().split('\n')
         return lines[0][:50] if lines else "未命名演示文稿"
 
-
 # 便捷函数
 async def create_presentation_from_request(
     request: PresentationRequest,
@@ -339,7 +335,6 @@ async def create_presentation_from_request(
     presentation = await service.generate_presentation(presentation, context)
 
     return presentation
-
 
 if __name__ == "__main__":
     # 测试代码

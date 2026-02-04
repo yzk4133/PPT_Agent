@@ -9,7 +9,6 @@ from typing import Optional
 from domain.events.task_events import create_stage_started_event, create_stage_completed_event, create_stage_failed_event
 from domain.services.task_validation_service import task_validation_service
 
-
 class StageTransitionService:
     """
     Service for managing stage transitions
@@ -108,7 +107,6 @@ class StageTransitionService:
         stage = task.stages.get(stage_name)
         if stage:
             stage.progress = max(0, min(100, progress))
-
 
 # Singleton instance
 stage_transition_service = StageTransitionService()

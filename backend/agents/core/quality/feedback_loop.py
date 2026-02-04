@@ -13,9 +13,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 
-
 logger = logging.getLogger(__name__)
-
 
 class QualityDimension(str, Enum):
     """Dimensions of quality to assess"""
@@ -26,7 +24,6 @@ class QualityDimension(str, Enum):
     CLARITY = "clarity"  # Is the content clear and understandable?
     STRUCTURE = "structure"  # Is the structure appropriate?
     LENGTH = "length"  # Is the length appropriate?
-
 
 @dataclass
 class QualityScore:
@@ -56,7 +53,6 @@ class QualityScore:
             "suggestions": self.suggestions
         }
 
-
 @dataclass
 class QualityAssessment:
     """
@@ -82,7 +78,6 @@ class QualityAssessment:
             "metadata": self.metadata
         }
 
-
 @dataclass
 class RefinementResult:
     """
@@ -100,7 +95,6 @@ class RefinementResult:
     assessment: QualityAssessment
     improved: bool
     changes: str = ""
-
 
 class QualityAssessor(ABC):
     """
@@ -128,7 +122,6 @@ class QualityAssessor(ABC):
             QualityAssessment object
         """
         pass
-
 
 class RuleBasedAssessor(QualityAssessor):
     """
@@ -348,7 +341,6 @@ class RuleBasedAssessor(QualityAssessor):
 
         return score, issues, suggestions
 
-
 class FeedbackLoopAgent:
     """
     Agent with feedback loop capability.
@@ -452,10 +444,8 @@ class FeedbackLoopAgent:
         logger.info("Using default refinement strategy (no changes)")
         return content
 
-
 # Global assessor instance
 _default_assessor: Optional[QualityAssessor] = None
-
 
 def get_default_assessor() -> QualityAssessor:
     """Get the default quality assessor"""
@@ -463,7 +453,6 @@ def get_default_assessor() -> QualityAssessor:
     if _default_assessor is None:
         _default_assessor = RuleBasedAssessor(threshold=0.8)
     return _default_assessor
-
 
 if __name__ == "__main__":
     # Test quality assessment

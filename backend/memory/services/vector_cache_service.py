@@ -42,7 +42,6 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-
 # ============================================================================
 # 配置
 # ============================================================================
@@ -65,7 +64,6 @@ class VectorCacheConfig:
 
     # 缓存预热
     WARMUP_PRIORITY_THRESHOLD = 3  # 访问次数>=3的键标记为高优先级
-
 
 # ============================================================================
 # 内存缓存实现
@@ -171,7 +169,6 @@ class LRUCache:
                 "total_accesses": sum(self.access_counts.values()),
                 "unique_keys": len(self.access_counts),
             }
-
 
 # ============================================================================
 # 向量缓存服务
@@ -492,13 +489,11 @@ class VectorCacheService:
 
         return expired
 
-
 # ============================================================================
 # 全局实例
 # ============================================================================
 
 _global_vector_cache: Optional[VectorCacheService] = None
-
 
 def get_vector_cache() -> VectorCacheService:
     """获取全局向量缓存服务实例"""

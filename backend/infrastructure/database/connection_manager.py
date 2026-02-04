@@ -30,7 +30,6 @@ from ..config.common_config import get_config, DatabaseConfig
 
 logger = logging.getLogger(__name__)
 
-
 class DatabaseManager:
     """
     统一数据库连接管理器
@@ -80,14 +79,21 @@ class DatabaseManager:
                 "postgresql://", "postgresql+asyncpg://"
             )
 
-            # 创建引擎
+            # 创建引擎（增强连接池配置）
             self._postgres_engine = create_async_engine(
                 database_url,
                 pool_size=self.config.pool_size,
                 max_overflow=self.config.max_overflow,
-                pool_pre_ping=True,  # 连接健康检查
-                pool_recycle=3600,   # 1小时回收连接
-                echo=False,           # 生产环境关闭 SQL 日志
+                pool_pre_ping=True,         # 连接健康检查
+                pool_recycle=3600,          # 1小时回收连接
+                echo=False,                 # 生产环境关闭 SQL 日志
+                pool_timeout=30,            # 连接池超时
+                pool_use_lifo=True,         # 使用LIFO减少连接数
+                connect_args={
+                    "connect_timeout": 10,
+                    "command_timeout": 30,
+                    "server_settings": {"jit": "off"},  # 禁用JIT提高连接速度
+                },
             )
 
             # 创建会话工厂
@@ -102,7 +108,8 @@ class DatabaseManager:
             logger.info(
                 f"PostgreSQL engine created: "
                 f"pool_size={self.config.pool_size}, "
-                f"max_overflow={self.config.max_overflow}"
+                f"max_overflow={self.config.max_overflow}, "
+                f"total_max={self.config.pool_size + self.config.max_overflow}"
             )
         except Exception as e:
             logger.error(f"Failed to initialize PostgreSQL: {e}")
@@ -113,17 +120,24 @@ class DatabaseManager:
         try:
             self._redis_pool = ConnectionPool.from_url(
                 self.config.redis_url,
-                max_connections=50,
-                socket_keepalive=True,
+                max_connections=50,          # 最大连接数
+                socket_keepalive=True,       # 启用TCP keepalive
                 socket_keepalive_options={},
                 decode_responses=True,
+                socket_connect_timeout=5,    # 连接超时
+                socket_timeout=5,            # 读写超时
+                retry_on_timeout=True,       # 超时重试
+                health_check_interval=30,    # 健康检查间隔（秒）
             )
 
             # 测试连接
             async with Redis(connection_pool=self._redis_pool) as redis:
                 await redis.ping()
 
-            logger.info(f"Redis pool created: {self.config.redis_url}")
+            logger.info(
+                f"Redis pool created: {self.config.redis_url} "
+                f"(max_connections=50)"
+            )
         except Exception as e:
             logger.error(f"Failed to initialize Redis: {e}")
             raise
@@ -323,10 +337,43 @@ class DatabaseManager:
         """获取 Redis 连接池"""
         return self._redis_pool
 
+    async def get_pool_stats(self) -> dict:
+        """
+        获取连接池统计信息
+
+        Returns:
+            连接池统计字典
+        """
+        stats = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "postgres": {},
+            "redis": {},
+        }
+
+        # PostgreSQL 连接池统计
+        if self._postgres_engine:
+            pool = self._postgres_engine.pool
+            stats["postgres"] = {
+                "pool_size": self.config.pool_size,
+                "max_overflow": self.config.max_overflow,
+                "total_max": self.config.pool_size + self.config.max_overflow,
+                "current_connections": pool.size() if hasattr(pool, "size") else "N/A",
+                "checked_out": pool.checkedout() if hasattr(pool, "checkedout") else "N/A",
+                "overflow": pool.overflow() if hasattr(pool, "overflow") else "N/A",
+            }
+
+        # Redis 连接池统计
+        if self._redis_pool:
+            stats["redis"] = {
+                "max_connections": self._redis_pool.max_connections,
+                "available_connections": self._redis_pool.connection_kwargs.get("max_connections", "N/A"),
+                "created_connections": getattr(self._redis_pool, "created_connections", "N/A"),
+            }
+
+        return stats
 
 # 全局单例
 _global_db_manager: Optional[DatabaseManager] = None
-
 
 def get_db_manager() -> DatabaseManager:
     """
@@ -340,7 +387,6 @@ def get_db_manager() -> DatabaseManager:
         _global_db_manager = DatabaseManager()
     return _global_db_manager
 
-
 async def init_database():
     """
     初始化全局数据库管理器
@@ -350,7 +396,6 @@ async def init_database():
     db_manager = get_db_manager()
     await db_manager.initialize()
 
-
 async def close_database():
     """
     关闭全局数据库管理器
@@ -359,7 +404,6 @@ async def close_database():
     """
     db_manager = get_db_manager()
     await db_manager.close_all()
-
 
 # 便捷函数
 async def get_postgres_session() -> AsyncSession:
@@ -371,7 +415,6 @@ async def get_postgres_session() -> AsyncSession:
     """
     return get_db_manager().get_postgres_session()
 
-
 async def get_redis_client() -> Redis:
     """
     获取 Redis 客户端（便捷函数）
@@ -381,58 +424,69 @@ async def get_redis_client() -> Redis:
     """
     return get_db_manager().get_redis_client()
 
-
 if __name__ == "__main__":
+    # 配置日志
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
     # 测试数据库连接管理器
     async def test_db_manager():
-        print("Testing DatabaseManager")
-        print("=" * 60)
+        logger.info("Testing DatabaseManager")
+        logger.info("=" * 60)
 
         # 初始化
-        print("\n1. Initializing...")
+        logger.info("1. Initializing...")
         db_manager = DatabaseManager()
         try:
             await db_manager.initialize()
-            print("   Initialized successfully")
+            logger.info("   Initialized successfully")
         except Exception as e:
-            print(f"   Initialization failed: {e}")
-            print("   (This is expected if PostgreSQL/Redis are not running)")
+            logger.error(f"   Initialization failed: {e}")
+            logger.info("   (This is expected if PostgreSQL/Redis are not running)")
             return
 
         # 健康检查
-        print("\n2. Health check...")
+        logger.info("2. Health check...")
         health = await db_manager.check_health()
-        print(f"   Overall: {health['status']}")
-        print(f"   PostgreSQL: {health['postgres']['status']}")
-        print(f"   Redis: {health['redis']['status']}")
+        logger.info(f"   Overall: {health['status']}")
+        logger.info(f"   PostgreSQL: {health['postgres']['status']}")
+        logger.info(f"   Redis: {health['redis']['status']}")
+
+        # 连接池统计
+        logger.info("2.5. Pool stats...")
+        stats = await db_manager.get_pool_stats()
+        logger.info(f"   PostgreSQL pool: {stats['postgres']}")
+        logger.info(f"   Redis pool: {stats['redis']}")
 
         # 使用 PostgreSQL
-        print("\n3. Using PostgreSQL...")
+        logger.info("3. Using PostgreSQL...")
         try:
             async with db_manager.postgres_session() as session:
                 result = await session.execute(text("SELECT version()"))
                 version = result.scalar()
-                print(f"   PostgreSQL version: {version[:50]}...")
+                logger.info(f"   PostgreSQL version: {version[:50]}...")
         except Exception as e:
-            print(f"   Error: {e}")
+            logger.error(f"   Error: {e}")
 
         # 使用 Redis
-        print("\n4. Using Redis...")
+        logger.info("4. Using Redis...")
         try:
             async with db_manager.redis_client() as redis:
                 await redis.set("test_key", "test_value")
                 value = await redis.get("test_key")
-                print(f"   Redis set/get: {value}")
+                logger.info(f"   Redis set/get: {value}")
                 await redis.delete("test_key")
         except Exception as e:
-            print(f"   Error: {e}")
+            logger.error(f"   Error: {e}")
 
         # 关闭
-        print("\n5. Closing...")
+        logger.info("5. Closing...")
         await db_manager.close_all()
-        print("   Closed successfully")
+        logger.info("   Closed successfully")
 
-        print("\n" + "=" * 60)
-        print("Test completed!")
+        logger.info("=" * 60)
+        logger.info("Test completed!")
 
     asyncio.run(test_db_manager())

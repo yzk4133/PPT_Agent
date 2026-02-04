@@ -10,7 +10,6 @@ from enum import Enum
 
 T = TypeVar("T")
 
-
 class ResultStatus(str, Enum):
     """结果状态"""
 
@@ -18,7 +17,6 @@ class ResultStatus(str, Enum):
     PARTIAL = "partial"  # 部分成功（使用了降级策略）
     FAILURE = "failure"  # 失败
     RETRY = "retry"  # 需要重试
-
 
 @dataclass
 class AgentResult(Generic[T]):
@@ -148,7 +146,6 @@ class AgentResult(Generic[T]):
         """创建需要重试的结果"""
         return cls(status=ResultStatus.RETRY, message=message, errors=errors or [])
 
-
 # 常用的特定类型结果
 @dataclass
 class ValidationResult:
@@ -164,7 +161,6 @@ class ValidationResult:
             "errors": self.errors,
             "warnings": self.warnings,
         }
-
 
 @dataclass
 class ProgressEvent:

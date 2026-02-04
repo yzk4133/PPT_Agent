@@ -11,7 +11,6 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-
 class PerformanceMonitor:
     """
     Performance monitor for all tools
@@ -147,7 +146,6 @@ class PerformanceMonitor:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(report)
         logger.info(f"Performance report saved to {filepath}")
-
 
 if __name__ == "__main__":
     # 测试性能监控

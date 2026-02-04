@@ -36,7 +36,6 @@ app.add_middleware(
             allow_headers=["*"],
         )
 
-
 # --- 定义 Pydantic 模型以验证传入的 JSON 数据 ---
 
 class RootImage(BaseModel):
@@ -45,15 +44,12 @@ class RootImage(BaseModel):
     background: bool = False  # 是否是背景图，如果为True则不单独创建图片幻灯片
     alt: Optional[str] = None  # 作为图片描述
 
-
 class ContentChild(BaseModel):
     text: str
-
 
 class ContentBlock(BaseModel):
     type: str  # e.g., "h1", "p", "bullets", "bullet", "h3"
     children: List[Dict[str, Any]]  # 使用 Dict[str, Any] 处理嵌套的复杂结构，因为内部结构多变
-
 
 class SectionData(BaseModel):
     id: str
@@ -62,11 +58,9 @@ class SectionData(BaseModel):
     layoutType: Optional[str] = None
     alignment: Optional[str] = None
 
-
 class PPTInput(BaseModel):
     sections: List[SectionData]
     references: Optional[List[str]] = None  # 参考文献列表
-
 
 # --- 配置静态文件服务 ---
 # 生成的PPT文件将保存在此目录，并由FastAPI提供静态访问
@@ -136,7 +130,6 @@ async def generate_ppt(ppt_data: PPTInput):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An internal server error occurred: {str(e)}"
         )
-
 
 # 可选：根路径，用于测试API是否运行
 @app.get("/", summary="Root endpoint")

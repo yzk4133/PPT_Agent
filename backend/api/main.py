@@ -19,8 +19,7 @@ from fastapi.responses import JSONResponse
 # 添加 backend 目录到 Python 路径
 backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if backend_path not in sys.path:
-    sys.path.insert(0, backend_path)
-
+    
 # 导入路由
 from api.routes import presentation, ppt_generation
 from api.routes import auth  # 新增：认证路由
@@ -39,11 +38,9 @@ logger = logging.getLogger(__name__)
 # 记录启动时间
 _start_time = time.time()
 
-
 def get_uptime() -> float:
     """获取服务运行时间（秒）"""
     return time.time() - _start_time
-
 
 # 创建 FastAPI 应用
 app = FastAPI(
@@ -71,7 +68,6 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-
 # ============================================================================
 # CORS 中间件
 # ============================================================================
@@ -93,7 +89,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
-
 
 # ============================================================================
 # 中间件：请求日志
@@ -122,7 +117,6 @@ async def log_requests(request: Request, call_next):
 
     return response
 
-
 # ============================================================================
 # 异常处理器
 # ============================================================================
@@ -144,7 +138,6 @@ class APIException(Exception):
         self.error_code = error_code
         self.message = message
         self.details = details
-
 
 # ============================================================================
 # 注册路由
@@ -171,7 +164,6 @@ app.include_router(
     tags=["Presentation Management"]
 )
 
-
 # ============================================================================
 # 根路径和健康检查
 # ============================================================================
@@ -185,7 +177,6 @@ async def root():
         "docs": "/docs",
         "health": "/api/ppt/health"
     }
-
 
 @app.get("/api/health")
 async def health_check():
@@ -206,7 +197,6 @@ async def health_check():
         }
     }
 
-
 # ============================================================================
 # 启动和关闭事件
 # ============================================================================
@@ -224,14 +214,12 @@ async def startup_event():
     logger.info("   🏥 健康检查: http://localhost:8000/api/health")
     logger.info("=" * 60)
 
-
 @app.on_event("shutdown")
 async def shutdown_event():
     """应用关闭时的清理"""
     logger.info("=" * 60)
     logger.info("🛑 FastAPI 统一网关正在关闭...")
     logger.info("=" * 60)
-
 
 # ============================================================================
 # 主程序入口

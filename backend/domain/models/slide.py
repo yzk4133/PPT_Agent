@@ -9,14 +9,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-
 class SlideLayout(str, Enum):
     """幻灯片布局类型"""
     VERTICAL = "vertical"
     LEFT = "left"
     RIGHT = "right"
     # 可以扩展更多布局类型
-
 
 class SlideComponentType(str, Enum):
     """幻灯片组件类型"""
@@ -29,7 +27,6 @@ class SlideComponentType(str, Enum):
     PYRAMID = "PYRAMID"
     STAIRCASE = "STAIRCASE"
     CHART = "CHART"
-
 
 @dataclass
 class Image:
@@ -60,7 +57,6 @@ class Image:
             alt=data.get("alt", ""),
             background=data.get("background", False)
         )
-
 
 @dataclass
 class Slide:
@@ -198,7 +194,6 @@ class Slide:
     def __str__(self) -> str:
         return f"Slide(page={self.page_number}, title='{self.title}', layout={self.layout.value})"
 
-
 @dataclass
 class SlideList:
     """
@@ -253,7 +248,6 @@ class SlideList:
             "total_count": self.total_count,
             "metadata": self.metadata
         }
-
 
 if __name__ == "__main__":
     # 测试代码

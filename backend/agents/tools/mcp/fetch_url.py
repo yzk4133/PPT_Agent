@@ -22,14 +22,12 @@ import html2text
 
 from .base_mcp_tool import BaseMCPTool
 
-
 # Cache configuration
 CACHE_DIR = Path(os.getenv("MCP_CACHE_DIR", "./data/mcp_cache"))
 CACHE_ENABLED = os.getenv("MCP_CACHE_ENABLED", "true").lower() == "true"
 CACHE_TTL_SECONDS = int(os.getenv("MCP_CACHE_TTL", "3600"))  # 1 hour default
 
 logger = logging.getLogger(__name__)
-
 
 class FetchUrlTool(BaseMCPTool):
     """URL fetching and content extraction tool"""
@@ -217,10 +215,8 @@ class FetchUrlTool(BaseMCPTool):
         except Exception as e:
             logger.warning(f"Cache write error: {e}")
 
-
 # Global instance
 _tool_instance = None
-
 
 def get_tool() -> FetchUrlTool:
     """Get or create the fetch URL tool instance"""
@@ -228,7 +224,6 @@ def get_tool() -> FetchUrlTool:
     if _tool_instance is None:
         _tool_instance = FetchUrlTool()
     return _tool_instance
-
 
 async def fetch_url(
     url: str,

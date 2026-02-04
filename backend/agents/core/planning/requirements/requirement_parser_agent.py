@@ -25,7 +25,6 @@ from google.genai import types
 from google.adk.events.event import Event
 
 # 导入基础设施
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from infrastructure.llm.fallback import JSONFallbackParser
 
 # 导入PromptManager
@@ -38,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 # 使用PromptManager获取提示词模板
 REQUIREMENT_PARSER_PROMPT = PromptManager.get_requirement_parser_prompt()
-
 
 class RequirementParserAgent(LlmAgent):
     """
@@ -292,7 +290,6 @@ class RequirementParserAgent(LlmAgent):
                 if len(requirement.core_modules) > requirement.page_num:
                     requirement.core_modules = requirement.core_modules[:requirement.page_num]
 
-
 def before_model_callback(
     callback_context: CallbackContext, llm_request: LlmRequest
 ) -> Optional[LlmResponse]:
@@ -312,12 +309,10 @@ def before_model_callback(
     logger.info(f"RequirementParserAgent processing: {user_input[:50]}...")
     return None
 
-
 # 创建全局实例
 requirement_parser_agent = RequirementParserAgent(
     before_model_callback=before_model_callback
 )
-
 
 if __name__ == "__main__":
     # 测试代码

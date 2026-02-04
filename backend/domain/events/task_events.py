@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-
 class TaskEventType(str, Enum):
     """任务事件类型"""
 
@@ -34,7 +33,6 @@ class TaskEventType(str, Enum):
     # Revision events
     REQUIREMENT_MODIFIED = "REQUIREMENT_MODIFIED"  # 用户修改大纲
     FRAMEWORK_MODIFIED = "FRAMEWORK_MODIFIED"
-
 
 @dataclass
 class TaskEvent:
@@ -89,7 +87,6 @@ class TaskEvent:
             metadata=data.get("metadata", {})
         )
 
-
 # Event factory functions for creating common task events
 
 def create_task_created_event(
@@ -116,7 +113,6 @@ def create_task_created_event(
         correlation_id=task_id
     )
 
-
 def create_requirement_parsed_event(
     version: int,
     task_id: str,
@@ -136,7 +132,6 @@ def create_requirement_parsed_event(
         timestamp=datetime.now(),
         correlation_id=task_id
     )
-
 
 def create_framework_designed_event(
     version: int,
@@ -158,7 +153,6 @@ def create_framework_designed_event(
         correlation_id=task_id
     )
 
-
 def create_checkpoint_saved_event(
     version: int,
     task_id: str,
@@ -178,7 +172,6 @@ def create_checkpoint_saved_event(
         correlation_id=task_id
     )
 
-
 def create_stage_started_event(
     version: int,
     task_id: str,
@@ -196,7 +189,6 @@ def create_stage_started_event(
         timestamp=datetime.now(),
         correlation_id=task_id
     )
-
 
 def create_stage_completed_event(
     version: int,
@@ -218,7 +210,6 @@ def create_stage_completed_event(
         correlation_id=task_id
     )
 
-
 def create_stage_failed_event(
     version: int,
     task_id: str,
@@ -239,7 +230,6 @@ def create_stage_failed_event(
         correlation_id=task_id
     )
 
-
 def create_task_failed_event(
     version: int,
     task_id: str,
@@ -258,7 +248,6 @@ def create_task_failed_event(
         correlation_id=task_id
     )
 
-
 def create_task_completed_event(
     version: int,
     task_id: str
@@ -274,7 +263,6 @@ def create_task_completed_event(
         timestamp=datetime.now(),
         correlation_id=task_id
     )
-
 
 if __name__ == "__main__":
     # 测试代码

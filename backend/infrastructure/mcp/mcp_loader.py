@@ -17,7 +17,6 @@ from google.adk.tools.mcp_tool.mcp_toolset import (
     SseConnectionParams
 )
 
-
 def load_mcp_config_from_file(config_path: str = "mcp_config.json") -> Dict[str, Any]:
     """
     从JSON文件加载MCP配置
@@ -41,7 +40,6 @@ def load_mcp_config_from_file(config_path: str = "mcp_config.json") -> Dict[str,
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON in {config_path}: {e}")
         raise
-
 
 def load_mcp_tools(mcp_config_path: str) -> List[MCPToolset]:
     """
@@ -90,7 +88,6 @@ def load_mcp_tools(mcp_config_path: str) -> List[MCPToolset]:
     print(f"成功加载 {len(mcp_tools)} 个MCP工具")
     return mcp_tools
 
-
 def load_mcp_tools_from_config(
     config: Dict[str, Any]
 ) -> List[MCPToolset]:
@@ -134,7 +131,6 @@ def load_mcp_tools_from_config(
         mcp_tools.append(client)
 
     return mcp_tools
-
 
 class MCPManager:
     """
@@ -184,10 +180,8 @@ class MCPManager:
         """清空已加载的MCP工具"""
         self.tools.clear()
 
-
 # 全局MCP管理器实例
 _mcp_manager: Optional[MCPManager] = None
-
 
 def get_mcp_manager() -> MCPManager:
     """
@@ -200,7 +194,6 @@ def get_mcp_manager() -> MCPManager:
     if _mcp_manager is None:
         _mcp_manager = MCPManager()
     return _mcp_manager
-
 
 if __name__ == "__main__":
     # 测试MCP加载

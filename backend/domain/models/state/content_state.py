@@ -7,7 +7,6 @@ Domain model for the content generation stage state.
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
-
 @dataclass
 class ContentMaterialState:
     """
@@ -61,7 +60,6 @@ class ContentMaterialState:
             image_suggestion=data.get("image_suggestion"),
             has_image=data.get("has_image", False)
         )
-
 
 @dataclass
 class ContentState:
@@ -117,7 +115,6 @@ class ContentState:
     def pages_with_images(self) -> int:
         """包含配图的页面数"""
         return sum(1 for m in self.materials if m.has_image)
-
 
 if __name__ == "__main__":
     # 测试代码

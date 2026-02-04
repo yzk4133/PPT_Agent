@@ -13,7 +13,6 @@ from .slide import Slide, SlideList
 from .topic import TopicList
 from .research import ResearchResults
 
-
 class PresentationStatus(str, Enum):
     """演示文稿状态"""
     DRAFT = "draft"
@@ -21,7 +20,6 @@ class PresentationStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     ARCHIVED = "archived"
-
 
 @dataclass
 class PresentationMetadata:
@@ -56,7 +54,6 @@ class PresentationMetadata:
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
-
 
 @dataclass
 class Presentation:
@@ -199,7 +196,6 @@ class Presentation:
     def __str__(self) -> str:
         return f"Presentation(id='{self.id}', title='{self.title}', status={self.status.value})"
 
-
 @dataclass
 class PresentationRequest:
     """
@@ -245,7 +241,6 @@ class PresentationRequest:
             style=data.get("style", ""),
             metadata=data.get("metadata", {})
         )
-
 
 if __name__ == "__main__":
     # 测试代码

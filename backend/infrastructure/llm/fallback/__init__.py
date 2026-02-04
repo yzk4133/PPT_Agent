@@ -15,9 +15,7 @@ from typing import Any, Callable, List, Optional, Dict
 from dataclasses import dataclass
 from enum import Enum
 
-
 logger = logging.getLogger(__name__)
-
 
 class FallbackLevel(str, Enum):
     """降级级别"""
@@ -26,7 +24,6 @@ class FallbackLevel(str, Enum):
     SECONDARY = "secondary"  # 次级策略
     TERTIARY = "tertiary"  # 三级策略
     DEFAULT = "default"  # 默认策略（最后保底）
-
 
 @dataclass
 class FallbackResult:
@@ -37,7 +34,6 @@ class FallbackResult:
     level: FallbackLevel
     error: Optional[str] = None
     metadata: Optional[Dict] = None
-
 
 class FallbackChain:
     """
@@ -115,9 +111,7 @@ class FallbackChain:
             error="All fallback strategies failed",
         )
 
-
 # ==================== JSON 解析降级 ====================
-
 
 class JSONFallbackParser:
     """JSON 解析降级器"""
@@ -213,9 +207,7 @@ class JSONFallbackParser:
 
         return chain.execute()
 
-
 # ==================== 部分成功处理 ====================
-
 
 class PartialSuccessHandler:
     """部分成功处理器"""
@@ -273,9 +265,7 @@ class PartialSuccessHandler:
             },
         )
 
-
 # ==================== LLM 调用降级 ====================
-
 
 class LLMCallFallback:
     """LLM 调用降级器"""
@@ -357,14 +347,11 @@ class LLMCallFallback:
 
         return chain.execute()
 
-
 # ==================== 预定义降级配置 ====================
-
 
 def create_default_json_parser() -> FallbackChain:
     """创建默认的 JSON 解析降级链"""
     return JSONFallbackParser()
-
 
 def create_default_parallel_handler(
     min_success_rate: float = 0.5,
@@ -372,11 +359,9 @@ def create_default_parallel_handler(
     """创建默认的并行任务处理器"""
     return PartialSuccessHandler()
 
-
 def create_default_llm_fallback(cache: Optional[Dict] = None) -> LLMCallFallback:
     """创建默认的 LLM 调用降级器"""
     return LLMCallFallback(cache=cache)
-
 
 if __name__ == "__main__":
     # 测试降级策略
@@ -420,7 +405,6 @@ if __name__ == "__main__":
     print(f"Partial success: success={result4.success}, level={result4.level}")
     print(f"Metadata: {result4.metadata}")
     print(f"Successful data: {result4.data}")
-
 
 # ==================== Exports ====================
 

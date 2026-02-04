@@ -12,9 +12,7 @@ from dataclasses import dataclass, field
 
 from domain.models import Task, TaskStage, TaskStatus
 
-
 logger = logging.getLogger(__name__)
-
 
 @dataclass
 class ProgressUpdate:
@@ -45,7 +43,6 @@ class ProgressUpdate:
             "message": self.message,
             "timestamp": self.timestamp.isoformat()
         }
-
 
 class ProgressTracker:
     """
@@ -338,10 +335,8 @@ class ProgressTracker:
                 except Exception as e:
                     logger.error(f"Error notifying subscriber: {e}")
 
-
 # 全局进度追踪器实例
 _global_tracker: Optional[ProgressTracker] = None
-
 
 def get_progress_tracker() -> ProgressTracker:
     """
@@ -354,7 +349,6 @@ def get_progress_tracker() -> ProgressTracker:
     if _global_tracker is None:
         _global_tracker = ProgressTracker()
     return _global_tracker
-
 
 if __name__ == "__main__":
     # 测试代码

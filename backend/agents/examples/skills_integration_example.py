@@ -18,7 +18,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 async def example_use_skills():
     """演示如何使用Skills"""
 
@@ -109,7 +108,6 @@ async def example_use_skills():
     print("示例执行完成")
     print("="*60 + "\n")
 
-
 async def example_auto_discovery():
     """演示工具自动发现功能"""
 
@@ -132,7 +130,6 @@ async def example_auto_discovery():
     print(f"成功注册 {count} 个工具")
 
     print("\n" + "="*60 + "\n")
-
 
 async def example_mcp_to_adk_conversion():
     """演示MCP到ADK的转换"""
@@ -165,7 +162,6 @@ async def example_mcp_to_adk_conversion():
 
     print("\n" + "="*60 + "\n")
 
-
 async def main():
     """主函数"""
     try:
@@ -176,7 +172,6 @@ async def main():
 
     except Exception as e:
         logger.error(f"示例执行失败: {e}", exc_info=True)
-
 
 if __name__ == "__main__":
     asyncio.run(main())

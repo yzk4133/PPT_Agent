@@ -14,7 +14,6 @@ from datetime import datetime
 from dataclasses import dataclass
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from domain.models.checkpoint import Checkpoint
 from domain.models.execution_mode import ExecutionMode
@@ -23,7 +22,6 @@ from sqlalchemy import text, select, update, delete, insert, Table, Column, Stri
 from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
-
 
 class ICheckpointBackend(ABC):
     """
@@ -62,12 +60,10 @@ class ICheckpointBackend(ABC):
         """列出所有checkpoint"""
         pass
 
-
 @dataclass
 class DatabaseConfig:
     """数据库配置"""
     db_path: str = "data/checkpoints.db"
-
 
 class InMemoryCheckpointBackend(ICheckpointBackend):
     """
@@ -131,7 +127,6 @@ class InMemoryCheckpointBackend(ICheckpointBackend):
     def clear(self) -> None:
         """清空所有checkpoint"""
         self._checkpoints.clear()
-
 
 class DatabaseCheckpointBackend(ICheckpointBackend):
     """
@@ -344,7 +339,6 @@ class DatabaseCheckpointBackend(ICheckpointBackend):
         if self._conn:
             self._conn.close()
             logger.debug("Database connection closed")
-
 
 class PostgresCheckpointBackend(ICheckpointBackend):
     """
@@ -561,10 +555,8 @@ class PostgresCheckpointBackend(ICheckpointBackend):
             metadata=json.loads(row[13])  # metadata
         )
 
-
 # 创建全局实例
 _global_backend: Optional[ICheckpointBackend] = None
-
 
 def get_checkpoint_backend() -> ICheckpointBackend:
     """获取全局checkpoint backend实例"""
@@ -573,12 +565,10 @@ def get_checkpoint_backend() -> ICheckpointBackend:
         _global_backend = InMemoryCheckpointBackend()
     return _global_backend
 
-
 def set_checkpoint_backend(backend: ICheckpointBackend) -> None:
     """设置全局checkpoint backend实例"""
     global _global_backend
     _global_backend = backend
-
 
 if __name__ == "__main__":
     # 测试代码

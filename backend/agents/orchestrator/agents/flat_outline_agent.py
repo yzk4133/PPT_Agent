@@ -27,7 +27,7 @@ import os
 # 添加 backend 目录到模块搜索路径
 backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if backend_path not in sys.path:
-    sys.path.insert(0, backend_path)
+    sys.path.append(backend_path)
 
 from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import ModelFactory
@@ -35,7 +35,6 @@ from infrastructure.llm.fallback import JSONFallbackParser, PartialSuccessHandle
 from infrastructure.llm.retry_decorator import retry_with_exponential_backoff
 
 logger = logging.getLogger(__name__)
-
 
 class Stage1RequirementAnalysisAgent(LlmAgent):
     """
@@ -85,7 +84,6 @@ class Stage1RequirementAnalysisAgent(LlmAgent):
             description="分析PPT需求并制定调研计划",
             instruction=instruction,
         )
-
 
 class Stage2ParallelResearchAgent(ParallelAgent):
     """
@@ -217,7 +215,6 @@ class Stage2ParallelResearchAgent(ParallelAgent):
         ctx.session.state["stage2_research_results"] = research_results
         ctx.session.state["stage2_success_count"] = validation_result["success_count"]
 
-
 class Stage3OutlineComposerAgent(LlmAgent):
     """
     Stage 3: 大纲生成 Agent
@@ -300,7 +297,6 @@ class Stage3OutlineComposerAgent(LlmAgent):
         await super()._run_async_impl(ctx)
 
         logger.info("[Stage3] 大纲生成完成")
-
 
 class FlatSlideOutlineAgent(SequentialAgent):
     """
@@ -398,7 +394,6 @@ class FlatSlideOutlineAgent(SequentialAgent):
             logger.error(f"[FlatSlideOutlineAgent] 执行失败：{str(e)}", exc_info=True)
             ctx.add_response(f"抱歉，大纲生成失败：{str(e)}")
 
-
 # 工厂函数：用于 main_api.py 创建 agent
 def create_flat_outline_agent(
     model_name: str,
@@ -435,7 +430,6 @@ def create_flat_outline_agent(
         mcp_tools=mcp_tools,
         max_concurrency=max_concurrency,
     )
-
 
 # 导出的全局实例（供 __init__.py 使用）
 flat_outline_agent = None  # 在 main_api.py 中实例化

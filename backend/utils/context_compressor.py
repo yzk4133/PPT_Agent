@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class SlideInfo:
     """压缩后的单页信息"""
@@ -32,7 +31,6 @@ class SlideInfo:
         if self.images:
             summary += f"图片: {len(self.images)}张\n"
         return summary.strip()
-
 
 class ContextCompressor:
     """
@@ -252,8 +250,13 @@ class ContextCompressor:
                 "suggestions": str
             }
         """
+        # 提取当前页面的标题和关键点
+        title_match = re.search(r'<H1>(.*?)</H1>', slide_xml, re.DOTALL)
+        title = title_match.group(1).strip() if title_match else ""
+        key_points = self._extract_key_points(slide_xml)
+
         # 提取当前页面的信息
-        current_keywords = self._extract_keywords(slide_xml, "", [])
+        current_keywords = self._extract_keywords(slide_xml, title, key_points)
         current_images = set(self._extract_images(slide_xml))
 
         # 检查重复
@@ -315,7 +318,6 @@ class ContextCompressor:
         self.all_slides.clear()
         self.used_keywords.clear()
         self.used_images.clear()
-
 
 # 便捷函数
 def compress_slide_history(

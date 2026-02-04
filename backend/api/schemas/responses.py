@@ -9,14 +9,12 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
 
-
 class Status(str, Enum):
     """状态枚举"""
     SUCCESS = "success"
     ERROR = "error"
     PENDING = "pending"
     PROCESSING = "processing"
-
 
 class BaseResponse(BaseModel):
     """
@@ -36,14 +34,12 @@ class BaseResponse(BaseModel):
             }
         }
 
-
 class PresentationStatus(str, Enum):
     """演示文稿状态"""
     DRAFT = "draft"
     GENERATING = "generating"
     COMPLETED = "completed"
     FAILED = "failed"
-
 
 class StageProgress(BaseModel):
     """
@@ -55,7 +51,6 @@ class StageProgress(BaseModel):
     count: Optional[int] = Field(None, description="数量")
     total: Optional[int] = Field(None, description="总数")
     success_rate: Optional[float] = Field(None, description="成功率")
-
 
 class PresentationProgressResponse(BaseModel):
     """
@@ -90,7 +85,6 @@ class PresentationProgressResponse(BaseModel):
             }
         }
 
-
 class PresentationCreateResponse(BaseModel):
     """
     演示文稿创建响应
@@ -110,7 +104,6 @@ class PresentationCreateResponse(BaseModel):
                 "message": "演示文稿生成中..."
             }
         }
-
 
 class PresentationDetailResponse(BaseModel):
     """
@@ -147,7 +140,6 @@ class PresentationDetailResponse(BaseModel):
             }
         }
 
-
 class OutlineGenerateResponse(BaseModel):
     """
     大纲生成响应
@@ -165,7 +157,6 @@ class OutlineGenerateResponse(BaseModel):
                 "message": "大纲生成成功"
             }
         }
-
 
 class UserPreferencesResponse(BaseModel):
     """
@@ -186,7 +177,6 @@ class UserPreferencesResponse(BaseModel):
                 }
             }
         }
-
 
 class ErrorResponse(BaseModel):
     """
@@ -212,7 +202,6 @@ class ErrorResponse(BaseModel):
                 "timestamp": "2025-02-02T12:00:00"
             }
         }
-
 
 class HealthCheckResponse(BaseModel):
     """

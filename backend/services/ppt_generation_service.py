@@ -12,7 +12,6 @@ import uuid
 from typing import Optional, Dict, Any, List, AsyncGenerator
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from google.adk.artifacts import InMemoryArtifactService
 from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
@@ -26,7 +25,6 @@ from agents.factory import get_agent_factory
 from infrastructure.config.common_config import get_config
 
 logger = logging.getLogger(__name__)
-
 
 class PptGenerationService:
     """
@@ -312,10 +310,8 @@ Outline:
 
             yield event_data
 
-
 # 全局服务实例
 _global_service: Optional[PptGenerationService] = None
-
 
 def get_ppt_generation_service(config: Optional[Dict[str, Any]] = None) -> PptGenerationService:
     """获取全局 PPT 生成服务实例"""
@@ -323,7 +319,6 @@ def get_ppt_generation_service(config: Optional[Dict[str, Any]] = None) -> PptGe
     if _global_service is None:
         _global_service = PptGenerationService(config)
     return _global_service
-
 
 def reset_ppt_generation_service():
     """重置全局 PPT 生成服务实例（主要用于测试）"""

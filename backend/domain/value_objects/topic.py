@@ -8,7 +8,6 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 from datetime import datetime
 
-
 @dataclass
 class Topic:
     """
@@ -62,7 +61,6 @@ class Topic:
     def __str__(self) -> str:
         return f"Topic(id={self.id}, title='{self.title}')"
 
-
 @dataclass
 class TopicList:
     """
@@ -115,7 +113,6 @@ class TopicList:
             metadata=data.get("metadata", {})
         )
 
-
 # JSON Schema 兼容的工厂函数
 def create_topic_from_json(data: Dict[str, Any]) -> Topic:
     """
@@ -137,7 +134,6 @@ def create_topic_from_json(data: Dict[str, Any]) -> Topic:
         keywords=data.get("keywords", []),
         research_focus=data.get("research_focus", "")
     )
-
 
 if __name__ == "__main__":
     # 测试代码

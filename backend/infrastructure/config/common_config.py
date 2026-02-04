@@ -9,6 +9,8 @@
 """
 
 import os
+import secrets
+import logging
 from enum import Enum
 from typing import Dict, List, Optional, Any
 
@@ -19,7 +21,7 @@ try:
 except ImportError:
     from pydantic import BaseSettings, Field, validator
 
-
+logger = logging.getLogger(__name__)
 
 class Environment(str, Enum):
     """环境类型"""
@@ -27,7 +29,6 @@ class Environment(str, Enum):
     DEVELOPMENT = "development"
     STAGING = "staging"
     PRODUCTION = "production"
-
 
 class ModelProvider(str, Enum):
     """支持的模型提供商"""
@@ -37,7 +38,6 @@ class ModelProvider(str, Enum):
     CLAUDE = "claude"
     GOOGLE = "google"
     QWEN = "qwen"
-
 
 class AgentConfig(BaseSettings):
     """单个 Agent 的配置"""
@@ -65,7 +65,6 @@ class AgentConfig(BaseSettings):
     class Config:
         env_prefix = ""  # 不使用前缀，由父类处理
         case_sensitive = False
-
 
 class DatabaseConfig(BaseSettings):
     """数据库配置"""
@@ -102,7 +101,6 @@ class DatabaseConfig(BaseSettings):
         env_prefix = "DB_"
         case_sensitive = False
 
-
 class FeatureFlags(BaseSettings):
     """Feature Flag 配置，用于灰度发布和向后兼容"""
 
@@ -126,7 +124,6 @@ class FeatureFlags(BaseSettings):
         env_prefix = "FEATURE_"
         case_sensitive = False
 
-
 class AppConfig(BaseSettings):
     """应用全局配置"""
 
@@ -136,16 +133,26 @@ class AppConfig(BaseSettings):
     log_level: str = Field("INFO", description="日志级别")
 
     # 认证配置
-    jwt_secret_key: str = Field("your-secret-key-change-in-production", description="JWT 密钥")
+    jwt_secret_key: str = Field(
+        default="",
+        description="JWT 密钥（生产环境必须从环境变量设置）"
+    )
     jwt_algorithm: str = Field("HS256", description="JWT 算法")
     access_token_expire_minutes: int = Field(30, description="访问令牌过期时间（分钟）")
     refresh_token_expire_days: int = Field(30, description="刷新令牌过期时间（天）")
 
     # CORS 配置
-    cors_allowed_origins: list = Field(
-        default=["http://localhost:3000", "http://localhost:5173"],
-        description="允许的 CORS 来源"
+    cors_allowed_origins: str = Field(
+        default="http://localhost:3000,http://localhost:5173",
+        description="允许的 CORS 来源（逗号分隔）"
     )
+
+    @property
+    def cors_origins_list(self) -> list:
+        """将逗号分隔的 CORS 来源转换为列表"""
+        if isinstance(self.cors_allowed_origins, str):
+            return [origin.strip() for origin in self.cors_allowed_origins.split(",")]
+        return self.cors_allowed_origins
 
     # 限流配置
     rate_limit_enabled: bool = Field(True, description="是否启用限流")
@@ -219,21 +226,85 @@ class AppConfig(BaseSettings):
             raise ValueError(f"Invalid log level: {v}. Must be one of {valid_levels}")
         return v.upper()
 
-    # Disable API key validation for Pydantic v2 compatibility
-    # @validator(
-    #     "openai_api_key",
-    #     "deepseek_api_key",
-    #     "claude_api_key",
-    #     "google_api_key",
-    #     "qwen_api_key",
-    # )
-    # def validate_api_keys(cls, v, values):
-    #     """在生产环境验证 API Key"""
-    #     env = values.get("environment", Environment.DEVELOPMENT)
-    #     if env == Environment.PRODUCTION and not v:
-    #         # 生产环境可以允许部分 Key 为空，只要有至少一个可用
-    #         pass
-    #     return v
+    @validator("jwt_secret_key")
+    def validate_jwt_secret(cls, v, info):
+        """验证JWT密钥"""
+        environment = info.data.get("environment", Environment.DEVELOPMENT)
+
+        # 开发环境：如果未设置，生成一个临时密钥并警告
+        if environment == Environment.DEVELOPMENT and not v:
+            logger.warning(
+                "JWT_SECRET_KEY not set in development mode. "
+                "Using auto-generated temporary key. Set JWT_SECRET_KEY environment variable for persistence."
+            )
+            return secrets.token_urlsafe(32)
+
+        # 生产环境：必须设置强密钥
+        if environment == Environment.PRODUCTION:
+            if not v:
+                raise ValueError(
+                    "JWT_SECRET_KEY must be set in production environment. "
+                    "Set JWT_SECRET_KEY environment variable to a secure random string (at least 32 characters)."
+                )
+            if len(v) < 32:
+                raise ValueError(
+                    f"JWT_SECRET_KEY too short (got {len(v)} chars). "
+                    "Must be at least 32 characters for security."
+                )
+            if v in ["your-secret-key-change-in-production", "secret", "password"]:
+                raise ValueError(
+                    "JWT_SECRET_KEY is using a default/insecure value. "
+                    "Set JWT_SECRET_KEY environment variable to a secure random string."
+                )
+
+        return v
+
+    @validator("openai_api_key", "deepseek_api_key", "claude_api_key", "google_api_key", "qwen_api_key")
+    def validate_api_keys(cls, v, info):
+        """验证 API Key 格式"""
+        if v is None:
+            return v
+
+        # 检查是否为空字符串
+        if isinstance(v, str) and not v.strip():
+            return None
+
+        # 基本格式验证（大多数API key都是字母数字和下划线）
+        if not isinstance(v, str):
+            raise ValueError("API key must be a string")
+
+        # 检查是否使用了占位符值
+        placeholder_values = [
+            "your_api_key_here",
+            "your-openai-api-key-here",
+            "your_deepseek_api_key_here",
+            "your_bing_search_api_key_here",
+            "your_unsplash_access_key_here",
+        ]
+        if v.lower() in placeholder_values:
+            logger.warning(f"API key is using placeholder value '{v}'. Please set a valid API key.")
+            return None
+
+        return v
+
+    @validator("environment", mode="after")
+    def validate_production_config(cls, v, info):
+        """验证生产环境配置"""
+        if v == Environment.PRODUCTION:
+            # 检查是否有至少一个 API key
+            api_keys = [
+                info.data.get("openai_api_key"),
+                info.data.get("deepseek_api_key"),
+                info.data.get("claude_api_key"),
+                info.data.get("google_api_key"),
+                info.data.get("qwen_api_key"),
+            ]
+            if not any(api_keys):
+                logger.warning(
+                    "Production environment configured but no API keys are set. "
+                    "At least one LLM provider API key is required."
+                )
+        return v
 
     def get_agent_config(self, agent_name: str) -> AgentConfig:
         """根据 Agent 名称获取配置"""
@@ -263,10 +334,8 @@ class AppConfig(BaseSettings):
         case_sensitive = False
         # Note: fields config is not supported in Pydantic v2, use env_prefix per field instead
 
-
 # 全局配置实例（单例模式）
 _config_instance: Optional[AppConfig] = None
-
 
 def get_config(reload: bool = False) -> AppConfig:
     """
@@ -282,7 +351,6 @@ def get_config(reload: bool = False) -> AppConfig:
     if _config_instance is None or reload:
         _config_instance = AppConfig()
     return _config_instance
-
 
 def update_config(**kwargs) -> AppConfig:
     """
@@ -300,13 +368,19 @@ def update_config(**kwargs) -> AppConfig:
             setattr(config, key, value)
     return config
 
-
 if __name__ == "__main__":
+    # 配置日志
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
     # 测试配置加载
     config = get_config()
-    print(f"Environment: {config.environment}")
-    print(f"Database URL: {config.database.database_url}")
-    print(f"Redis URL: {config.database.redis_url}")
-    print(f"Use Flat Architecture: {config.features.use_flat_architecture}")
-    print(f"Split Topic Agent Model: {config.split_topic_agent.model}")
-    print(f"Research Agent Concurrency: {config.research_agent.max_concurrency}")
+    logger.info(f"Environment: {config.environment}")
+    logger.info(f"Database URL: {config.database.database_url}")
+    logger.info(f"Redis URL: {config.database.redis_url}")
+    logger.info(f"Use Flat Architecture: {config.features.use_flat_architecture}")
+    logger.info(f"Split Topic Agent Model: {config.split_topic_agent.model}")
+    logger.info(f"Research Agent Concurrency: {config.research_agent.max_concurrency}")
+    logger.info(f"CORS Origins: {config.cors_origins_list}")

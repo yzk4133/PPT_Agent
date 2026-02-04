@@ -14,14 +14,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class MemoryLayer(Enum):
     """内存层级枚举"""
 
     L1_TRANSIENT = "transient"  # 瞬时内存 (seconds)
     L2_SHORT_TERM = "short_term"  # 短期内存 (hours)
     L3_LONG_TERM = "long_term"  # 长期内存 (permanent)
-
 
 class MemoryScope(Enum):
     """内存作用域枚举"""
@@ -32,7 +30,6 @@ class MemoryScope(Enum):
     WORKSPACE = "workspace"  # 多Agent工作区范围
     USER = "user"  # 用户级全局范围
 
-
 class PromotionReason(Enum):
     """数据提升原因"""
 
@@ -41,7 +38,6 @@ class PromotionReason(Enum):
     CROSS_SESSION_USAGE = "cross_session_usage"  # 跨会话使用
     MANUAL_PROMOTION = "manual_promotion"  # 手动标记重要
     LONG_LIFETIME = "long_lifetime"  # 长期存在
-
 
 class MemoryMetadata:
     """内存数据的元信息"""
@@ -101,7 +97,6 @@ class MemoryMetadata:
             "session_ids": self.session_ids,
             "tags": self.tags,
         }
-
 
 class BaseMemoryLayer(ABC):
     """内存层抽象基类"""
@@ -211,7 +206,6 @@ class BaseMemoryLayer(ABC):
             return key, scope, scope_id
         except (ValueError, IndexError):
             return None
-
 
 class PromotionTracker:
     """数据提升追踪器"""

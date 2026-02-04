@@ -10,13 +10,10 @@ from datetime import datetime
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from domain.interfaces import IAgentFactory, IIAgentContext, IAgentResult
-
+from domain.interfaces import IAgentFactory, IAgentContext, IAgentResult
 
 logger = logging.getLogger(__name__)
-
 
 class OutlineService:
     """
@@ -117,7 +114,6 @@ class OutlineService:
         except Exception as e:
             logger.warning(f"加载用户偏好失败: {e}")
 
-
 # 便捷函数
 async def generate_outline_simple(
     topic: str,
@@ -140,7 +136,6 @@ async def generate_outline_simple(
     # 这里需要传入实际的Agent工厂
     # 暂时返回模拟结果
     return f"# {topic}\n\n这是生成的大纲内容..."
-
 
 if __name__ == "__main__":
     # 测试代码

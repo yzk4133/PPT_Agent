@@ -8,7 +8,6 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 from enum import Enum
 
-
 class PageType(str, Enum):
     """页面类型"""
     COVER = "cover"                   # 封面
@@ -19,7 +18,6 @@ class PageType(str, Enum):
     SUMMARY = "summary"                # 总结
     THANKS = "thanks"                  # 致谢
 
-
 class ContentType(str, Enum):
     """内容类型"""
     TEXT_ONLY = "text_only"            # 纯文本
@@ -28,7 +26,6 @@ class ContentType(str, Enum):
     TEXT_WITH_BOTH = "text_with_both"    # 文字+图表+配图
     IMAGE_ONLY = "image_only"          # 纯配图
     CHART_ONLY = "chart_only"          # 纯图表
-
 
 @dataclass
 class PageDefinition:
@@ -101,7 +98,6 @@ class PageDefinition:
             estimated_word_count=data.get("estimated_word_count", 100),
             layout_suggestion=data.get("layout_suggestion", "")
         )
-
 
 @dataclass
 class PPTFramework:
@@ -344,7 +340,6 @@ class PPTFramework:
     def __str__(self) -> str:
         return f"PPTFramework(pages={self.total_page}, research_pages={len(self.research_page_indices)})"
 
-
 @dataclass
 class FrameworkValidation:
     """
@@ -369,7 +364,6 @@ class FrameworkValidation:
             "warnings": self.warnings,
             "suggestions": self.suggestions
         }
-
 
 if __name__ == "__main__":
     # 测试代码

@@ -9,7 +9,6 @@ from sqlalchemy.orm import relationship
 from memory.storage.models import Base
 import uuid
 
-
 class RefreshToken(Base):
     """刷新令牌表"""
 

@@ -34,7 +34,6 @@ from ..base_agent_with_memory import AgentMemoryMixin
 
 logger = logging.getLogger(__name__)
 
-
 class RequirementParserAgentWithMemory(AgentMemoryMixin, RequirementParserAgent):
     """
     带记忆功能的需求解析智能体
@@ -341,12 +340,10 @@ class RequirementParserAgentWithMemory(AgentMemoryMixin, RequirementParserAgent)
             session_id=task_id,
         )
 
-
 # 创建全局实例
 requirement_parser_agent_with_memory = RequirementParserAgentWithMemory(
     before_model_callback=before_model_callback
 )
-
 
 if __name__ == "__main__":
     # 测试代码

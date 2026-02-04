@@ -21,13 +21,11 @@ from dataclasses import dataclass
 from enum import Enum
 
 # 导入基础设施
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # 导入领域模型
 from domain.models import Task, TaskStage
 
 logger = logging.getLogger(__name__)
-
 
 class RevisionType(str, Enum):
     """修订类型"""
@@ -36,7 +34,6 @@ class RevisionType(str, Enum):
     DATA_SUPPLEMENT = "data_supplement"      # 补充数据
     PAGE_COUNT_CHANGE = "page_count_change"  # 增减页数
     REQUIREMENT_CHANGE = "requirement_change"  # 需求变更
-
 
 @dataclass
 class RevisionPlan:
@@ -65,7 +62,6 @@ class RevisionPlan:
             "additional_data": self.additional_data
         }
 
-
 @dataclass
 class RevisionResult:
     """
@@ -92,7 +88,6 @@ class RevisionResult:
             "new_output": self.new_output,
             "error": self.error
         }
-
 
 class RevisionHandler:
     """
@@ -307,10 +302,8 @@ class RevisionHandler:
 
         return len(errors) == 0, errors
 
-
 # 全局修订处理器实例
 _global_revision_handler: Optional[RevisionHandler] = None
-
 
 def get_revision_handler() -> RevisionHandler:
     """
@@ -323,7 +316,6 @@ def get_revision_handler() -> RevisionHandler:
     if _global_revision_handler is None:
         _global_revision_handler = RevisionHandler()
     return _global_revision_handler
-
 
 if __name__ == "__main__":
     # 测试代码

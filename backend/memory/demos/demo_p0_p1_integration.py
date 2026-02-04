@@ -16,7 +16,6 @@ from persistent_memory import (
     ContextWindowOptimizer,
 )
 
-
 class EnhancedAgentExample:
     """增强版Agent示例 - 集成P0-P1功能"""
 
@@ -216,7 +215,6 @@ class EnhancedAgentExample:
         if tool_perf.get("avg_relevance_score"):
             print(f"   相关性评分: {tool_perf['avg_relevance_score']}")
 
-
 async def main():
     """主演示函数"""
     print("\n" + "=" * 70)
@@ -265,7 +263,6 @@ async def main():
         import traceback
 
         traceback.print_exc()
-
 
 if __name__ == "__main__":
     asyncio.run(main())

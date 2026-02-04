@@ -10,7 +10,6 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, status
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from api.schemas.requests import (
     PresentationCreateRequest,
@@ -25,7 +24,6 @@ from api.schemas.responses import (
 from services import PresentationService, create_presentation_from_request
 from domain.models import PresentationRequest as CorePresentationRequest
 
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
@@ -37,12 +35,10 @@ router = APIRouter(
 _presentation_service: PresentationService = None
 _background_tasks: Dict[str, Any] = {}
 
-
 def set_presentation_service(service: PresentationService):
     """设置演示文稿服务实例"""
     global _presentation_service
     _presentation_service = service
-
 
 @router.post(
     "/create",
@@ -102,7 +98,6 @@ async def create_presentation(
             detail=str(e)
         )
 
-
 @router.get(
     "/progress/{presentation_id}",
     response_model=PresentationProgressResponse,
@@ -133,7 +128,6 @@ async def get_progress(presentation_id: str):
         },
         created_at="2025-02-02T12:00:00"
     )
-
 
 @router.get(
     "/detail/{presentation_id}",
@@ -172,7 +166,6 @@ async def get_detail(presentation_id: str):
         completed_at="2025-02-02T12:05:00"
     )
 
-
 async def _generate_presentation_background(presentation):
     """
     后台生成演示文稿的任务
@@ -202,7 +195,6 @@ async def _generate_presentation_background(presentation):
     except Exception as e:
         logger.error(f"后台生成演示文稿失败: {e}")
         # TODO: 更新状态为失败
-
 
 if __name__ == "__main__":
     # 测试代码

@@ -16,7 +16,6 @@ from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
 
 from .skill_metadata import SkillMetadata, SkillMethodMetadata, SkillCategory
 
-
 class SkillAdapter:
     """
     Adapter to convert a Skill method into an ADK BaseTool.
@@ -157,7 +156,6 @@ class SkillAdapter:
 
         return tool_wrapper
 
-
 class McpSkillAdapter:
     """
     Adapter to wrap MCP tools (MCPToolset) as Skills.
@@ -208,7 +206,6 @@ class McpSkillAdapter:
         except Exception as e:
             print(f"Warning: Failed to get tools from MCP toolset: {e}")
             return []
-
 
 class SkillWrapper:
     """

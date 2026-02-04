@@ -56,7 +56,6 @@ __all__ = [
     "get_content_material_agent",
 ]
 
-
 def get_content_material_agent():
     """
     获取内容素材智能体实例

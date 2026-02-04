@@ -1,0 +1,32 @@
+docs/testing/infrastructure/
+├── README.md                      ⭐ 入口文档 - 从这里开始
+├── QUICK_START.md                 ⚡ 30秒快速开始
+├── MIGRATION_NOTICE.md            📋 迁移说明
+│
+├── FINAL_REPORT.md                📊 最终测试报告 (主要)
+├── FINAL_SUMMARY.md               📝 完成总结
+├── PROGRESS_REPORT.md             📈 进度报告
+├── TEST_STATUS_REPORT.md          🎯 状态报告
+│
+├── TEST_SUMMARY.md                📊 测试统计摘要
+├── MODULE_DETAILS.md              📖 模块详细说明
+├── RUNNING_TESTS.md               🚀 运行测试指南
+│
+├── TESTING_ISSUES.md              🐛 问题记录 (第一部分)
+├── TESTING_ISSUES_PART2.md        ⚠️ 关键问题分析
+│
+└── INDEX.md                       📑 索引
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+推荐阅读顺序:
+1. README.md          - 了解文档结构
+2. QUICK_START.md     - 快速开始使用
+3. FINAL_REPORT.md    - 了解整体情况
+4. RUNNING_TESTS.md   - 学习如何运行测试
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+文档大小: 总计 ~116KB
+文档数量: 13个
+最后更新: 2025-02-04

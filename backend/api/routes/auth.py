@@ -29,7 +29,6 @@ router = APIRouter(prefix="/auth", tags=["认证"])
 # HTTP Bearer 认证方案
 security = HTTPBearer()
 
-
 @router.post(
     "/register",
     response_model=TokenResponse,
@@ -58,7 +57,6 @@ async def register(
     service = get_auth_service(db)
     return service.register(data)
 
-
 @router.post(
     "/login",
     response_model=TokenResponse,
@@ -83,7 +81,6 @@ async def login(
 
     service = get_auth_service(db)
     return service.login(data)
-
 
 @router.post(
     "/refresh",
@@ -114,7 +111,6 @@ async def refresh_token(
     service = get_auth_service(db)
     return service.refresh_token(refresh_token)
 
-
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -140,7 +136,6 @@ async def logout(
 
     return None
 
-
 @router.get(
     "/me",
     response_model=UserProfile,
@@ -158,7 +153,6 @@ async def get_current_user_info(
     """
     service = get_user_service(db)
     return service.get_profile(current_user)
-
 
 @router.patch(
     "/me",
@@ -186,7 +180,6 @@ async def update_current_user_info(
     update_obj = UserProfileUpdate(**update_data)
 
     return service.update_profile(current_user, update_obj)
-
 
 @router.get(
     "/verify",

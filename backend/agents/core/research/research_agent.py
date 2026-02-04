@@ -29,7 +29,6 @@ from google.adk.agents.parallel_agent import (
 )
 
 # 导入基础设施
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from infrastructure.config.common_config import get_config
 
 # 导入新的 MCP 工具
@@ -49,7 +48,6 @@ logging.basicConfig(level=logging.INFO)
 # 加载工具和模型配置
 research_model = "deepseek-chat"
 
-
 def research_agent_before_model_callback(
     callback_context: CallbackContext, llm_request: LlmRequest
 ) -> Optional[LlmResponse]:
@@ -58,7 +56,6 @@ def research_agent_before_model_callback(
     history_length = len(llm_request.contents)
     logger.info(f"{agent_name} research agent callback, history: {history_length}")
     return None
-
 
 class OptimizedResearchAgent(ParallelAgent):
     """
@@ -449,13 +446,11 @@ class OptimizedResearchAgent(ParallelAgent):
         """清空单页研究结果缓存"""
         self._single_page_results.clear()
 
-
 # 创建全局实例
 optimized_research_agent = OptimizedResearchAgent(
     name="OptimizedResearchAgent",
     description="优化的资料研究智能体，仅研究需要的页面并整理结果"
 )
-
 
 if __name__ == "__main__":
     # 测试代码

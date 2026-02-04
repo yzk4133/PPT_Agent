@@ -25,7 +25,6 @@ from google.adk.agents.parallel_agent import (
 )
 
 # 导入配置和模型创建（从common模块）
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import create_model_with_fallback, create_model_with_fallback_simple
 
@@ -42,10 +41,8 @@ RESEARCH_TOPIC_AGENT_PROMPT = PromptManager.get_research_topic_prompt()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 # 加载工具和模型配置 - use simple model string for ADK
 research_model = "deepseek-chat"
-
 
 def research_agent_before_model_callback(
     callback_context: CallbackContext, llm_request: LlmRequest
@@ -58,7 +55,6 @@ def research_agent_before_model_callback(
     )
     # 返回 None，继续调用 LLM
     return None
-
 
 class DynamicParallelSearchAgent(ParallelAgent):
     """
@@ -152,7 +148,6 @@ class DynamicParallelSearchAgent(ParallelAgent):
         # 5. 合并并产生事件流
         async for event in _merge_agent_run(agent_runs):
             yield event
-
 
 # 实例化我们的新 Agent
 parallel_search_agent = DynamicParallelSearchAgent(

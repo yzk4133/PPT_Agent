@@ -1,0 +1,22 @@
+# Test requirements for backend/utils package
+
+# Testing framework
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+pytest-asyncio>=0.21.0
+
+# Coverage
+coverage[toml]>=7.3.0
+
+# HTTP testing
+requests-mock>=1.11.0
+
+# For FastAPI testing
+httpx>=0.24.0
+
+# Utilities
+faker>=19.0.0
+
+# Optional: for better assertions
+pytest-asserts>=0.1.0

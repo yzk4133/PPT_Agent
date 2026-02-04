@@ -15,7 +15,6 @@ from ..storage.redis_cache import RedisCache
 
 logger = logging.getLogger(__name__)
 
-
 class UserPreferenceService:
     """用户偏好管理服务"""
 

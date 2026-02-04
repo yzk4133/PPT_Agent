@@ -5,7 +5,6 @@
 from passlib.context import CryptContext
 from infrastructure.exceptions.validation import PasswordValidationException
 
-
 class PasswordHandler:
     """密码加密与验证"""
 
@@ -91,7 +90,6 @@ class PasswordHandler:
             raise PasswordValidationException(error_msg)
 
         return self.hash_password(password)
-
 
 # 全局实例
 password_handler = PasswordHandler()

@@ -27,7 +27,6 @@ dotenv.load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-
 class XMLConverterTool(BaseMCPTool):
     """
     XML to JSON Converter Tool
@@ -351,10 +350,8 @@ class XMLConverterTool(BaseMCPTool):
                 "trunk_count": len(trunk_list)
             })
 
-
 # 创建全局实例
 _xml_converter_tool = XMLConverterTool()
-
 
 # 导出函数式接口（与 agents 工具兼容）
 async def xml_converter(
@@ -385,7 +382,6 @@ async def xml_converter(
         tool_context=tool_context
     )
 
-
 async def parse_xml_to_json(
     xml_content: str,
     title: str = "Presentation"
@@ -406,7 +402,6 @@ async def parse_xml_to_json(
         return data["result"]
     return {}
 
-
 async def parse_trunk_data(
     trunk_list: List[Dict],
     title: str = "Presentation"
@@ -422,7 +417,6 @@ async def parse_trunk_data(
         JSON 格式的结果
     """
     return await _xml_converter_tool.parse_trunk_data(trunk_list, title)
-
 
 if __name__ == "__main__":
     # 测试代码

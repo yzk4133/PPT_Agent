@@ -6,12 +6,15 @@ Agent记忆适配器 - 为现有Agent添加记忆能力
 - 共享工作空间 (share_data/get_shared_data)
 - 用户偏好管理 (get_user_preferences/update_user_preferences)
 - 决策记录 (record_decision)
+- 内存配额管理 (memory quota)
 """
 
 import logging
 import os
+import threading
 from typing import Any, Dict, Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,111 @@ try:
 except ImportError as e:
     logger.warning(f"记忆系统未安装，Agent将以无记忆模式运行: {e}")
 
+# ============================================================================
+# 内存配额管理器
+# ============================================================================
+
+class MemoryQuotaManager:
+    """
+    内存配额管理器
+
+    功能：
+    - 跟踪每个Agent的内存使用量
+    - 当配额超限时触发清理
+    - 提供内存使用统计
+    """
+
+    def __init__(self):
+        # Agent内存使用统计 {agent_name: {"count": int, "last_cleanup": datetime}}
+        self._memory_stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
+            "count": 0,
+            "last_cleanup": None,
+            "total_size_bytes": 0
+        })
+        self._lock = threading.Lock()
+
+        # 配置
+        self.max_memory_items_per_agent = int(os.getenv("MAX_MEMORY_ITEMS_PER_AGENT", "1000"))
+        self.cleanup_threshold_percent = float(os.getenv("MEMORY_CLEANUP_THRESHOLD", "0.9"))
+        self.cleanup_batch_size = int(os.getenv("MEMORY_CLEANUP_BATCH_SIZE", "100"))
+        self.auto_cleanup_interval_minutes = int(os.getenv("MEMORY_AUTO_CLEANUP_INTERVAL", "30"))
+
+    def track_memory_usage(self, agent_name: str, operation: str, estimated_size: int = 0):
+        """
+        跟踪内存操作
+
+        Args:
+            agent_name: Agent名称
+            operation: 操作类型 (remember/delete)
+            estimated_size: 估计的数据大小（字节）
+        """
+        with self._lock:
+            stats = self._memory_stats[agent_name]
+
+            if operation == "remember":
+                stats["count"] += 1
+                stats["total_size_bytes"] += estimated_size
+            elif operation == "delete":
+                stats["count"] = max(0, stats["count"] - 1)
+                stats["total_size_bytes"] = max(0, stats["total_size_bytes"] - estimated_size)
+
+    def should_cleanup(self, agent_name: str) -> bool:
+        """
+        检查是否需要清理
+
+        Returns:
+            True如果超过配额阈值
+        """
+        with self._lock:
+            stats = self._memory_stats[agent_name]
+            return stats["count"] >= self.max_memory_items_per_agent * self.cleanup_threshold_percent
+
+    def get_memory_stats(self, agent_name: str) -> Dict[str, Any]:
+        """获取Agent内存统计"""
+        with self._lock:
+            stats = self._memory_stats[agent_name].copy()
+            stats["quota"] = self.max_memory_items_per_agent
+            stats["usage_percent"] = min(100.0, (stats["count"] / self.max_memory_items_per_agent) * 100) if self.max_memory_items_per_agent > 0 else 0
+            return stats
+
+    def needs_periodic_cleanup(self, agent_name: str) -> bool:
+        """
+        检查是否需要定期清理
+
+        Returns:
+            True如果距离上次清理超过自动清理间隔
+        """
+        with self._lock:
+            stats = self._memory_stats[agent_name]
+            if stats["last_cleanup"] is None:
+                return False
+
+            elapsed = datetime.utcnow() - stats["last_cleanup"]
+            return elapsed >= timedelta(minutes=self.auto_cleanup_interval_minutes)
+
+    def mark_cleanup(self, agent_name: str):
+        """标记清理已完成"""
+        with self._lock:
+            self._memory_stats[agent_name]["last_cleanup"] = datetime.utcnow()
+
+    def reset_stats(self, agent_name: str):
+        """重置Agent内存统计（用于测试或重置）"""
+        with self._lock:
+            self._memory_stats[agent_name] = {
+                "count": 0,
+                "last_cleanup": None,
+                "total_size_bytes": 0
+            }
+
+# 全局配额管理器实例
+_global_quota_manager: Optional[MemoryQuotaManager] = None
+
+def get_global_quota_manager() -> MemoryQuotaManager:
+    """获取全局配额管理器"""
+    global _global_quota_manager
+    if _global_quota_manager is None:
+        _global_quota_manager = MemoryQuotaManager()
+    return _global_quota_manager
 
 class AgentMemoryMixin:
     """
@@ -68,7 +176,7 @@ class AgentMemoryMixin:
         # 检查环境变量
         use_memory = os.getenv("USE_AGENT_MEMORY", "true").lower() == "true"
 
-        # 初始化记忆服务（使用object.__setattr__绕过Pydantic验证）
+        # 初始化记忆服务（使用私有属性，避免Pydantic验证问题）
         memory_enabled = _MEMORY_AVAILABLE and use_memory
 
         if memory_enabled:
@@ -83,22 +191,32 @@ class AgentMemoryMixin:
                 )
                 decision_service = _memory_services["AgentDecisionService"]()
                 DecisionRecord = _memory_services["DecisionRecord"]
+                quota_manager = get_global_quota_manager()
 
-                # 使用object.__setattr__绕过Pydantic验证
-                object.__setattr__(self, 'memory_manager', memory_manager)
-                object.__setattr__(self, 'MemoryScope', MemoryScope)
-                object.__setattr__(self, 'shared_workspace', shared_workspace)
-                object.__setattr__(self, 'user_pref_service', user_pref_service)
-                object.__setattr__(self, 'decision_service', decision_service)
-                object.__setattr__(self, 'DecisionRecord', DecisionRecord)
-                object.__setattr__(self, 'memory_enabled', True)
+                # 使用私有属性（不经过Pydantic验证）
+                self._memory_manager = memory_manager
+                self._MemoryScope = MemoryScope
+                self._shared_workspace = shared_workspace
+                self._user_pref_service = user_pref_service
+                self._decision_service = decision_service
+                self._DecisionRecord = DecisionRecord
+                self._quota_manager = quota_manager
+                self._memory_enabled = True
 
                 logger.info(f"[{self.__class__.__name__}] 记忆服务初始化成功")
             except Exception as e:
                 logger.warning(f"[{self.__class__.__name__}] 记忆服务初始化失败: {e}")
-                object.__setattr__(self, 'memory_enabled', False)
+                self._memory_enabled = False
         else:
-            object.__setattr__(self, 'memory_enabled', False)
+            self._memory_enabled = False
+            self._memory_manager = None
+            self._MemoryScope = None
+            self._shared_workspace = None
+            self._user_pref_service = None
+            self._decision_service = None
+            self._DecisionRecord = None
+            self._quota_manager = get_global_quota_manager()
+
             if not _MEMORY_AVAILABLE:
                 logger.debug(f"[{self.__class__.__name__}] 记忆系统不可用，无记忆模式")
             else:
@@ -106,11 +224,70 @@ class AgentMemoryMixin:
                     f"[{self.__class__.__name__}] 记忆功能已禁用（USE_AGENT_MEMORY=false）"
                 )
 
-        # Agent标识（使用object.__setattr__绕过Pydantic验证）
-        object.__setattr__(self, 'agent_name', self.__class__.__name__)
-        object.__setattr__(self, 'task_id', None)
-        object.__setattr__(self, 'user_id', None)
-        object.__setattr__(self, 'session_id', None)
+        # Agent标识（使用私有属性）
+        self._agent_name = self.__class__.__name__
+        self._task_id = None
+        self._user_id = None
+        self._session_id = None
+
+    # ========================================================================
+    # 属性访问器（提供对私有属性的访问）
+    # ========================================================================
+
+    @property
+    def memory_manager(self):
+        """获取memory_manager（兼容旧代码）"""
+        return self._memory_manager
+
+    @property
+    def MemoryScope(self):
+        """获取MemoryScope（兼容旧代码）"""
+        return self._MemoryScope
+
+    @property
+    def shared_workspace(self):
+        """获取shared_workspace（兼容旧代码）"""
+        return self._shared_workspace
+
+    @property
+    def user_pref_service(self):
+        """获取user_pref_service（兼容旧代码）"""
+        return self._user_pref_service
+
+    @property
+    def decision_service(self):
+        """获取decision_service（兼容旧代码）"""
+        return self._decision_service
+
+    @property
+    def DecisionRecord(self):
+        """获取DecisionRecord（兼容旧代码）"""
+        return self._DecisionRecord
+
+    @property
+    def memory_enabled(self) -> bool:
+        """获取memory_enabled（兼容旧代码）"""
+        return self._memory_enabled
+
+    @property
+    def agent_name(self) -> str:
+        """获取agent_name（兼容旧代码）"""
+        return self._agent_name
+
+    @property
+    def task_id(self) -> Optional[str]:
+        """获取task_id（兼容旧代码）"""
+        return self._task_id
+
+    @property
+    def user_id(self) -> Optional[str]:
+        """获取user_id（兼容旧代码）"""
+        return self._user_id
+
+    @property
+    def session_id(self) -> Optional[str]:
+        """获取session_id（兼容旧代码）"""
+        return self._session_id
 
     # ========================================================================
     # 基础记忆方法
@@ -143,6 +320,13 @@ class AgentMemoryMixin:
             return False
 
         try:
+            # 检查是否需要清理（配额管理）
+            if self._quota_manager.should_cleanup(self._agent_name):
+                logger.warning(
+                    f"[{self._agent_name}] 内存配额即将耗尽，触发自动清理"
+                )
+                await self._cleanup_old_memories()
+
             # 自动确定作用域
             if scope is None:
                 scope = self._infer_scope_from_key(key)
@@ -152,21 +336,29 @@ class AgentMemoryMixin:
 
             # 添加agent名称标签
             all_tags = tags or []
-            all_tags.extend([self.agent_name, key])
+            all_tags.extend([self._agent_name, key])
 
-            await self.memory_manager.set(
-                key=f"{self.agent_name}:{key}",
+            success = await self._memory_manager.set(
+                key=f"{self._agent_name}:{key}",
                 value=value,
-                scope=self.MemoryScope[scope.upper()],
+                scope=self._MemoryScope[scope.upper()],
                 scope_id=scope_id,
                 importance=importance,
                 tags=all_tags,
             )
-            logger.debug(f"[{self.agent_name}] 记忆保存: {key}")
-            return True
+
+            if success:
+                # 估算数据大小并跟踪内存使用
+                estimated_size = len(str(value)) if value else 0
+                self._quota_manager.track_memory_usage(self._agent_name, "remember", estimated_size)
+                logger.debug(f"[{self._agent_name}] 记忆保存: {key}")
+            else:
+                logger.error(f"[{self._agent_name}] 记忆保存失败: {key}")
+
+            return success
 
         except Exception as e:
-            logger.error(f"[{self.agent_name}] 记忆保存失败: {e}")
+            logger.error(f"[{self._agent_name}] 记忆保存失败: {e}")
             return False
 
     async def recall(
@@ -600,16 +792,110 @@ class AgentMemoryMixin:
             session_id: 会话ID
         """
         if user_id is not None:
-            object.__setattr__(self, 'user_id', user_id)
+            self._user_id = user_id
         if task_id is not None:
-            object.__setattr__(self, 'task_id', task_id)
+            self._task_id = task_id
         if session_id is not None:
-            object.__setattr__(self, 'session_id', session_id)
+            self._session_id = session_id
 
         logger.debug(
-            f"[{self.agent_name}] 上下文更新: user_id={user_id}, task_id={task_id}, session_id={session_id}"
+            f"[{self._agent_name}] 上下文更新: user_id={user_id}, task_id={task_id}, session_id={session_id}"
         )
 
     def is_memory_enabled(self) -> bool:
         """检查记忆功能是否启用"""
-        return self.memory_enabled
+        return self._memory_enabled
+
+    # ========================================================================
+    # 内存配额管理方法
+    # ========================================================================
+
+    async def get_memory_stats(self) -> Dict[str, Any]:
+        """
+        获取内存使用统计
+
+        Returns:
+            内存统计信息字典
+        """
+        if not self.memory_enabled:
+            return {"error": "Memory not enabled"}
+
+        stats = self._quota_manager.get_memory_stats(self._agent_name)
+        stats["agent_name"] = self._agent_name
+        return stats
+
+    async def cleanup_memory(self, aggressive: bool = False) -> Dict[str, int]:
+        """
+        手动清理内存
+
+        Args:
+            aggressive: 是否使用激进清理模式（清理更多数据）
+
+        Returns:
+            清理统计 {"l1": count, "l2": count, "l3": count}
+        """
+        if not self.memory_enabled:
+            return {"error": "Memory not enabled"}
+
+        logger.info(
+            f"[{self._agent_name}] 手动触发内存清理 (aggressive={aggressive})"
+        )
+
+        result = await self._cleanup_old_memories(aggressive=aggressive)
+
+        # 标记清理已完成
+        self._quota_manager.mark_cleanup(self._agent_name)
+
+        return result
+
+    async def _cleanup_old_memories(self, aggressive: bool = False) -> Dict[str, int]:
+        """
+        内部方法：清理旧记忆
+
+        Args:
+            aggressive: 是否使用激进清理模式
+
+        Returns:
+            清理统计
+        """
+        if not self._memory_manager:
+            return {"l1": 0, "l2": 0, "l3": 0}
+
+        try:
+            # 清理当前作用域的旧数据
+            scope_id = self._get_scope_id("TASK")
+
+            # 清理L1层（瞬时层）
+            l1_count = await self._memory_manager.l1.clear_scope(
+                self._MemoryScope.TASK, scope_id
+            )
+
+            # 如果是激进模式，也清理L2层
+            l2_count = 0
+            if aggressive:
+                l2_count = await self._memory_manager.l2.clear_scope(
+                    self._MemoryScope.TASK, scope_id
+                )
+
+            # L3层是长期存储，通常不自动清理，除非是激进模式
+            l3_count = 0
+            if aggressive:
+                # L3层只清理当前任务的低重要性数据
+                l3_count = await self._memory_manager.l3.clear_scope(
+                    self._MemoryScope.TASK, scope_id
+                )
+
+            result = {"l1": l1_count, "l2": l2_count, "l3": l3_count}
+
+            logger.info(
+                f"[{self._agent_name}] 内存清理完成: L1={l1_count}, L2={l2_count}, L3={l3_count}"
+            )
+
+            # 更新配额统计
+            self._quota_manager.reset_stats(self._agent_name)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"[{self._agent_name}] 内存清理失败: {e}")
+            return {"l1": 0, "l2": 0, "l3": 0, "error": str(e)}

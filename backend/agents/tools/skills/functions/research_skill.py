@@ -15,9 +15,7 @@ from typing import Optional, Dict, Any, List
 from ..skill_decorator import Skill
 from ..skill_metadata import SkillCategory
 
-
 logger = logging.getLogger(__name__)
-
 
 @Skill(
     name="ResearchTopicSkill",
@@ -238,7 +236,6 @@ class ResearchTopicSkill:
             description="Execute comprehensive research on a topic",
             enabled=True
         )
-
 
 # Convenience function
 async def research_topic(

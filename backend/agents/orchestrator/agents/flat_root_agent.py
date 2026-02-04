@@ -20,7 +20,6 @@ from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event, EventActions
 
 # 导入基础设施
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from infrastructure.config import get_config
 from infrastructure.llm import create_model_with_fallback
 from infrastructure.llm.fallback import JSONFallbackParser, PartialSuccessHandler
@@ -40,9 +39,7 @@ except ImportError:
     user_pref_service = None
     PERSISTENT_MEMORY_AVAILABLE = False
 
-
 logger = logging.getLogger(__name__)
-
 
 class FlatPPTGenerationAgent(BaseAgent):
     """
@@ -224,7 +221,6 @@ class FlatPPTGenerationAgent(BaseAgent):
         async for event in ppt_generator_loop_agent.run_async(ctx):
             yield event
 
-
 def before_agent_callback(callback_context: CallbackContext) -> None:
     """
     兼容原有的回调（用于非扁平化模式）
@@ -235,7 +231,6 @@ def before_agent_callback(callback_context: CallbackContext) -> None:
     callback_context.state["slides_plan_num"] = slides_plan_num
     callback_context.state["language"] = language
     return None
-
 
 # 创建全局实例
 flat_root_agent = FlatPPTGenerationAgent(

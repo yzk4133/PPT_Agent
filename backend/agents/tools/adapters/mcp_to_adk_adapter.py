@@ -12,7 +12,6 @@ import inspect
 
 logger = logging.getLogger(__name__)
 
-
 class MCPAgentTool:
     """
     MCP工具到ADK AgentTool的适配器
@@ -92,7 +91,6 @@ class MCPAgentTool:
             "properties": parameters
         }
 
-
 def mcp_to_agent_tool(
     mcp_func: Callable,
     name: str,
@@ -112,7 +110,6 @@ def mcp_to_agent_tool(
         MCPAgentTool instance compatible with ADK
     """
     return MCPAgentTool(mcp_func, name, description, schema)
-
 
 def mcp_to_agent_tools_batch(
     registrations: list
@@ -138,7 +135,6 @@ def mcp_to_agent_tools_batch(
             # For tool classes, try to use them directly
             tools.append(registration.tool_class)
     return tools
-
 
 if __name__ == "__main__":
     # 测试适配器

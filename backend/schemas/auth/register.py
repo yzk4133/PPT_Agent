@@ -4,7 +4,6 @@
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
-
 class RegisterRequest(BaseModel):
     """用户注册请求"""
 

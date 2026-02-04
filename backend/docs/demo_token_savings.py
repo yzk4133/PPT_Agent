@@ -161,7 +161,6 @@ def visualize_token_savings():
 • 渐进式加载实施方案.md - 完整技术文档
 """)
 
-
 if __name__ == "__main__":
     import sys
 

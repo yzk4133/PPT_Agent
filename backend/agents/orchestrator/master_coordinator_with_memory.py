@@ -31,7 +31,6 @@ from ..core.base_agent_with_memory import AgentMemoryMixin
 
 logger = logging.getLogger(__name__)
 
-
 class MasterCoordinatorAgentWithMemory(AgentMemoryMixin, MasterCoordinatorAgent):
     """
     带记忆功能的主协调智能体
@@ -395,10 +394,8 @@ class MasterCoordinatorAgentWithMemory(AgentMemoryMixin, MasterCoordinatorAgent)
             session_id=task_id,
         )
 
-
 # 创建全局实例
 master_coordinator_agent_with_memory = MasterCoordinatorAgentWithMemory()
-
 
 if __name__ == "__main__":
     # 测试代码

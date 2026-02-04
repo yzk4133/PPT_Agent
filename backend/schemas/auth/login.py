@@ -4,7 +4,6 @@
 
 from pydantic import BaseModel, Field
 
-
 class LoginRequest(BaseModel):
     """用户登录请求"""
 
@@ -18,7 +17,6 @@ class LoginRequest(BaseModel):
                 "password": "SecurePass123"
             }
         }
-
 
 class TokenResponse(BaseModel):
     """Token 响应"""
@@ -37,7 +35,6 @@ class TokenResponse(BaseModel):
                 "expires_in": 1800
             }
         }
-
 
 class RefreshTokenRequest(BaseModel):
     """刷新令牌请求"""

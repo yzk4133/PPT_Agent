@@ -25,7 +25,6 @@ from ..storage.redis_cache import RedisCache
 
 logger = logging.getLogger(__name__)
 
-
 class VectorMemoryService:
     """向量记忆服务 - 语义搜索和缓存"""
 

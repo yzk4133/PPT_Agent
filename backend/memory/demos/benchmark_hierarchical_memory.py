@@ -18,7 +18,6 @@ from persistent_memory import (
     DatabaseManager,
 )
 
-
 class PerformanceTest:
     """性能测试基类"""
 
@@ -62,7 +61,6 @@ class PerformanceTest:
         print(f"P99 延迟: {p99:.2f} ms")
         print(f"总耗时: {sum(self.results):.2f} ms")
 
-
 class OldArchitectureWriteTest(PerformanceTest):
     """旧架构：直接写入数据库"""
 
@@ -88,7 +86,6 @@ class OldArchitectureWriteTest(PerformanceTest):
             )
             session.commit()
 
-
 class NewArchitectureWriteTest(PerformanceTest):
     """新架构：L1瞬时内存写入"""
 
@@ -105,7 +102,6 @@ class NewArchitectureWriteTest(PerformanceTest):
             scope_id=f"task_{iteration}",
             importance=0.5,
         )
-
 
 class OldArchitectureReadTest(PerformanceTest):
     """旧架构：从数据库读取"""
@@ -146,7 +142,6 @@ class OldArchitectureReadTest(PerformanceTest):
                 },
             ).fetchone()
 
-
 class NewArchitectureReadTest(PerformanceTest):
     """新架构：从L1/L2/L3读取"""
 
@@ -173,7 +168,6 @@ class NewArchitectureReadTest(PerformanceTest):
             scope_id=f"task_read",
         )
 
-
 class BatchOperationTest(PerformanceTest):
     """批量操作测试"""
 
@@ -197,7 +191,6 @@ class BatchOperationTest(PerformanceTest):
         await self.memory.batch_flush_l1_to_l2(
             MemoryScope.TASK, f"batch_task_{iteration}"
         )
-
 
 async def run_comparison_tests():
     """运行对比测试"""
@@ -292,7 +285,6 @@ async def run_comparison_tests():
     finally:
         await memory.stop_background_tasks()
 
-
 async def run_stress_test():
     """压力测试：模拟高并发场景"""
 
@@ -351,7 +343,6 @@ async def run_stress_test():
     finally:
         await memory.stop_background_tasks()
 
-
 async def main():
     """运行所有测试"""
 
@@ -371,7 +362,6 @@ async def main():
         import traceback
 
         traceback.print_exc()
-
 
 if __name__ == "__main__":
     asyncio.run(main())

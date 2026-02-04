@@ -46,7 +46,6 @@ __all__ = [
     "get_research_agent",
 ]
 
-
 def get_research_agent():
     """
     获取研究智能体实例

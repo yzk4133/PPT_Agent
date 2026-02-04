@@ -17,7 +17,6 @@ from infrastructure.config.common_config import get_config
 
 logger = logging.getLogger(__name__)
 
-
 def migrate(database_url: str = None) -> bool:
     """
     Run migration to create authentication tables
@@ -62,7 +61,6 @@ def migrate(database_url: str = None) -> bool:
     except Exception as e:
         logger.error(f"Migration failed: {e}", exc_info=True)
         return False
-
 
 def _seed_default_data(engine):
     """Seed default roles and permissions"""
@@ -118,7 +116,6 @@ def _seed_default_data(engine):
         session.commit()
         logger.info("Default roles and permissions seeded successfully")
 
-
 def rollback(database_url: str = None) -> bool:
     """
     Rollback migration by dropping authentication tables
@@ -153,7 +150,6 @@ def rollback(database_url: str = None) -> bool:
     except Exception as e:
         logger.error(f"Rollback failed: {e}", exc_info=True)
         return False
-
 
 def get_migration_status(database_url: str = None) -> dict:
     """
@@ -204,7 +200,6 @@ def get_migration_status(database_url: str = None) -> dict:
         logger.error(f"Failed to get migration status: {e}", exc_info=True)
 
     return status
-
 
 if __name__ == "__main__":
     # Configure logging

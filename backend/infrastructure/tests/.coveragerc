@@ -1,0 +1,27 @@
+[coverage:run]
+source = backend/infrastructure
+omit =
+    */tests/*
+    */__pycache__/*
+    */site-packages/*
+    */dist-packages/*
+    */venv/*
+    */env/*
+    */.venv/*
+
+[coverage:report]
+precision = 2
+show_missing = True
+skip_covered = False
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+
+[coverage:html]
+directory = htmlcov

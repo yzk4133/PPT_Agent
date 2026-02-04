@@ -16,7 +16,6 @@ from infrastructure.exceptions import ResourceNotFoundException, AuthorizationEx
 
 logger = logging.getLogger(__name__)
 
-
 class UserService:
     """用户服务"""
 
@@ -187,10 +186,8 @@ class UserService:
 
         return list(permissions)
 
-
 # 全局服务实例（单例）
 _user_service: Optional[UserService] = None
-
 
 def get_user_service(db: Session) -> UserService:
     """
@@ -203,7 +200,6 @@ def get_user_service(db: Session) -> UserService:
         UserService 实例
     """
     return UserService(db)
-
 
 def reset_user_service():
     """重置用户服务（用于测试）"""

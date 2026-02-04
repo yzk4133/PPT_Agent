@@ -12,7 +12,6 @@ from typing import Optional
 # 导入配置和模型创建（从common模块）
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import create_model_with_fallback, create_model_with_fallback_simple
@@ -22,7 +21,6 @@ from prompts import PromptManager
 
 # 使用PromptManager获取提示词模板
 SPLIT_TOPIC_AGENT_PROMPT = PromptManager.get_split_topic_prompt()
-
 
 def my_before_model_callback(callback_context: CallbackContext, llm_request: LlmRequest) -> Optional[LlmResponse]:
     """模型调用前的回调函数"""
@@ -36,7 +34,6 @@ def my_before_model_callback(callback_context: CallbackContext, llm_request: Llm
     )
     # 返回 None，继续调用 LLM
     return None
-
 
 # 创建全局实例
 split_topic_agent = Agent(

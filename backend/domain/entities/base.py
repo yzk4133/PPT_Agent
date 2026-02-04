@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Any
 
-
 class Entity(ABC):
     """
     Base class for all entities
@@ -19,7 +18,6 @@ class Entity(ABC):
     """
 
     pass
-
 
 class ValueObject(ABC):
     """
@@ -39,7 +37,6 @@ class ValueObject(ABC):
     def __hash__(self):
         """Value objects with same attributes have same hash"""
         return hash(tuple(sorted(self.__dict__.items())))
-
 
 class Serializable(ABC):
     """
@@ -71,7 +68,6 @@ class Serializable(ABC):
             Instance of the class
         """
         pass
-
 
 class AggregateRoot(Entity):
     """

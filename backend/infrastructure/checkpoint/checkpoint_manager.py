@@ -11,13 +11,11 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from domain.models.checkpoint import Checkpoint, CheckpointSummary
 from .database_backend import ICheckpointBackend, DatabaseCheckpointBackend
 
 logger = logging.getLogger(__name__)
-
 
 class CheckpointManager:
     """
@@ -293,21 +291,17 @@ class CheckpointManager:
 
         return checkpoint.get_summary()
 
-
 # 全局checkpoint manager实例
 _checkpoint_manager: Optional[CheckpointManager] = None
-
 
 def get_checkpoint_manager() -> Optional[CheckpointManager]:
     """获取全局checkpoint manager实例"""
     return _checkpoint_manager
 
-
 def set_checkpoint_manager(manager: CheckpointManager) -> None:
     """设置全局checkpoint manager实例"""
     global _checkpoint_manager
     _checkpoint_manager = manager
-
 
 if __name__ == "__main__":
     # 测试代码

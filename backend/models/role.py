@@ -25,7 +25,6 @@ role_permissions = Table(
     Column('permission_id', UUID(as_uuid=True), ForeignKey('permissions.id', ondelete='CASCADE'), primary_key=True)
 )
 
-
 class Role(Base):
     """角色表"""
 
@@ -58,7 +57,6 @@ class Role(Base):
 
     def __repr__(self) -> str:
         return f"<Role(id={self.id}, name={self.name})>"
-
 
 class Permission(Base):
     """权限表"""

@@ -12,7 +12,6 @@ import uuid
 # 使用与 memory/storage/models.py 相同的 Base
 from memory.storage.models import Base
 
-
 class User(Base):
     """用户表"""
 

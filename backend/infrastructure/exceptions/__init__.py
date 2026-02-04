@@ -1,11 +1,16 @@
 """
 异常类模块
 
-提供统一的异常处理体系，包括：
+提供基础设施层的异常处理体系，包括：
 - 基础异常类
-- 认证相关异常
-- 业务异常
-- 验证异常
+- 认证技术异常（infrastructure内部使用）
+- 验证技术异常（infrastructure内部使用）
+- 技术异常
+
+职责说明：
+- 这些异常用于infrastructure层的内部模块之间通信
+- 不包含业务逻辑（业务异常在 domain/exceptions/）
+- 主要用于技术验证（Token格式、密码强度等）
 """
 
 from .base import (
@@ -18,41 +23,42 @@ from .base import (
 )
 
 from .auth import (
-    AuthenticationException,
     InvalidTokenException,
     InvalidCredentialsException,
     TokenExpiredException,
-    AuthorizationException,
+    PasswordFormatException,
     UserAlreadyExistsException,
     UserInactiveException,
-    UserNotFoundException
-)
-
-from .business import (
-    PPTGenerationException,
-    OutlineGenerationException,
-    SlideGenerationException,
-    TaskNotFoundException,
-    TaskExpiredException,
-    InvalidParameterException,
-    ExternalServiceException,
-    LLMServiceException,
-    DatabaseException,
-    CacheException
+    AuthorizationException,
 )
 
 from .validation import (
-    EmailValidationException,
     PasswordValidationException,
+    TokenValidationException,
+    EmailValidationException,
     UsernameValidationException,
     MissingRequiredFieldException,
     InvalidDateFormatException,
     InvalidEnumException,
     FileValidationException,
     FileSizeException,
-    FileFormatException
+    FileFormatException,
 )
 
+from .technical import (
+    BaseInfrastructureError,
+    DatabaseConnectionError,
+    LLMAPIError,
+    CacheMissError,
+    FileSystemError,
+    MCPTimeoutError,
+    MCPConnectionError,
+    ConfigurationError,
+    RetryExhaustedError
+)
+
+# Alias for backward compatibility
+AuthenticationException = InvalidCredentialsException
 
 __all__ = [
     # Base exceptions
@@ -63,31 +69,19 @@ __all__ = [
     "RateLimitExceededException",
     "ConflictException",
 
-    # Auth exceptions
-    "AuthenticationException",
+    # Auth technical exceptions (infrastructure internal)
     "InvalidTokenException",
     "InvalidCredentialsException",
     "TokenExpiredException",
-    "AuthorizationException",
+    "PasswordFormatException",
     "UserAlreadyExistsException",
     "UserInactiveException",
-    "UserNotFoundException",
+    "AuthorizationException",
 
-    # Business exceptions
-    "PPTGenerationException",
-    "OutlineGenerationException",
-    "SlideGenerationException",
-    "TaskNotFoundException",
-    "TaskExpiredException",
-    "InvalidParameterException",
-    "ExternalServiceException",
-    "LLMServiceException",
-    "DatabaseException",
-    "CacheException",
-
-    # Validation exceptions
-    "EmailValidationException",
+    # Validation technical exceptions (infrastructure internal)
     "PasswordValidationException",
+    "TokenValidationException",
+    "EmailValidationException",
     "UsernameValidationException",
     "MissingRequiredFieldException",
     "InvalidDateFormatException",
@@ -95,4 +89,18 @@ __all__ = [
     "FileValidationException",
     "FileSizeException",
     "FileFormatException",
+
+    # Technical exceptions (Infrastructure)
+    "BaseInfrastructureError",
+    "DatabaseConnectionError",
+    "LLMAPIError",
+    "CacheMissError",
+    "FileSystemError",
+    "MCPTimeoutError",
+    "MCPConnectionError",
+    "ConfigurationError",
+    "RetryExhaustedError",
+
+    # Alias
+    "AuthenticationException",
 ]

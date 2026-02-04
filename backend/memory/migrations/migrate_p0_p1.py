@@ -10,11 +10,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import ProgrammingError
 
 # 添加路径
-sys.path.insert(0, os.path.dirname(__file__))
 
 from models import Base, AgentDecision, ToolExecutionFeedback, SharedWorkspaceMemory
 from database import DatabaseManager
-
 
 def run_migration():
     """运行数据库迁移"""
@@ -238,7 +236,6 @@ def run_migration():
 
         traceback.print_exc()
         sys.exit(1)
-
 
 if __name__ == "__main__":
     run_migration()

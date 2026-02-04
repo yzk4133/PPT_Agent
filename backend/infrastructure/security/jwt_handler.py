@@ -9,7 +9,6 @@ from jose import JWTError, jwt
 from infrastructure.config.common_config import get_config
 from infrastructure.exceptions.auth import InvalidTokenException
 
-
 class JWTHandler:
     """JWT Token 处理器"""
 
@@ -150,7 +149,6 @@ class JWTHandler:
             raise InvalidTokenException("令牌缺少用户信息")
 
         return user_id
-
 
 # 全局实例
 jwt_handler = JWTHandler()

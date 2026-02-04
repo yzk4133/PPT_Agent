@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+PPT生成器拆分脚本
+
+将ppt_generator.py拆分为多个小文件，提高代码可维护性
+"""
+
+import re
+import os
+
+# 读取原始文件
+with open('ppt_generator.py', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# 定义拆分方案
+splits = [
+    # (文件名, 起始标记, 结束标记, 包含imports)
+    ('text_processor.py', '# ==================== 文本处理器 ====================', '# ==================== 幻灯片策略接口 ====', 'import re\nfrom pptx.util import Pt, Inches\nfrom .config import SlideConfig'),
+    ('strategies/base.py', '# ==================== 幻灯片策略接口 ====================', 'class TitleSlideStrategy', 'import re\nimport logging\nfrom typing import Dict, List, Optional, Tuple, Any\nfrom dataclasses import dataclass\nfrom abc import ABC, abstractmethod\nfrom pptx import Presentation\nfrom pptx.util import Pt, Inches\nfrom pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE, MSO_ANCHOR\nfrom pptx.enum.shapes import MSO_SHAPE_TYPE\nimport random\nimport re\nimport requests\nfrom io import BytesIO\nfrom PIL import Image\nimport datetime\nfrom ..config import SlideConfig\nfrom ..text_processor import TextProcessor'),
+    ('strategies/title_slide.py', 'class TitleSlideStrategy(SlideStrategy):', 'class ContentSlideStrategy(SlideStrategy):', ''),
+    ('strategies/content_slide.py', 'class ContentSlideStrategy(SlideStrategy):', 'class TableOfContentsSlideStrategy(SlideStrategy):', ''),
+    ('strategies/toc_slide.py', 'class TableOfContentsSlideStrategy(SlideStrategy):', 'class ImageSlideStrategy(SlideStrategy):', ''),
+    ('strategies/image_slide.py', 'class ImageSlideStrategy(SlideStrategy):', 'class SubSectionSlideStrategy(SlideStrategy):', ''),
+    ('strategies/subsection_slide.py', 'class SubSectionSlideStrategy(SlideStrategy):', 'class ReferencesSlideStrategy(SlideStrategy):', ''),
+    ('strategies/references_slide.py', 'class ReferencesSlideStrategy(SlideStrategy):', 'class EndSlideStrategy(SlideStrategy):', ''),
+    ('strategies/end_slide.py', 'class EndSlideStrategy(SlideStrategy):', 'class PresentationGenerator:', ''),
+]
+
+print("开始拆分 ppt_generator.py...")
+print("="*80)
+
+created_files = []
+
+for filename, start_mark, end_mark, imports in splits:
+    # 查找起始和结束位置
+    start_idx = content.find(start_mark)
+    end_idx = content.find(end_mark) if end_mark else len(content)
+
+    if start_idx == -1:
+        print(f"⚠️  警告: 未找到 '{start_mark}'，跳过 {filename}")
+        continue
+
+    # 提取内容
+    if end_mark:
+        code_content = content[start_idx:end_idx]
+    else:
+        code_content = content[start_idx:]
+
+    # 对于非base文件，需要添加导入
+    if imports and 'strategies' in filename:
+        code_content = imports + '\n' + code_content
+
+    # 写入新文件
+    filepath = os.path.join('strategies', filename) if 'strategies' in filename else filename
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(code_content)
+
+    created_files.append(filepath)
+    print(f"✅ 创建: {filename} ({len(code_content)} 行)")
+
+# 处理PresentationGenerator类
+start_idx = content.find('class PresentationGenerator:')
+end_idx = content.find('def start_generate_presentation')
+
+if start_idx != -1 and end_idx != -1:
+    code_content = content[start_idx:end_idx]
+    imports = '''import re
+import json
+import logging
+from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from pptx import Presentation
+from pptx.util import Pt, Inches
+from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+import random
+import re
+import requests
+from io import BytesIO
+from PIL import Image
+import datetime
+import os
+from .config import SlideConfig
+from .text_processor import TextProcessor
+from .strategies import *
+'''
+
+    with open('generator.py', 'w', encoding='utf-8') as f:
+        f.write(imports + '\n' + code_content)
+
+    created_files.append('generator.py')
+    print(f"✅ 创建: generator.py ({len(code_content)} 行)")
+
+# 处理入口函数
+start_idx = content.find('def start_generate_presentation')
+if start_idx != -1:
+    code_content = content[start_idx:]
+
+    with open('main.py', 'w', encoding='utf-8') as f:
+        f.write(code_content)
+
+    created_files.append('main.py')
+    print(f"✅ 创建: main.py ({len(code_content)} 行)")
+
+# 重命名原文件为备份
+os.rename('ppt_generator.py', 'ppt_generator.py.bak')
+print(f"\n📦 原文件已备份为: ppt_generator.py.bak")
+
+print("\n" + "="*80)
+print(f"拆分完成！共创建 {len(created_files)} 个文件")
+print("\n创建的文件:")
+for f in created_files:
+    print(f"  - {f}")

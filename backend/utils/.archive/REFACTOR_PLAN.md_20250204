@@ -1,0 +1,236 @@
+# PPT生成器文件拆分方案
+
+## 当前问题
+
+- `ppt_generator.py` 有 **2055行**
+- 包含 **1个配置类 + 1个工具类 + 1个抽象基类 + 7个策略类 + 1个生成器类**
+- 难以维护和查找
+
+## 建议的拆分结构
+
+```
+backend/utils/save_ppt/
+├── __init__.py                    # 主入口
+├── config.py                      # ✅ 已创建 - 配置类
+├── text_processor.py              # ✅ 已创建 - 文本处理工具
+├── generator.py                   # 主生成器类
+├── main.py                        # 入口函数
+├── strategies/                     # 策略目录
+│   ├── __init__.py               # ✅ 已创建 - 暴露所有策略
+│   ├── base.py                   # 抽象基类 SlideStrategy
+│   ├── title_slide.py            # TitleSlideStrategy
+│   ├── content_slide.py          # ContentSlideStrategy
+│   ├── toc_slide.py              # TableOfContentsSlideStrategy
+│   ├── image_slide.py            # ImageSlideStrategy
+│   ├── subsection_slide.py       # SubSectionSlideStrategy
+│   ├── references_slide.py       # ReferencesSlideStrategy
+│   └── end_slide.py              # EndSlideStrategy
+├── ppt_generator.py               # 原文件（保留作为备份）
+└── ppt_generator.py.bak          # 自动备份
+```
+
+## 拆分后的文件大小估算
+
+| 文件 | 预估行数 | 说明 |
+|------|---------|------|
+| config.py | ~120 | 配置类（已完成）|
+| text_processor.py | ~75 | 文本处理工具（已完成）|
+| strategies/base.py | ~290 | 基类 + 共享方法 |
+| strategies/title_slide.py | ~30 | 标题页策略 |
+| strategies/content_slide.py | ~160 | 内容页策略 |
+| strategies/toc_slide.py | ~55 | 目录页策略 |
+| strategies/image_slide.py | ~145 | 图片页策略 |
+| strategies/subsection_slide.py | ~80 | 子章节策略 |
+| strategies/references_slide.py | ~85 | 参考文献策略 |
+| strategies/end_slide.py | ~15 | 结束页策略 |
+| generator.py | ~300 | PresentationGenerator类 |
+| main.py | ~20 | 入口函数 |
+| **总计** | ~1375 | 拆分后总行数 |
+
+## 优势
+
+### 1. 易于维护
+- 每个文件职责单一
+- 修改某个策略只需要打开对应的小文件
+
+### 2. 易于查找
+- 需要修改标题页？直接看 `title_slide.py`
+- 需要修改图片处理？直接看 `image_slide.py`
+
+### 3. 易于测试
+- 每个策略可以独立测试
+- 测试文件结构与源文件结构一致
+
+### 4. 易于扩展
+- 添加新策略？在 `strategies/` 目录下创建新文件
+- 修改配置？直接看 `config.py`
+
+### 5. 降低耦合
+- 策略之间相互独立
+- 通过基类接口通信
+
+## 拆分步骤
+
+### 步骤1: 准备工作 ✅
+- [x] 创建 `strategies/` 目录
+- [x] 拆分 `config.py`
+- [x] 拆分 `text_processor.py`
+- [x] 创建 `strategies/__init__.py`
+
+### 步骤2: 拆分策略类
+需要手动拆分以下代码块：
+
+1. **base.py** (~290行)
+   - `SlideStrategy` 抽象基类
+   - 所有共享方法（`_log_slide_shapes`, `_get_slide_layout`, `_add_text_with_auto_fit`等）
+
+2. **title_slide.py** (~30行)
+   - `TitleSlideStrategy` 类
+   - 依赖: base.py
+
+3. **content_slide.py** (~160行)
+   - `ContentSlideStrategy` 类
+   - 依赖: base.py
+
+4. **toc_slide.py** (~55行)
+   - `TableOfContentsSlideStrategy` 类
+   - 依赖: base.py
+
+5. **image_slide.py** (~145行)
+   - `ImageSlideStrategy` 类
+   - 依赖: base.py, requests, PIL
+
+6. **subsection_slide.py** (~80行)
+   - `SubSectionSlideStrategy` 类
+   - 依赖: base.py
+
+7. **references_slide.py** (~85行)
+   - `ReferencesSlideStrategy` 类
+   - 依赖: base.py
+
+8. **end_slide.py** (~15行)
+   - `EndSlideStrategy` 类
+   - 依赖: base.py
+
+### 步骤3: 拆分主类
+1. **generator.py** (~300行)
+   - `PresentationGenerator` 类
+   - 所有策略导入
+
+2. **main.py** (~20行)
+   - `start_generate_presentation` 入口函数
+
+### 步骤4: 更新导入
+- 更新 `__init__.py` 暴露公共接口
+- 确保所有导入路径正确
+
+### 步骤5: 测试验证
+- 运行测试确保功能正常
+- 检查导入是否正确
+- 验证PPT生成功能
+
+## 导入关系示例
+
+### generator.py 的导入
+```python
+from .config import SlideConfig
+from .text_processor import TextProcessor
+from .strategies import (
+    TitleSlideStrategy,
+    ContentSlideStrategy,
+    TableOfContentsSlideStrategy,
+    ImageSlideStrategy,
+    SubSectionSlideStrategy,
+    ReferencesSlideStrategy,
+    EndSlideStrategy,
+)
+```
+
+### 策略文件的导入
+```python
+from .base import SlideStrategy
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+```
+
+## 迁移计划
+
+### 阶段1: 拆分策略类 (推荐先做)
+- 创建各个策略文件
+- 移动对应的类代码
+- 调整导入
+
+### 阶段2: 拆分主类
+- 提取 PresentationGenerator
+- 提取入口函数
+- 创建 generator.py 和 main.py
+
+### 阶段3: 更新入口
+- 修改 __init__.py
+- 确保向后兼容
+
+### 阶段4: 测试验证
+- 运行所有测试
+- 修复可能的导入问题
+- 验证PPT生成
+
+### 阶段5: 清理
+- 删除或备份原文件
+- 更新文档
+
+## 注意事项
+
+### 1. 循环导入问题
+- 策略文件不能导入 generator.py
+- 策略文件可以导入 config.py 和 text_processor.py
+
+### 2. 共享代码
+- `SlideStrategy` 基类包含所有共享方法
+- 各个策略继承基类
+
+### 3. 导入顺序
+```python
+# 正确的导入顺序
+from .config import SlideConfig
+from .text_processor import TextProcessor
+from .strategies.base import SlideStrategy
+```
+
+### 4. 类型提示
+- 使用 `from typing import List, Dict, Optional, Tuple, Any`
+- 确保类型提示完整
+
+## 向后兼容性
+
+为了保持向后兼容，在 `__init__.py` 中重新导出所有公共类：
+
+```python
+# __init__.py
+from .config import SlideConfig
+from .text_processor import TextProcessor
+from .generator import PresentationGenerator
+from .strategies import *
+from .main import start_generate_presentation
+
+__all__ = [
+    'SlideConfig',
+    'TextProcessor',
+    'PresentationGenerator',
+    'start_generate_presentation',
+    # ... 所有策略类
+]
+```
+
+这样现有代码不需要修改导入语句，继续工作：
+```python
+from utils.save_ppt.ppt_generator import PresentationGenerator
+from utils.save_ppt.ppt_generator import start_generate_presentation
+```
+
+## 总结
+
+拆分后：
+- ✅ 文件更小，易于查看
+- ✅ 职责更清晰，易于维护
+- ✅ 测试更简单，易于扩展
+- ✅ 保持向后兼容，不影响现有代码

@@ -15,7 +15,6 @@ import os
 import json
 from pathlib import Path
 
-
 class ToolCategory(str, Enum):
     """工具类别"""
     SEARCH = "search"
@@ -24,7 +23,6 @@ class ToolCategory(str, Enum):
     VECTOR = "vector"
     UTILITY = "utility"
     MCP = "mcp"
-
 
 @dataclass
 class ToolMetadata:
@@ -53,7 +51,6 @@ class ToolMetadata:
         if self.parameters is None:
             self.parameters = {}
 
-
 @dataclass
 class ToolRegistration:
     """
@@ -68,7 +65,6 @@ class ToolRegistration:
     metadata: ToolMetadata
     tool_func: Optional[Callable] = None
     tool_class: Optional[Type] = None
-
 
 class UnifiedToolRegistry:
     """
@@ -388,10 +384,8 @@ class UnifiedToolRegistry:
             "categories": {cat.value: len(names) for cat, names in self._categories.items()},
         }
 
-
 # Global registry instance
 _global_registry: Optional[UnifiedToolRegistry] = None
-
 
 def get_unified_registry() -> UnifiedToolRegistry:
     """
@@ -406,7 +400,6 @@ def get_unified_registry() -> UnifiedToolRegistry:
         # Auto-register built-in tools
         _register_builtin_tools(_global_registry)
     return _global_registry
-
 
 def _register_builtin_tools(registry: UnifiedToolRegistry) -> None:
     """
@@ -544,7 +537,6 @@ def _register_builtin_tools(registry: UnifiedToolRegistry) -> None:
     except Exception as e:
         print(f"Warning: Auto-discovery failed: {e}")
 
-
 # Convenience functions
 def register_tool(
     name: str,
@@ -574,7 +566,6 @@ def register_tool(
     )
     registry.register(metadata, tool_func, tool_class)
 
-
 def get_tool(tool_name: str) -> Optional[ToolRegistration]:
     """
     获取工具的便捷函数
@@ -587,7 +578,6 @@ def get_tool(tool_name: str) -> Optional[ToolRegistration]:
     """
     return get_unified_registry().get_tool(tool_name)
 
-
 def list_all_tools(enabled_only: bool = False) -> List[str]:
     """
     列出所有工具的便捷函数
@@ -599,7 +589,6 @@ def list_all_tools(enabled_only: bool = False) -> List[str]:
         工具名称列表
     """
     return get_unified_registry().list_tools(enabled_only=enabled_only)
-
 
 if __name__ == "__main__":
     # 测试代码

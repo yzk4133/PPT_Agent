@@ -15,9 +15,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-
 logger = logging.getLogger(__name__)
-
 
 @dataclass
 class CacheEntry:
@@ -66,7 +64,6 @@ class CacheEntry:
             "expired": self.is_expired()
         }
 
-
 @dataclass
 class CacheStats:
     """
@@ -111,7 +108,6 @@ class CacheStats:
             "hit_rate": round(self.hit_rate * 100, 2),
             "miss_rate": round((1 - self.hit_rate) * 100, 2)
         }
-
 
 class AgentCache:
     """
@@ -448,11 +444,9 @@ class AgentCache:
 
         logger.debug(f"Evicted LRU entry: {lru_key[:50]}...")
 
-
 # Global cache instance
 _global_cache: Optional[AgentCache] = None
 _cache_lock = threading.Lock()
-
 
 def get_agent_cache() -> AgentCache:
     """
@@ -467,7 +461,6 @@ def get_agent_cache() -> AgentCache:
             _global_cache = AgentCache()
         return _global_cache
 
-
 def reset_agent_cache() -> AgentCache:
     """
     Reset the global agent cache with a new instance.
@@ -479,7 +472,6 @@ def reset_agent_cache() -> AgentCache:
     with _cache_lock:
         _global_cache = AgentCache()
         return _global_cache
-
 
 # Decorator for automatic caching
 def cached(ttl_seconds: Optional[int] = None):
@@ -517,7 +509,6 @@ def cached(ttl_seconds: Optional[int] = None):
             return result
         return wrapper
     return decorator
-
 
 if __name__ == "__main__":
     # Test the cache

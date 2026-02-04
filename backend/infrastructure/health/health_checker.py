@@ -17,14 +17,12 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
-
 class HealthStatus(str, Enum):
     """健康状态枚举"""
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     UNKNOWN = "unknown"
-
 
 @dataclass
 class HealthCheckResult:
@@ -47,7 +45,6 @@ class HealthCheckResult:
             "response_time_ms": self.response_time_ms,
         }
 
-
 @dataclass
 class SystemHealthReport:
     """
@@ -66,7 +63,6 @@ class SystemHealthReport:
             "checks": {k: v.to_dict() for k, v in self.checks.items()},
             "summary": self.summary,
         }
-
 
 class HealthChecker:
     """
@@ -242,7 +238,6 @@ class HealthChecker:
         """
         return self._last_results.get(name)
 
-
 # 预定义的健康检查函数
 
 async def check_postgresql(db_manager) -> HealthCheckResult:
@@ -268,7 +263,6 @@ async def check_postgresql(db_manager) -> HealthCheckResult:
             message=f"PostgreSQL check failed: {str(e)}",
         )
 
-
 async def check_redis(db_manager) -> HealthCheckResult:
     """
     检查 Redis 健康状态
@@ -291,7 +285,6 @@ async def check_redis(db_manager) -> HealthCheckResult:
             status=HealthStatus.UNHEALTHY,
             message=f"Redis check failed: {str(e)}",
         )
-
 
 async def check_llm_provider(provider: str, api_key: Optional[str] = None) -> HealthCheckResult:
     """
@@ -318,7 +311,6 @@ async def check_llm_provider(provider: str, api_key: Optional[str] = None) -> He
             message=f"{provider} API key not configured",
             details={"provider": provider},
         )
-
 
 async def check_cache(cache) -> HealthCheckResult:
     """
@@ -347,7 +339,6 @@ async def check_cache(cache) -> HealthCheckResult:
             message=f"Cache check failed: {str(e)}",
         )
 
-
 async def check_mcp_tools(mcp_manager) -> HealthCheckResult:
     """
     检查 MCP 工具健康状态
@@ -372,10 +363,8 @@ async def check_mcp_tools(mcp_manager) -> HealthCheckResult:
             message=f"MCP tools check failed: {str(e)}",
         )
 
-
 # 全局单例
 _global_health_checker: Optional[HealthChecker] = None
-
 
 def get_health_checker() -> HealthChecker:
     """
@@ -388,7 +377,6 @@ def get_health_checker() -> HealthChecker:
     if _global_health_checker is None:
         _global_health_checker = HealthChecker()
     return _global_health_checker
-
 
 async def setup_default_checks(db_manager=None, cache=None, mcp_manager=None):
     """
@@ -423,7 +411,6 @@ async def setup_default_checks(db_manager=None, cache=None, mcp_manager=None):
             lambda: check_mcp_tools(mcp_manager),
         )
 
-
 # 便捷函数
 async def check_system_health() -> Dict[str, Any]:
     """
@@ -435,7 +422,6 @@ async def check_system_health() -> Dict[str, Any]:
     checker = get_health_checker()
     report = await checker.check_health()
     return report.to_dict()
-
 
 async def check_component_health(name: str) -> Dict[str, Any]:
     """
@@ -450,7 +436,6 @@ async def check_component_health(name: str) -> Dict[str, Any]:
     checker = get_health_checker()
     result = await checker.check_component(name)
     return result.to_dict()
-
 
 if __name__ == "__main__":
     # 测试健康检查系统

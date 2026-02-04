@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, AsyncIterator
 from dataclasses import dataclass
 
-
 @dataclass
 class IAgentConfig:
     """
@@ -30,7 +29,6 @@ class IAgentConfig:
     max_tokens: int = 4096
     timeout: int = 60
     enable_fallback: bool = True
-
 
 @dataclass
 class IAgentContext:
@@ -63,7 +61,6 @@ class IAgentContext:
         """设置状态值"""
         self.state[key] = value
 
-
 @dataclass
 class IAgentResult:
     """
@@ -88,7 +85,6 @@ class IAgentResult:
             self.metadata = {}
         if self.events is None:
             self.events = []
-
 
 class IAgent(ABC):
     """
@@ -143,7 +139,6 @@ class IAgent(ABC):
         """
         pass
 
-
 class ITopicSplitterAgent(IAgent):
     """
     主题拆分Agent接口
@@ -168,7 +163,6 @@ class ITopicSplitterAgent(IAgent):
             主题列表
         """
         pass
-
 
 class IResearchAgent(IAgent):
     """
@@ -213,7 +207,6 @@ class IResearchAgent(IAgent):
         """
         pass
 
-
 class IContentGeneratorAgent(IAgent):
     """
     内容生成Agent接口
@@ -238,7 +231,6 @@ class IContentGeneratorAgent(IAgent):
             生成的内容
         """
         pass
-
 
 class ISlideWriterAgent(IContentGeneratorAgent):
     """
@@ -285,7 +277,6 @@ class ISlideWriterAgent(IContentGeneratorAgent):
         """
         pass
 
-
 class IQualityCheckerAgent(IAgent):
     """
     质量检查Agent接口
@@ -312,7 +303,6 @@ class IQualityCheckerAgent(IAgent):
             检查结果，包含 pass/fail 和建议
         """
         pass
-
 
 # Agent工厂接口
 class IAgentFactory(ABC):
@@ -341,7 +331,6 @@ class IAgentFactory(ABC):
     def create_quality_checker(self, config: IAgentConfig) -> IQualityCheckerAgent:
         """创建质量检查Agent"""
         pass
-
 
 if __name__ == "__main__":
     # 测试代码

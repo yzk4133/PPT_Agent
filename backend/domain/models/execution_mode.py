@@ -7,7 +7,6 @@ two-phase PPT generation workflow.
 
 from enum import Enum
 
-
 class ExecutionMode(str, Enum):
     """
     MasterCoordinator执行模式
@@ -65,7 +64,6 @@ class ExecutionMode(str, Enum):
                 f"Invalid execution mode: {value}. "
                 f"Valid values are: {', '.join([m.value for m in cls])}"
             )
-
 
 if __name__ == "__main__":
     # 测试代码

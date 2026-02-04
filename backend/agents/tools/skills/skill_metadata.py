@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Dict, Any, Optional
 
-
 class SkillCategory(Enum):
     """Categories for organizing skills"""
 
@@ -22,7 +21,6 @@ class SkillCategory(Enum):
     EXTERNAL = "external"
     UTILITY = "utility"
     COMMUNICATION = "communication"
-
 
 @dataclass
 class SkillMetadata:
@@ -137,7 +135,6 @@ class SkillMetadata:
             examples=data.get("examples", []),
         )
 
-
 @dataclass
 class SkillMethodMetadata:
     """
@@ -161,7 +158,6 @@ class SkillMethodMetadata:
             "examples": self.examples,
             "async_method": self.async_method,
         }
-
 
 @dataclass
 class MarkdownSkillMetadata(SkillMetadata):

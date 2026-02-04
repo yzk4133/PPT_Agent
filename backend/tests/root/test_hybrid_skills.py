@@ -12,10 +12,8 @@ import sys
 import os
 
 # 添加 backend 到路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from skill_framework import SkillManager, SkillCategory
-
 
 def test_markdown_skill_loading():
     """测试 Markdown 技能是否正确加载"""
@@ -54,7 +52,6 @@ def test_markdown_skill_loading():
 
     return len(descriptive_skills) >= len(expected_ids)
 
-
 def test_descriptive_content_for_prompt():
     """测试描述性技能是否可以格式化为 prompt"""
     print("\n" + "=" * 60)
@@ -82,7 +79,6 @@ def test_descriptive_content_for_prompt():
 
     return len(content) > 0
 
-
 def test_get_skills_for_agent():
     """测试为 Agent 获取混合技能"""
     print("\n" + "=" * 60)
@@ -105,7 +101,6 @@ def test_get_skills_for_agent():
         print(f"  - {skill['name']} (ID: {skill['skill_id']})")
 
     return len(skills['descriptive']) > 0
-
 
 def test_get_descriptive_skill_info():
     """测试获取描述性技能的详细信息"""
@@ -131,7 +126,6 @@ def test_get_descriptive_skill_info():
         print("获取技能信息失败")
         return False
 
-
 def test_registry_stats():
     """测试注册表统计"""
     print("\n" + "=" * 60)
@@ -152,7 +146,6 @@ def test_registry_stats():
     print(f"  总标签数: {stats['total_tags']}")
 
     return stats['descriptive_skills'] > 0
-
 
 def main():
     """运行所有测试"""
@@ -199,7 +192,6 @@ def main():
     else:
         print(f"\n*** {total - passed} 个测试失败 ***")
         return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())

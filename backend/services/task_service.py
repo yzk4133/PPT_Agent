@@ -31,7 +31,6 @@ from agents.orchestrator.components.revision_handler import (
 
 logger = logging.getLogger(__name__)
 
-
 class TaskService:
     """
     任务管理服务
@@ -309,10 +308,8 @@ class TaskService:
         """生成任务ID"""
         return f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{id(object())}"
 
-
 # 全局任务服务实例
 _global_task_service: Optional[TaskService] = None
-
 
 def get_task_service() -> TaskService:
     """
@@ -325,7 +322,6 @@ def get_task_service() -> TaskService:
     if _global_task_service is None:
         _global_task_service = TaskService()
     return _global_task_service
-
 
 if __name__ == "__main__":
     # 测试代码

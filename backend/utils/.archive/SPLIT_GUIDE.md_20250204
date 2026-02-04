@@ -1,0 +1,432 @@
+# PPT生成器文件拆分 - 执行指南
+
+## 当前进度
+
+### ✅ 已完成
+1. 创建 `strategies/` 目录
+2. 拆分 `config.py` (120行) - 配置类
+3. 拆分 `text_processor.py` (75行) - 文本处理工具
+4. 创建 `strategies/__init__.py` - 策略包初始化
+5. 创建拆分计划文档 `REFACTOR_PLAN.md`
+
+### 📋 待完成
+- 拆分 8个策略类文件 (~770行)
+- 拆分 `generator.py` (~300行)
+- 拆分 `main.py` (~20行)
+- 更新 `__init__.py`
+- 验证功能
+
+---
+
+## 详细拆分步骤
+
+### 第1步: 拆分 SlideStrategy 基类
+
+创建 `strategies/base.py`，包含：
+
+**内容** (约290行):
+```python
+# 导入部分
+import re
+import logging
+from typing import Dict, List, Optional, Tuple, Any
+from abc import ABC, abstractmethod
+from pptx import Presentation
+from pptx.util import Pt, Inches
+from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+import requests
+from io import BytesIO
+from PIL import Image
+import datetime
+
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+
+# SlideStrategy 类 (包含所有共享方法)
+class SlideStrategy(ABC):
+    """幻灯片生成策略的抽象基类"""
+    def __init__(self, presentation: Presentation, config: SlideConfig):
+        # ... 完整实现
+        pass
+
+    @abstractmethod
+    def create_slide(self, *args, **kwargs):
+        pass
+
+    def _log_slide_shapes(self, slide, slide_type: str):
+        # ... 完整实现
+        pass
+
+    def _get_slide_layout(self, layout_key: str):
+        # ... 完整实现
+        pass
+
+    # ... 其他所有共享方法
+```
+
+**从 ppt_generator.py 复制的行数**: 196-480
+
+---
+
+### 第2步: 拆分各个策略类
+
+#### 2.1 title_slide.py
+从 ppt_generator.py 第482-519行复制 `TitleSlideStrategy` 类
+
+**导入**:
+```python
+from .base import SlideStrategy
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+import datetime
+```
+
+---
+
+#### 2.2 content_slide.py
+从 ppt_generator.py 第520-577行复制 `ContentSlideStrategy` 类
+
+**导入**:
+```python
+from .base import SlideStrategy
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+```
+
+---
+
+#### 2.3 toc_slide.py
+从 ppt_generator.py 第578-632行复制 `TableOfContentsSlideStrategy` 类
+
+**导入**:
+```python
+from .base import SlideStrategy
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+import random
+```
+
+---
+
+#### 2.4 image_slide.py
+从 ppt_generator.py 第633-776行复制 `ImageSlideStrategy` 类
+
+**导入**:
+```python
+from .base import SlideStrategy
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+import requests
+from io import BytesIO
+from PIL import Image
+```
+
+---
+
+#### 2.5 subsection_slide.py
+从 ppt_generator.py 第777-856行复制 `SubSectionSlideStrategy` 类
+
+**导入**:
+```python
+from .base import SlideStrategy
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+```
+
+---
+
+#### 2.6 references_slide.py
+从 ppt_generator.py 第857-938行复制 `ReferencesSlideStrategy` 类
+
+**导入**:
+```python
+from .base import SlideStrategy
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+```
+
+---
+
+#### 2.7 end_slide.py
+从 ppt_generator.py 第939-950行复制 `EndSlideStrategy` 类
+
+**导入**:
+```python
+from .base import SlideStrategy
+from ..config import SlideConfig
+from ..text_processor import TextProcessor
+```
+
+---
+
+### 第3步: 拆分主类
+
+#### 3.1 创建 generator.py
+从 ppt_generator.py 第958-1268行复制 `PresentationGenerator` 类
+
+**导入**:
+```python
+import re
+import json
+import logging
+import os
+from typing import Dict, List, Optional, Tuple, Any
+from pptx import Presentation
+from pptx.util import Pt, Inches
+
+from .config import SlideConfig
+from .text_processor import TextProcessor
+from .strategies import (
+    TitleSlideStrategy,
+    ContentSlideStrategy,
+    TableOfContentsSlideStrategy,
+    ImageSlideStrategy,
+    SubSectionSlideStrategy,
+    ReferencesSlideStrategy,
+    EndSlideStrategy,
+)
+```
+
+---
+
+#### 3.2 创建 main.py
+从 ppt_generator.py 第1269-1273行复制 `start_generate_presentation` 函数
+
+**导入**:
+```python
+import json
+import sys
+import os
+from typing import Any, Optional
+
+from .generator import PresentationGenerator
+```
+
+---
+
+### 第4步: 更新 __init__.py
+
+创建/更新 `save_ppt/__init__.py`:
+
+```python
+"""
+PPT生成器模块
+
+用于从JSON数据生成PowerPoint演示文稿
+"""
+
+# 配置和工具
+from .config import SlideConfig
+from .text_processor import TextProcessor
+
+# 主生成器
+from .generator import PresentationGenerator
+from .main import start_generate_presentation
+
+# 策略
+from .strategies import (
+    SlideStrategy,
+    TitleSlideStrategy,
+    ContentSlideStrategy,
+    TableOfContentsSlideStrategy,
+    ImageSlideStrategy,
+    SubSectionSlideStrategy,
+    ReferencesSlideStrategy,
+    EndSlideStrategy,
+)
+
+__all__ = [
+    # 配置和工具
+    'SlideConfig',
+    'TextProcessor',
+
+    # 主生成器
+    'PresentationGenerator',
+    'start_generate_presentation',
+
+    # 策略
+    'SlideStrategy',
+    'TitleSlideStrategy',
+    'ContentSlideStrategy',
+    'TableOfContentsSlideStrategy',
+    'ImageSlideStrategy',
+    'SubSectionSlideStrategy',
+    'ReferencesSlideStrategy',
+    'EndSlideStrategy',
+]
+
+# 向后兼容：保留原导入路径
+__legacy__all__ = [
+    'SlideConfig',
+    'TextProcessor',
+    'PresentationGenerator',
+    'start_generate_presentation',
+]
+
+# 保留对 ppt_generator 的兼容（如果需要）
+try:
+    from . import ppt_generator
+    __all__.extend(dir(ppt_generator))
+except ImportError:
+    pass
+```
+
+---
+
+## 快速执行命令
+
+如果您想手动执行拆分，这里有一些命令可以帮助：
+
+```bash
+cd backend/utils/save_ppt
+
+# 1. 创建策略基类 (手动复制相应行)
+# 复制 ppt_generator.py 第196-480行到 strategies/base.py
+
+# 2. 创建各个策略文件 (手动复制相应行)
+# title_slide.py: 第482-519行
+# content_slide.py: 第520-577行
+# 等等...
+
+# 3. 验证文件结构
+python -c "
+import os
+files = [
+    'config.py',
+    'text_processor.py',
+    'strategies/__init__.py',
+    'strategies/base.py',
+    'strategies/title_slide.py',
+    'strategies/content_slide.py',
+    'strategies/toc_slide.py',
+    'strategies/image_slide.py',
+    'strategies/subsection_slide.py',
+    'strategies/references_slide.py',
+    'strategies/end_slide.py',
+    'generator.py',
+    'main.py'
+]
+print('待创建文件:', len(files))
+for f in files:
+    exists = os.path.exists(f)
+    print(f'  {f}: {'✅' if exists else '❌'}')
+"
+```
+
+---
+
+## 文件创建检查清单
+
+- [ ] config.py ✅
+- [ ] text_processor.py ✅
+- [ ] strategies/__init__.py ✅
+- [ ] strategies/base.py ⏳
+- [ ] strategies/title_slide.py ⏳
+- [ ] strategies/content_slide.py ⏳
+- [ ] strategies/toc_slide.py ⏳
+- [ ] strategies/image_slide.py ⏳
+- [ ] strategies/subsection_slide.py ⏳
+- [ ] strategies/references_slide.py ⏳
+- [ ] strategies/end_slide.py ⏳
+- [ ] generator.py ⏳
+- [ ] main.py ⏳
+- [ ] __init__.py ⏳
+- [ ] ppt_generator.py (保留备份) ⏳
+
+---
+
+## 拆分前后对比
+
+### 拆分前
+```
+ppt_generator.py
+├── 2055行
+├── 1个配置类
+├── 1个工具类
+├── 1个抽象基类
+├── 7个具体策略类
+├── 1个生成器类
+└── 1个入口函数
+```
+
+### 拆分后
+```
+save_ppt/
+├── config.py (120行) ← 配置集中管理
+├── text_processor.py (75行) ← 文本工具独立
+├── strategies/ ← 策略模块化
+│   ├── base.py (290行)
+│   ├── title_slide.py (30行)
+│   ├── content_slide.py (160行)
+│   ├── toc_slide.py (55行)
+│   ├── image_slide.py (145行)
+│   ├── subsection_slide.py (80行)
+│   ├── references_slide.py (85行)
+│   └── end_slide.py (15行)
+├── generator.py (300行) ← 主生成器
+├── main.py (20行) ← 入口函数
+└── ppt_generator.py (2055行) ← 原文件备份
+```
+
+---
+
+## 下一步行动
+
+### 选项A: 手动拆分 (推荐)
+1. 按照上述指南手动创建各个文件
+2. 从原文件复制对应代码段
+3. 添加必要的导入语句
+4. 测试验证
+
+**优点**: 更可控，可以边拆分边测试
+**缺点**: 工作量较大
+
+### 选项B: 使用脚本拆分
+1. 完善 `split_ppt_generator.py` 脚本
+2. 运行脚本自动拆分
+3. 检查和修复导入问题
+
+**优点**: 快速
+**缺点**: 可能需要调试脚本
+
+### 选项C: 混合方式
+1. 手动拆分核心文件（策略类）
+2. 使用脚本或手动拆分主类
+3. 逐步验证
+
+**优点**: 平衡速度和可控性
+**缺点**: 需要仔细协调
+
+---
+
+## 建议
+
+考虑到文件拆分的复杂性，我建议：
+
+1. **先保持当前状态**
+   - config.py 和 text_processor.py 已经拆分 ✅
+   - 原文件 ppt_generator.py 暂时保留
+
+2. **逐步拆分**
+   - 一次拆分2-个策略文件
+   - 每次拆分后进行测试验证
+   - 确保功能正常后继续
+
+3. **优先级**
+   - 高优先级: base.py, generator.py (核心)
+   - 中优先级: 常用策略 (title, content)
+   - 低优先级: 较少使用的策略
+
+4. **保持兼容**
+   - 原导入路径继续有效
+   - 测试代码不需要大幅修改
+
+---
+
+## 总结
+
+✅ **已完成**: 基础设施准备（config, text_processor, strategies目录）
+⏳ **待完成**: 策略类和主类的拆分
+
+如果您希望我继续完成拆分，我可以帮您逐步拆分剩余的文件。请告诉我您想采用哪种方式（手动/脚本/混合）？

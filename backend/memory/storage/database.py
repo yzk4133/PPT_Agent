@@ -15,7 +15,6 @@ from .models import Base, CREATE_VECTOR_INDEX_SQL
 
 logger = logging.getLogger(__name__)
 
-
 class DatabaseManager:
     """数据库管理器 - 单例模式"""
 
@@ -125,10 +124,8 @@ class DatabaseManager:
             logger.error(f"Database health check failed: {e}")
             return False
 
-
 # 全局数据库管理器实例
 _db_manager: Optional[DatabaseManager] = None
-
 
 def get_db() -> DatabaseManager:
     """获取数据库管理器实例"""
@@ -137,12 +134,10 @@ def get_db() -> DatabaseManager:
         _db_manager = DatabaseManager()
     return _db_manager
 
-
 def get_db_session() -> Session:
     """获取数据库会话（用于依赖注入）"""
     db = get_db()
     return db.SessionLocal()
-
 
 # 初始化脚本（仅在直接运行时执行）
 if __name__ == "__main__":

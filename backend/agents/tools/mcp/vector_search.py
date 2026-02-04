@@ -13,9 +13,7 @@ from typing import Optional, Dict, Any, List
 
 from .base_mcp_tool import BaseMCPTool
 
-
 logger = logging.getLogger(__name__)
-
 
 class VectorSearchTool(BaseMCPTool):
     """Vector search tool wrapping VectorMemoryService"""
@@ -209,10 +207,8 @@ class VectorSearchTool(BaseMCPTool):
                 details={"collection": collection}
             )
 
-
 # Global instance
 _tool_instance = None
-
 
 def get_tool() -> VectorSearchTool:
     """Get or create the vector search tool instance"""
@@ -220,7 +216,6 @@ def get_tool() -> VectorSearchTool:
     if _tool_instance is None:
         _tool_instance = VectorSearchTool()
     return _tool_instance
-
 
 async def vector_search(
     query: str,

@@ -13,7 +13,6 @@ from sqlalchemy.exc import SQLAlchemyError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 def run_migration():
     """执行数据库迁移"""
 
@@ -230,7 +229,6 @@ def run_migration():
     finally:
         engine.dispose()
 
-
 def rollback_migration():
     """回滚迁移"""
     db_url = os.getenv(
@@ -263,7 +261,6 @@ def rollback_migration():
         raise
     finally:
         engine.dispose()
-
 
 if __name__ == "__main__":
     import argparse

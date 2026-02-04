@@ -14,7 +14,6 @@ from enum import Enum
 from ..entities.base import ValueObject, Serializable
 from ..exceptions import ValidationError
 
-
 class SceneType(str, Enum):
     """使用场景类型"""
     BUSINESS_REPORT = "business_report"  # 商务汇报
@@ -24,7 +23,6 @@ class SceneType(str, Enum):
     CONFERENCE = "conference"            # 会议
     OTHER = "other"                      # 其他
 
-
 class TemplateType(str, Enum):
     """模板类型"""
     BUSINESS = "business_template"       # 商务模板
@@ -32,7 +30,6 @@ class TemplateType(str, Enum):
     CREATIVE = "creative_template"       # 创意模板
     SIMPLE = "simple_template"           # 简约模板
     TECH = "tech_template"               # 科技模板
-
 
 @dataclass(frozen=True)
 class Requirement(ValueObject, Serializable):
@@ -85,13 +82,23 @@ class Requirement(ValueObject, Serializable):
         elif self.page_num > 100:
             errors.append("页数不能超过100")
 
-        # 验证场景类型
-        if self.scene not in SceneType:
-            errors.append(f"无效的场景类型: {self.scene}")
+        # 验证场景类型（处理Python 3.11+的Enum兼容性）
+        try:
+            if self.scene not in SceneType:
+                errors.append(f"无效的场景类型: {self.scene}")
+        except TypeError:
+            # Python 3.11+中，字符串与Enum比较会抛出TypeError
+            if not isinstance(self.scene, SceneType):
+                errors.append(f"无效的场景类型: {self.scene}")
 
-        # 验证模板类型
-        if self.template_type not in TemplateType:
-            errors.append(f"无效的模板类型: {self.template_type}")
+        # 验证模板类型（处理Python 3.11+的Enum兼容性）
+        try:
+            if self.template_type not in TemplateType:
+                errors.append(f"无效的模板类型: {self.template_type}")
+        except TypeError:
+            # Python 3.11+中，字符串与Enum比较会抛出TypeError
+            if not isinstance(self.template_type, TemplateType):
+                errors.append(f"无效的模板类型: {self.template_type}")
 
         # 检查核心模块数量
         if self.core_modules and len(self.core_modules) > self.page_num:
@@ -212,7 +219,6 @@ class Requirement(ValueObject, Serializable):
     def __str__(self) -> str:
         return f"Requirement(topic='{self.ppt_topic}', pages={self.page_num}, template={self.template_type.value})"
 
-
 @dataclass
 class RequirementAnalysis:
     """
@@ -240,7 +246,6 @@ class RequirementAnalysis:
             "ambiguous_fields": self.ambiguous_fields,
             "suggestions": self.suggestions
         }
-
 
 if __name__ == "__main__":
     # 测试代码

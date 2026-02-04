@@ -23,7 +23,6 @@ from .base_mcp_tool import BaseMCPTool
 
 logger = logging.getLogger(__name__)
 
-
 class WeChatSearchTool(BaseMCPTool):
     """
     WeChat Article Search Tool
@@ -227,10 +226,8 @@ class WeChatSearchTool(BaseMCPTool):
             logger.error(f"Get article content failed: {e}")
             return f"获取文章内容失败: {str(e)}"
 
-
 # 创建全局实例
 _weixin_search_tool = WeChatSearchTool()
-
 
 # 导出函数式接口（与 agents 工具兼容）
 async def weixin_search(
@@ -258,7 +255,6 @@ async def weixin_search(
         tool_context=tool_context
     )
 
-
 # 便捷函数
 async def search_wechat_articles(query: str, num_results: int = 5) -> List[Dict[str, Any]]:
     """
@@ -276,7 +272,6 @@ async def search_wechat_articles(query: str, num_results: int = 5) -> List[Dict[
     if data.get("success"):
         return data["result"]["articles"]
     return []
-
 
 if __name__ == "__main__":
     # 测试代码

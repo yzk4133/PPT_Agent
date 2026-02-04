@@ -24,13 +24,11 @@ from google.genai import types
 from google.adk.events.event import Event
 
 # 导入基础设施
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 # 导入领域模型
 from domain.models import Requirement, TemplateType
 
 logger = logging.getLogger(__name__)
-
 
 class TemplateRendererAgent(BaseAgent):
     """
@@ -377,10 +375,8 @@ class TemplateRendererAgent(BaseAgent):
             "created_at": datetime.now().isoformat()
         }
 
-
 # 创建全局实例
 template_renderer_agent = TemplateRendererAgent()
-
 
 if __name__ == "__main__":
     # 测试代码

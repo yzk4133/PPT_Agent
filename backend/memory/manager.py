@@ -29,7 +29,6 @@ from .promotion import (
 
 logger = logging.getLogger(__name__)
 
-
 class HierarchicalMemoryManager:
     """三层内存架构的统一管理器"""
 
@@ -481,10 +480,8 @@ class HierarchicalMemoryManager:
             return await self.promotion_engine.get_promotion_history(limit, **filters)
         return []
 
-
 # 全局单例（可选）
 _global_memory_manager: Optional[HierarchicalMemoryManager] = None
-
 
 def get_global_memory_manager() -> HierarchicalMemoryManager:
     """获取全局内存管理器实例"""
@@ -493,14 +490,12 @@ def get_global_memory_manager() -> HierarchicalMemoryManager:
         _global_memory_manager = HierarchicalMemoryManager()
     return _global_memory_manager
 
-
 async def init_global_memory_manager(**kwargs):
     """初始化全局内存管理器"""
     global _global_memory_manager
     _global_memory_manager = HierarchicalMemoryManager(**kwargs)
     await _global_memory_manager.start_background_tasks()
     return _global_memory_manager
-
 
 async def shutdown_global_memory_manager():
     """关闭全局内存管理器"""

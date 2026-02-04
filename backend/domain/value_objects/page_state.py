@@ -9,7 +9,6 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 from enum import Enum
 
-
 class PageStatus(str, Enum):
     """页面处理状态"""
     PENDING = "pending"
@@ -18,7 +17,6 @@ class PageStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
-
 
 @dataclass
 class PageState:
@@ -176,7 +174,6 @@ class PageState:
             metadata=data.get("metadata", {})
         )
 
-
 class PageStateManager:
     """
     页面状态管理器
@@ -308,7 +305,6 @@ class PageStateManager:
             "pages": [s.to_dict() for s in self.page_states.values()]
         }
 
-
 @dataclass
 class PagePipelineConfig:
     """
@@ -348,7 +344,6 @@ class PagePipelineConfig:
             timeout_per_page=data.get("timeout_per_page", 300),
             retry_limit=data.get("retry_limit", 2)
         )
-
 
 @dataclass
 class PagePipelineResult:
@@ -407,7 +402,6 @@ class PagePipelineResult:
             page_states=manager.get_all_states(),
             errors=errors or []
         )
-
 
 if __name__ == "__main__":
     # 测试代码

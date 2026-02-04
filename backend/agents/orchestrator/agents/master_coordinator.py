@@ -33,7 +33,6 @@ from google.genai import types
 from google.adk.events.event import Event
 
 # 导入基础设施
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # 导入领域模型
 from domain.models import Task, TaskStatus, TaskStage
@@ -60,7 +59,6 @@ except ImportError:
     PagePipelineConfig = None
 
 logger = logging.getLogger(__name__)
-
 
 class MasterCoordinatorAgent(BaseAgent):
     """
@@ -635,10 +633,8 @@ class MasterCoordinatorAgent(BaseAgent):
         """生成任务ID"""
         return f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
-
 # 创建全局实例
 master_coordinator_agent = MasterCoordinatorAgent()
-
 
 if __name__ == "__main__":
     # 测试代码

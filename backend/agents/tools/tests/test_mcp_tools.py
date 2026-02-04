@@ -17,7 +17,6 @@ import asyncio
 import json
 from pathlib import Path
 
-
 class TestWebSearch:
     """Tests for web_search tool"""
 
@@ -56,7 +55,6 @@ class TestWebSearch:
         assert data["success"] == False
         assert "UNSUPPORTED_ENGINE" in data["error"].get("code", "")
 
-
 class TestFetchUrl:
     """Tests for fetch_url tool"""
 
@@ -89,7 +87,6 @@ class TestFetchUrl:
         data = json.loads(result)
         assert data["success"] == False
         assert "timeout" in data["error"].get("message", "").lower() or "TIMEOUT" in data["error"].get("code", "")
-
 
 class TestSearchImages:
     """Tests for search_images tool"""
@@ -129,7 +126,6 @@ class TestSearchImages:
         data = json.loads(result)
         assert data["success"] == False
         assert "UNSUPPORTED_SOURCE" in data["error"].get("code", "")
-
 
 class TestCreatePptx:
     """Tests for create_pptx tool"""
@@ -189,7 +185,6 @@ class TestCreatePptx:
 
         data = json.loads(result)
         assert data["success"] == True
-
 
 class TestStateStore:
     """Tests for state_store tool"""
@@ -294,7 +289,6 @@ class TestStateStore:
         get_data = json.loads(get_result)
         assert get_data["result"]["value"] is None
 
-
 class TestVectorSearch:
     """Tests for vector_search tool"""
 
@@ -315,7 +309,6 @@ class TestVectorSearch:
         if not data["success"]:
             # Should fail with service unavailable message
             assert "SERVICE" in data.get("error", {}).get("code", "")
-
 
 class TestMCPToolsIntegration:
     """Integration tests for MCP tools"""
@@ -341,7 +334,6 @@ class TestMCPToolsIntegration:
             tool = registry.get_tool(tool_name)
             assert tool is not None, f"Tool {tool_name} not registered"
             assert tool.metadata.enabled == True, f"Tool {tool_name} is not enabled"
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

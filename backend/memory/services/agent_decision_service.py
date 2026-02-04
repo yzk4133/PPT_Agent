@@ -15,7 +15,6 @@ from ..storage.redis_cache import RedisCache
 
 logger = logging.getLogger(__name__)
 
-
 class AgentDecisionService:
     """Agent决策追踪服务"""
 

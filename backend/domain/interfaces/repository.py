@@ -12,11 +12,9 @@ from ..models.research import ResearchResult, ResearchResults
 from ..models.slide import Slide, SlideList
 from ..models.presentation import Presentation, PresentationRequest
 
-
 # 泛型类型变量
 T = TypeVar('T')
 ID = TypeVar('ID')
-
 
 class IRepository(ABC, Generic[T, ID]):
     """
@@ -86,7 +84,6 @@ class IRepository(ABC, Generic[T, ID]):
             更新后的实体
         """
         pass
-
 
 class IPresentationRepository(IRepository[Presentation, str]):
     """
@@ -162,7 +159,6 @@ class IPresentationRepository(IRepository[Presentation, str]):
         """
         pass
 
-
 class IUserPreferenceRepository(ABC):
     """
     用户偏好仓储接口
@@ -220,7 +216,6 @@ class IUserPreferenceRepository(ABC):
             是否更新成功
         """
         pass
-
 
 class ICacheRepository(ABC):
     """
@@ -287,7 +282,6 @@ class ICacheRepository(ABC):
             是否存在
         """
         pass
-
 
 class IVectorRepository(ABC):
     """
@@ -356,7 +350,6 @@ class IVectorRepository(ABC):
         """
         pass
 
-
 class ISessionRepository(ABC):
     """
     会话仓储接口
@@ -420,7 +413,6 @@ class ISessionRepository(ABC):
             是否删除成功
         """
         pass
-
 
 if __name__ == "__main__":
     # 测试代码

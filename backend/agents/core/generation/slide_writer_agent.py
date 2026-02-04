@@ -17,7 +17,6 @@ from google.adk.agents.callback_context import CallbackContext
 from google.adk.models import LlmRequest, LlmResponse
 
 # 导入配置和模型创建（从common模块）
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from infrastructure.config.common_config import get_config
 from infrastructure.llm.common_model_factory import create_model_with_fallback, create_model_with_fallback_simple
 from utils.context_compressor import ContextCompressor
@@ -39,7 +38,6 @@ logger = logging.getLogger(__name__)
 XML_PPT_AGENT_NEXT_PAGE_PROMPT_TEMPLATE = PromptManager.get_xml_ppt_generation_prompt
 CHECKER_AGENT_PROMPT_TEMPLATE = PromptManager.get_checker_prompt
 
-
 # ==================== Callback Functions ====================
 def my_before_model_callback(
     callback_context: CallbackContext, llm_request: LlmRequest
@@ -55,7 +53,6 @@ def my_before_model_callback(
         f"调用了{agent_name}模型前的callback, 现在Agent共有{history_length}条历史记录,metadata数据为：{metadata}"
     )
     return None
-
 
 def my_after_model_callback(
     callback_context: CallbackContext, llm_response: LlmResponse
@@ -77,7 +74,6 @@ def my_after_model_callback(
         f"调用了{agent_name}模型后的callback, 这次模型回复{response_parts}条信息,metadata数据为：{metadata},回复内容是: {part_text_content}"
     )
     return None
-
 
 def my_writer_before_agent_callback(callback_context: CallbackContext) -> None:
     """
@@ -155,7 +151,6 @@ def my_writer_before_agent_callback(callback_context: CallbackContext) -> None:
 
     return None
 
-
 def my_after_agent_callback(callback_context: CallbackContext) -> None:
     """
     在LLM生成内容后，将其存储到会话状态中。供下一页ppt生成使用
@@ -178,7 +173,6 @@ def my_after_agent_callback(callback_context: CallbackContext) -> None:
     print(
         f"--- Stored content for slide {callback_context.state.get('current_slide_index', 0) + 1} ---"
     )
-
 
 # ==================== Agents ====================
 class PPTWriterSubAgent(LlmAgent):
@@ -223,7 +217,6 @@ class PPTWriterSubAgent(LlmAgent):
                 ),
             )
 
-
 ppt_writer_sub_agent = PPTWriterSubAgent(
     model="deepseek-chat",  # Simple model string for litellm
     name="PPTWriterSubAgent",
@@ -235,7 +228,6 @@ ppt_writer_sub_agent = PPTWriterSubAgent(
     after_model_callback=my_after_model_callback,
     tools=[search_images],  # 使用新的 MCP 工具
 )
-
 
 class PPTCheckerAgent(LlmAgent):
     """PPT检查Agent"""
@@ -301,14 +293,12 @@ class PPTCheckerAgent(LlmAgent):
 
             yield event
 
-
 ppt_checker_agent = PPTCheckerAgent(
     model="deepseek-chat",  # Simple model string for litellm
     name="PPTCheckerAgent",
     description="检查幻灯片内容是否合格",
     instruction=CHECKER_AGENT_PROMPT,
 )
-
 
 def my_super_before_agent_callback(callback_context: CallbackContext):
     """
@@ -339,7 +329,6 @@ def my_super_before_agent_callback(callback_context: CallbackContext):
     research_outputs_content = "\n\n".join(research_outputs)
     callback_context.state["research_outputs_content"] = research_outputs_content
     return None
-
 
 class SlideLoopConditionAgent(BaseAgent):
     """循环条件检查Agent"""
@@ -375,7 +364,6 @@ class SlideLoopConditionAgent(BaseAgent):
             yield Event(
                 author=self.name, actions=EventActions()
             )
-
 
 # 创建PPT生成循环Agent
 ppt_generator_loop_agent = LoopAgent(

@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 # HTTP Bearer 认证方案
 security = HTTPBearer(auto_error=False)
 
-
 async def get_current_user_optional(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
@@ -50,7 +49,6 @@ async def get_current_user_optional(
     except InvalidTokenException as e:
         logger.warning(f"Invalid token in optional auth: {e.message}")
         return None
-
 
 async def get_current_user(
     request: Request,
@@ -90,7 +88,6 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-
 async def get_current_user_with_db(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -125,7 +122,6 @@ async def get_current_user_with_db(
     except Exception as e:
         logger.error(f"Error loading user from database: {e}")
         return None
-
 
 class RequireAuth:
     """
@@ -171,12 +167,10 @@ class RequireAuth:
             return get_current_user_optional(request, credentials)
         return get_current_user(request, credentials)
 
-
 # 便捷依赖函数
 async def require_auth(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     """需要认证的依赖（便捷函数）"""
     return await get_current_user(request, credentials)
-
 
 async def optional_auth(request: Request, credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Optional[str]:
     """可选认证的依赖（便捷函数）"""

@@ -1,0 +1,20 @@
+# Test outputs
+htmlcov/
+.coverage
+coverage.xml
+.test-results/
+test-results.xml
+
+# Pytest cache
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Test artifacts
+output_ppts/
+*.pptx
+temp/
+
+# OS files
+.DS_Store
+Thumbs.db

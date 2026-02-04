@@ -12,7 +12,6 @@ from typing import List, Type
 
 logger = logging.getLogger(__name__)
 
-
 def discover_mcp_tools(mcp_dir: Path = None) -> List[Type]:
     """
     自动发现MCP工具类
@@ -47,7 +46,6 @@ def discover_mcp_tools(mcp_dir: Path = None) -> List[Type]:
             logger.warning(f"Failed to import {py_file}: {e}")
 
     return tools
-
 
 def auto_register_tools(registry=None) -> int:
     """
@@ -91,7 +89,6 @@ def auto_register_tools(registry=None) -> int:
 
     logger.info(f"Auto-registered {registered_count}/{len(tool_classes)} MCP tools")
     return registered_count
-
 
 if __name__ == "__main__":
     # 测试自动发现

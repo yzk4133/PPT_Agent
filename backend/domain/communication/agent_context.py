@@ -9,14 +9,12 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
-
 class ExecutionMode(str, Enum):
     """执行模式"""
 
     FULL = "full"  # 完整执行所有阶段
     PHASE_1 = "phase_1"  # 仅执行阶段1-2（需求解析+框架设计）
     PHASE_2 = "phase_2"  # 从checkpoint继续执行阶段3-5
-
 
 class AgentStage(str, Enum):
     """Agent执行阶段"""
@@ -27,7 +25,6 @@ class AgentStage(str, Enum):
     CONTENT_GENERATION = "content_generation"
     PAGE_RENDERING = "page_rendering"
     QUALITY_CHECK = "quality_check"
-
 
 @dataclass
 class Requirement:
@@ -53,7 +50,6 @@ class Requirement:
             "key_points": self.key_points,
         }
 
-
 @dataclass
 class PPTFramework:
     """PPT框架模型"""
@@ -71,7 +67,6 @@ class PPTFramework:
             "total_slides": self.total_slides,
             "structure_type": self.structure_type,
         }
-
 
 @dataclass
 class ResearchResult:
@@ -92,7 +87,6 @@ class ResearchResult:
             "images": self.images,
             "confidence": self.confidence,
         }
-
 
 @dataclass
 class SlideContent:
@@ -115,7 +109,6 @@ class SlideContent:
             "images": self.images,
             "notes": self.notes,
         }
-
 
 @dataclass
 class AgentContext:

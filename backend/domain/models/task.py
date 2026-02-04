@@ -11,7 +11,6 @@ from enum import Enum
 
 from .presentation import Presentation
 
-
 class TaskStatus(str, Enum):
     """任务状态"""
     PENDING = "pending"
@@ -24,7 +23,6 @@ class TaskStatus(str, Enum):
     FAILED = "failed"
     REVISION_PENDING = "revision_pending"
 
-
 class TaskStage(str, Enum):
     """任务阶段"""
     REQUIREMENT_PARSING = "requirement_parsing"
@@ -32,7 +30,6 @@ class TaskStage(str, Enum):
     RESEARCH = "research"
     CONTENT_GENERATION = "content_generation"
     TEMPLATE_RENDERING = "template_rendering"
-
 
 @dataclass
 class StageProgress:
@@ -68,7 +65,6 @@ class StageProgress:
             "retry_count": self.retry_count
         }
 
-
 @dataclass
 class TaskMetadata:
     """
@@ -102,7 +98,6 @@ class TaskMetadata:
             "total_duration": self.total_duration,
             "revision_count": self.revision_count
         }
-
 
 @dataclass
 class Task:
@@ -299,7 +294,6 @@ class Task:
 
     def __str__(self) -> str:
         return f"Task(id='{self.id}', status={self.status.value}, progress={self.get_overall_progress()}%)"
-
 
 if __name__ == "__main__":
     # 测试代码

@@ -21,7 +21,6 @@ os.environ["RESEARCH_CACHE_TTL_DAYS"] = "7"
 
 from agents.core.base_agent_with_memory import AgentMemoryMixin
 
-
 # ============================================================================
 # Mock LLM Agent for testing
 # ============================================================================
@@ -35,13 +34,11 @@ class MockLlmAgent:
     def __init_subclass__(cls, **kwargs):
         return super().__init_subclass__(**kwargs)
 
-
 class TestAgentWithMemory(AgentMemoryMixin, MockLlmAgent):
     """测试用的带记忆的Agent"""
 
     def __init__(self, name="TestAgent"):
         super().__init__(name=name)
-
 
 # ============================================================================
 # Test Suite
@@ -173,7 +170,6 @@ class TestAgentMemoryMixin:
         )
         # 即使失败也不应该抛出异常
 
-
 class TestResearchAgentCache:
     """测试ResearchAgent缓存功能"""
 
@@ -257,7 +253,6 @@ class TestResearchAgentCache:
             ttl_minutes=180
         )
 
-
 class TestContentMaterialAgent:
     """测试ContentMaterialAgent记忆集成"""
 
@@ -280,7 +275,6 @@ class TestContentMaterialAgent:
         key = agent._generate_content_cache_key("测试页面", page)
         assert key.startswith("content_")
         assert len(key) == 32  # MD5哈希长度
-
 
 class TestRequirementParserAgent:
     """测试RequirementParserAgent记忆集成"""
@@ -321,7 +315,6 @@ class TestRequirementParserAgent:
         # 验证偏好已应用
         assert ctx.session.state.get("slides_plan_num") == 15
         assert ctx.session.state.get("language") == "ZH-CN"
-
 
 class TestMasterCoordinator:
     """测试MasterCoordinator记忆集成"""
@@ -371,7 +364,6 @@ class TestMasterCoordinator:
 
         # 验证上下文已设置
         assert agent.task_id == "test_task_456"
-
 
 # ============================================================================
 # Integration Tests
@@ -435,7 +427,6 @@ class TestEndToEndIntegration:
             assert shared_data["page_title"] == "电商618"
             assert shared_data["content"] == "618促销活动分析"
 
-
 # ============================================================================
 # Performance Tests
 # ============================================================================
@@ -483,7 +474,6 @@ class TestMemoryPerformance:
         # 打印性能数据
         print(f"\n保存100条记录耗时: {save_duration:.2f}秒")
         print(f"召回{recalled_count}/100条记录耗时: {recall_duration:.2f}秒")
-
 
 # ============================================================================
 # Run Tests

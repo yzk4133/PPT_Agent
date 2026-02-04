@@ -15,9 +15,7 @@ from typing import Optional, Dict, Any, Callable
 from ..skill_decorator import Skill
 from ..skill_metadata import SkillCategory
 
-
 logger = logging.getLogger(__name__)
-
 
 @Skill(
     name="RetryWithBackoffSkill",
@@ -177,7 +175,6 @@ class RetryWithBackoffSkill:
             enabled=True
         )
 
-
 # Convenience function
 async def retry_with_backoff(
     func: Callable,
@@ -216,7 +213,6 @@ async def retry_with_backoff(
         retry_on=retry_on,
         tool_context=tool_context
     )
-
 
 # Decorator version for convenience
 def with_retry(

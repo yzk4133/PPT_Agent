@@ -28,7 +28,6 @@ from ..base_agent_with_memory import AgentMemoryMixin
 
 logger = logging.getLogger(__name__)
 
-
 class ContentMaterialAgentWithMemory(AgentMemoryMixin, ContentMaterialAgent):
     """
     带记忆功能的内容素材智能体
@@ -382,12 +381,10 @@ class ContentMaterialAgentWithMemory(AgentMemoryMixin, ContentMaterialAgent):
             tags=["stats", "content"],
         )
 
-
 # 创建全局实例
 content_material_agent_with_memory = ContentMaterialAgentWithMemory(
     before_agent_callback=before_agent_callback
 )
-
 
 if __name__ == "__main__":
     # 测试代码

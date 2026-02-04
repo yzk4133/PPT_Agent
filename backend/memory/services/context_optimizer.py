@@ -10,7 +10,6 @@ import sys
 import os
 
 # 导入项目模块
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # 渐进式加载功能已被移除（依赖的模块已废弃）
 # 如需重新启用，请使用 backend/agents/tools/skills/ 中的 Skills 框架
@@ -20,7 +19,6 @@ from .vector_memory_service import VectorMemoryService
 from .user_preference_service import UserPreferenceService
 
 logger = logging.getLogger(__name__)
-
 
 class ContextWindowOptimizer:
     """
@@ -362,7 +360,6 @@ class ContextWindowOptimizer:
                 score += 0.2
 
         return min(score, 1.0)
-
 
 # 使用示例
 if __name__ == "__main__":

@@ -19,7 +19,6 @@ except ImportError:
 
 Base = declarative_base()
 
-
 class Session(Base):
     """会话表 - 存储Agent会话状态"""
 
@@ -64,7 +63,6 @@ class Session(Base):
             "updated_at": self.updated_at.isoformat(),
             "metadata": self.session_metadata,
         }
-
 
 class UserProfile(Base):
     """用户配置表 - 存储用户偏好"""
@@ -115,7 +113,6 @@ class UserProfile(Base):
             "version": self.version,
         }
 
-
 class VectorMemory(Base):
     """向量记忆表 - 使用pgvector存储语义向量"""
 
@@ -163,7 +160,6 @@ class VectorMemory(Base):
             "user_id": self.user_id,
         }
 
-
 class ConversationHistory(Base):
     """会话历史表 - 存储对话记录"""
 
@@ -198,7 +194,6 @@ class ConversationHistory(Base):
             "metadata": self.message_metadata,
             "created_at": self.created_at.isoformat(),
         }
-
 
 class AgentDecision(Base):
     """Agent决策表 - 追踪Agent的决策过程和结果"""
@@ -264,7 +259,6 @@ class AgentDecision(Base):
             "created_at": self.created_at.isoformat(),
         }
 
-
 class ToolExecutionFeedback(Base):
     """工具执行反馈表 - 追踪工具调用效果"""
 
@@ -324,7 +318,6 @@ class ToolExecutionFeedback(Base):
             "error_type": self.error_type,
             "created_at": self.created_at.isoformat(),
         }
-
 
 class SharedWorkspaceMemory(Base):
     """共享工作空间记忆表 - Multi-Agent协作数据共享"""
@@ -393,7 +386,6 @@ class SharedWorkspaceMemory(Base):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
-
 
 # 创建向量索引的SQL（需要手动执行或通过迁移脚本）
 CREATE_VECTOR_INDEX_SQL = """

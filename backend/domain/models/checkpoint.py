@@ -12,7 +12,6 @@ from typing import Optional, Dict, Any, List
 
 from .execution_mode import ExecutionMode
 
-
 @dataclass
 class Checkpoint:
     """
@@ -219,7 +218,6 @@ class Checkpoint:
             status="editing"
         )
 
-
 @dataclass
 class CheckpointSummary:
     """
@@ -257,7 +255,6 @@ class CheckpointSummary:
             updated_at=checkpoint.updated_at.isoformat(),
             age_hours=(datetime.now() - checkpoint.created_at).total_seconds() / 3600
         )
-
 
 if __name__ == "__main__":
     # 测试代码

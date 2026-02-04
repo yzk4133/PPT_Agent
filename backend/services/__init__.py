@@ -29,6 +29,8 @@ from .user_service import (
     get_user_service,
     reset_user_service
 )
+from .presentation_service import PresentationService
+from .outline_service import OutlineService
 
 __all__ = [
     "PptGenerationService",
@@ -42,4 +44,6 @@ __all__ = [
     "UserService",
     "get_user_service",
     "reset_user_service",
+    "PresentationService",
+    "OutlineService",
 ]

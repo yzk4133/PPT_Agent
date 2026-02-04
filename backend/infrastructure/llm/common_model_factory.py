@@ -23,9 +23,7 @@ from google.genai.types import (
 
 from ..config.common_config import get_config, ModelProvider, AgentConfig
 
-
 logger = logging.getLogger(__name__)
-
 
 class ModelType(str, Enum):
     """模型类型"""
@@ -33,7 +31,6 @@ class ModelType(str, Enum):
     CHAT = "chat"  # 对话模型
     EMBEDDING = "embedding"  # 嵌入模型
     IMAGE = "image"  # 图像模型
-
 
 @dataclass
 class ModelFallbackResult:
@@ -44,7 +41,6 @@ class ModelFallbackResult:
     model_name: str  # 实际使用的模型名称
     is_fallback: bool  # 是否使用了降级
     fallback_reason: Optional[str] = None  # 降级原因
-
 
 class ModelFactory:
     """模型工厂类"""
@@ -305,10 +301,8 @@ class ModelFactory:
             self._failed_models.clear()
             logger.info("Reset all circuit breakers")
 
-
 # 全局模型工厂实例
 _factory_instance: Optional[ModelFactory] = None
-
 
 def get_model_factory() -> ModelFactory:
     """获取全局模型工厂实例（单例）"""
@@ -316,7 +310,6 @@ def get_model_factory() -> ModelFactory:
     if _factory_instance is None:
         _factory_instance = ModelFactory()
     return _factory_instance
-
 
 def create_model_with_fallback(
     agent_config: AgentConfig,
@@ -336,7 +329,6 @@ def create_model_with_fallback(
     """
     factory = get_model_factory()
     return factory.create_model_with_fallback(agent_config, model_type, enable_cache)
-
 
 def create_model_with_fallback_simple(
     model: str,
@@ -376,7 +368,6 @@ def create_model_with_fallback_simple(
     )
 
     return create_model_with_fallback(agent_config, model_type, enable_cache)
-
 
 if __name__ == "__main__":
     # 测试模型创建

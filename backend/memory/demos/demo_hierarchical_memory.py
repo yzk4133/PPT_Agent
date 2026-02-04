@@ -22,7 +22,6 @@ from persistent_memory import (
     shutdown_global_memory_manager,
 )
 
-
 async def demo_basic_operations():
     """演示基础操作"""
     print("\n" + "=" * 60)
@@ -87,7 +86,6 @@ async def demo_basic_operations():
     finally:
         await memory.stop_background_tasks()
 
-
 async def demo_auto_promotion():
     """演示自动提升机制"""
     print("\n" + "=" * 60)
@@ -137,7 +135,6 @@ async def demo_auto_promotion():
     finally:
         await memory.stop_background_tasks()
 
-
 async def demo_batch_operations():
     """演示批量操作"""
     print("\n" + "=" * 60)
@@ -178,7 +175,6 @@ async def demo_batch_operations():
 
     finally:
         await memory.stop_background_tasks()
-
 
 async def demo_multi_agent_collaboration():
     """演示多Agent协作场景"""
@@ -260,7 +256,6 @@ async def demo_multi_agent_collaboration():
     finally:
         await memory.stop_background_tasks()
 
-
 async def demo_statistics():
     """演示统计信息"""
     print("\n" + "=" * 60)
@@ -310,7 +305,6 @@ async def demo_statistics():
     finally:
         await memory.stop_background_tasks()
 
-
 async def demo_global_instance():
     """演示全局单例模式"""
     print("\n" + "=" * 60)
@@ -354,7 +348,6 @@ async def demo_global_instance():
         await shutdown_global_memory_manager()
         print("✓ 全局内存管理器已关闭")
 
-
 async def main():
     """运行所有演示"""
     print("\n" + "=" * 70)
@@ -387,7 +380,6 @@ async def main():
         import traceback
 
         traceback.print_exc()
-
 
 if __name__ == "__main__":
     asyncio.run(main())

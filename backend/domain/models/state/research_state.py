@@ -7,7 +7,6 @@ Domain model for the research stage state.
 from dataclasses import dataclass, field
 from typing import List, Dict, Any
 
-
 @dataclass
 class ResearchResultState:
     """
@@ -58,7 +57,6 @@ class ResearchResultState:
             is_visualizable=data.get("is_visualizable", False)
         )
 
-
 @dataclass
 class ResearchState:
     """
@@ -104,7 +102,6 @@ class ResearchState:
     def total_researched(self) -> int:
         """已研究的页面数"""
         return len(self.results)
-
 
 if __name__ == "__main__":
     # 测试代码

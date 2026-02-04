@@ -26,7 +26,6 @@ from ..base_agent_with_memory import AgentMemoryMixin
 
 logger = logging.getLogger(__name__)
 
-
 class ResearchAgentWithMemory(AgentMemoryMixin, OptimizedResearchAgent):
     """
     带记忆功能的研究智能体
@@ -402,13 +401,11 @@ class ResearchAgentWithMemory(AgentMemoryMixin, OptimizedResearchAgent):
             tags=["stats", "research"],
         )
 
-
 # 创建全局实例
 research_agent_with_memory = ResearchAgentWithMemory(
     name="ResearchAgentWithMemory",
     description="带记忆功能的研究智能体，支持缓存和共享"
 )
-
 
 if __name__ == "__main__":
     # 测试代码

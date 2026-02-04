@@ -8,7 +8,6 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 from enum import Enum
 
-
 class SceneType(str, Enum):
     """使用场景类型"""
     BUSINESS_REPORT = "business_report"  # 商务汇报
@@ -18,7 +17,6 @@ class SceneType(str, Enum):
     CONFERENCE = "conference"            # 会议
     OTHER = "other"                      # 其他
 
-
 class TemplateType(str, Enum):
     """模板类型"""
     BUSINESS = "business_template"       # 商务模板
@@ -26,7 +24,6 @@ class TemplateType(str, Enum):
     CREATIVE = "creative_template"       # 创意模板
     SIMPLE = "simple_template"           # 简约模板
     TECH = "tech_template"               # 科技模板
-
 
 @dataclass
 class Requirement:
@@ -195,7 +192,6 @@ class Requirement:
     def __str__(self) -> str:
         return f"Requirement(topic='{self.ppt_topic}', pages={self.page_num}, template={self.template_type.value})"
 
-
 @dataclass
 class RequirementAnalysis:
     """
@@ -223,7 +219,6 @@ class RequirementAnalysis:
             "ambiguous_fields": self.ambiguous_fields,
             "suggestions": self.suggestions
         }
-
 
 if __name__ == "__main__":
     # 测试代码

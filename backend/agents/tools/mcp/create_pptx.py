@@ -22,9 +22,7 @@ from pptx.dml.color import RGBColor
 
 from .base_mcp_tool import BaseMCPTool
 
-
 logger = logging.getLogger(__name__)
-
 
 class CreatePptxTool(BaseMCPTool):
     """PowerPoint file creation tool using python-pptx"""
@@ -234,10 +232,8 @@ class CreatePptxTool(BaseMCPTool):
         # This is a placeholder for future enhancement
         logger.info(f"Applying theme: {theme.get('name', 'custom')}")
 
-
 # Global instance
 _tool_instance = None
-
 
 def get_tool() -> CreatePptxTool:
     """Get or create the create PPT tool instance"""
@@ -245,7 +241,6 @@ def get_tool() -> CreatePptxTool:
     if _tool_instance is None:
         _tool_instance = CreatePptxTool()
     return _tool_instance
-
 
 async def create_pptx(
     slides: List[Dict],

@@ -19,12 +19,10 @@ from ..storage.redis_cache import RedisCache
 
 logger = logging.getLogger(__name__)
 
-
 class OptimisticLockError(Exception):
     """乐观锁冲突异常"""
 
     pass
-
 
 class PostgresSessionService(SessionService):
     """基于PostgreSQL的持久化会话服务"""

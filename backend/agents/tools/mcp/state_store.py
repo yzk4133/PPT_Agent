@@ -15,14 +15,12 @@ from pathlib import Path
 
 from .base_mcp_tool import BaseMCPTool
 
-
 # Configuration
 REDIS_URL = os.getenv("REDIS_URL", "")
 STATE_DIR = Path(os.getenv("MCP_STATE_DIR", "./data/state"))
 DEFAULT_NAMESPACE = os.getenv("MCP_STATE_NAMESPACE", "default")
 
 logger = logging.getLogger(__name__)
-
 
 class StateStoreTool(BaseMCPTool):
     """State storage tool using Redis or file backend"""
@@ -189,10 +187,8 @@ class StateStoreTool(BaseMCPTool):
                 return [f.stem for f in namespace_dir.glob("*.json")]
             return []
 
-
 # Global instance
 _tool_instance = None
-
 
 def get_tool() -> StateStoreTool:
     """Get or create the state store tool instance"""
@@ -200,7 +196,6 @@ def get_tool() -> StateStoreTool:
     if _tool_instance is None:
         _tool_instance = StateStoreTool()
     return _tool_instance
-
 
 async def state_store(
     operation: str,

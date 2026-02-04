@@ -11,7 +11,6 @@ from functools import wraps
 
 from .skill_metadata import SkillMetadata, SkillCategory
 
-
 def Skill(
     name: str,
     version: str = "1.0.0",
@@ -87,7 +86,6 @@ def Skill(
         return cls
 
     return decorator
-
 
 def SkillMethod(
     description: str = "",

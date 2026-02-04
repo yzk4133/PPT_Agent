@@ -6,7 +6,6 @@ Provides configuration for task progress weights and task behavior.
 
 from dataclasses import dataclass, field
 
-
 @dataclass
 class TaskProgressWeights:
     """
@@ -40,7 +39,6 @@ class TaskProgressWeights:
         }
         return stage_map.get(stage_name.lower(), 0)
 
-
 @dataclass
 class TaskConfig:
     """
@@ -67,7 +65,6 @@ class TaskConfig:
             Progress weight
         """
         return self.progress_weights.get_weight(stage)
-
 
 # Default singleton instance
 default_task_config = TaskConfig()

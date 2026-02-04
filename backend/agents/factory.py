@@ -8,7 +8,6 @@ import sys
 from typing import Optional, Dict, Any, List
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from google.adk.agents import Agent
 
@@ -25,7 +24,6 @@ from agents.core.generation.content_material_agent import content_material_agent
 from agents.core.rendering.template_renderer_agent import template_renderer_agent
 
 logger = logging.getLogger(__name__)
-
 
 class AgentFactory:
     """
@@ -116,10 +114,8 @@ class AgentFactory:
             "template_renderer": template_renderer_agent
         }
 
-
 # 全局单例
 _global_factory: Optional[AgentFactory] = None
-
 
 def get_agent_factory(config: Optional[Dict[str, Any]] = None) -> AgentFactory:
     """获取全局 AgentFactory 实例"""
@@ -127,7 +123,6 @@ def get_agent_factory(config: Optional[Dict[str, Any]] = None) -> AgentFactory:
     if _global_factory is None:
         _global_factory = AgentFactory(config)
     return _global_factory
-
 
 def reset_agent_factory():
     """重置全局 AgentFactory 实例（主要用于测试）"""

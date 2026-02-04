@@ -7,7 +7,6 @@ Domain model for the framework design stage state.
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Tuple, Optional
 
-
 @dataclass
 class FrameworkPageState:
     """
@@ -61,7 +60,6 @@ class FrameworkPageState:
             is_need_image=data.get("is_need_image", False),
             keywords=data.get("keywords", [])
         )
-
 
 @dataclass
 class FrameworkState:
@@ -162,7 +160,6 @@ class FrameworkState:
     def has_chart_pages(self) -> bool:
         """是否有需要图表的页面"""
         return len(self.chart_page_indices) > 0
-
 
 if __name__ == "__main__":
     # 测试代码

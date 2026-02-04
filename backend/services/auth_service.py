@@ -28,7 +28,6 @@ from infrastructure.exceptions.auth import (
 
 logger = logging.getLogger(__name__)
 
-
 class AuthService:
     """认证服务"""
 
@@ -256,10 +255,8 @@ class AuthService:
         except Exception:
             return None
 
-
 # 全局服务实例（单例）
 _auth_service: Optional[AuthService] = None
-
 
 def get_auth_service(db: Session) -> AuthService:
     """
@@ -272,7 +269,6 @@ def get_auth_service(db: Session) -> AuthService:
         AuthService 实例
     """
     return AuthService(db)
-
 
 def reset_auth_service():
     """重置认证服务（用于测试）"""

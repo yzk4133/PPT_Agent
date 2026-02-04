@@ -13,7 +13,6 @@ import asyncio
 import json
 from pathlib import Path
 
-
 class TestPromptBasedSkills:
     """Tests for prompt-based Skills (Markdown files)"""
 
@@ -67,7 +66,6 @@ class TestPromptBasedSkills:
             assert hasattr(skill, "name")
             assert hasattr(skill, "category")
             assert hasattr(skill, "content")
-
 
 class TestFunctionBasedSkills:
     """Tests for function-based Skills (Python classes)"""
@@ -206,7 +204,6 @@ class TestFunctionBasedSkills:
         assert data["success"] == False
         assert call_count == 2  # Should have tried max_retries times
 
-
 class TestSkillMetadata:
     """Tests for Skill metadata"""
 
@@ -234,7 +231,6 @@ class TestSkillMetadata:
             assert hasattr(metadata, "version")
             assert hasattr(metadata, "category")
             assert hasattr(metadata, "enabled")
-
 
 class TestSkillsIntegration:
     """Integration tests for Skills"""
@@ -281,7 +277,6 @@ class TestSkillsIntegration:
         assert metadata.name == "TestSkill"
         assert metadata.version == "1.0.0"
         assert metadata.category == SkillCategory.UTILITY
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

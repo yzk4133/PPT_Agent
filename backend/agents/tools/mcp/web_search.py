@@ -14,14 +14,12 @@ import httpx
 
 from .base_mcp_tool import BaseMCPTool
 
-
 # Configuration
 BING_SEARCH_API_KEY = os.getenv("BING_SEARCH_API_KEY", "")
 BING_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
 BING_CUSTOM_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/custom/search"
 
 logger = logging.getLogger(__name__)
-
 
 class WebSearchTool(BaseMCPTool):
     """Web search tool using Bing Search API"""
@@ -162,10 +160,8 @@ class WebSearchTool(BaseMCPTool):
         except Exception:
             return url
 
-
 # Global instance
 _tool_instance = None
-
 
 def get_tool() -> WebSearchTool:
     """Get or create the web search tool instance"""
@@ -173,7 +169,6 @@ def get_tool() -> WebSearchTool:
     if _tool_instance is None:
         _tool_instance = WebSearchTool()
     return _tool_instance
-
 
 async def web_search(
     query: str,
