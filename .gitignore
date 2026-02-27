@@ -82,6 +82,9 @@ backend/save_ppt/output_ppts/*.pptx
 *.pptx
 !**/ppt_template*.pptx
 
+# Runtime cache and data
+backend/data/*/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -17,22 +17,25 @@ from infrastructure.exceptions import RateLimitExceededException
 
 logger = logging.getLogger(__name__)
 
+
 class RateLimiter:
     """基于 Redis 的限流器"""
 
     def __init__(self):
         """初始化限流器"""
         config = get_config()
-        redis_url = getattr(config.database, 'redis_url', 'redis://localhost:6379/0')
+        redis_url = getattr(config.database, "redis_url", "redis://localhost:6379/0")
         self.redis = Redis.from_url(redis_url, decode_responses=True)
-        self.enabled = getattr(config, 'rate_limit_enabled', True)
+        self.enabled = getattr(config, "rate_limit_enabled", True)
 
-    async def check_rate_limit(
-        self,
-        user_id: str,
-        limit: int = 100,
-        window: int = 60
-    ):
+        if self.enabled:
+            try:
+                self.redis.ping()
+            except Exception as e:
+                self.enabled = False
+                logger.warning(f"Rate limiter disabled because Redis is unavailable: {e}")
+
+    async def check_rate_limit(self, user_id: str, limit: int = 100, window: int = 60):
         """
         检查限流
 
@@ -76,19 +79,19 @@ class RateLimiter:
                 logger.warning(f"Rate limit exceeded for {user_id}: {request_count} requests")
                 raise RateLimitExceededException(limit, window)
 
+        except RateLimitExceededException:
+            raise
         except Exception as e:
             # Redis 故障时，记录日志但不阻塞请求
             logger.error(f"Rate limiter error: {e}")
 
+
 # 全局限流器实例
 rate_limiter = RateLimiter()
 
+
 # FastAPI 依赖
-async def rate_limit_check(
-    request: Request,
-    limit: int = 100,
-    window: int = 60
-):
+async def rate_limit_check(request: Request, limit: int = 100, window: int = 60):
     """
     限流检查依赖
 
@@ -110,9 +113,8 @@ async def rate_limit_check(
 
     await rate_limiter.check_rate_limit(user_id, limit, window)
 
-async def strict_rate_limit_check(
-    request: Request
-):
+
+async def strict_rate_limit_check(request: Request):
     """
     严格限流检查依赖（50次/分钟）
 
@@ -120,9 +122,8 @@ async def strict_rate_limit_check(
     """
     await rate_limit_check(request, limit=50, window=60)
 
-async def loose_rate_limit_check(
-    request: Request
-):
+
+async def loose_rate_limit_check(request: Request):
     """
     宽松限流检查依赖（200次/分钟）
 

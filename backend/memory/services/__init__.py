@@ -1,21 +1,16 @@
 """
-业务服务模块
+Memory Services (简化版 v5.1)
+
+提供记忆系统的业务逻辑层：
+- UserPreferenceService: 用户偏好管理
+
+v5.1 简化：
+- ❌ 删除 BaseService - 只有一个子类，继承价值不大
+- ✅ UserPreferenceService 独立存在，不再继承BaseService
 """
 
-from .postgres_session_service import PostgresSessionService
 from .user_preference_service import UserPreferenceService
-from .vector_memory_service import VectorMemoryService
-from .agent_decision_service import AgentDecisionService
-from .tool_feedback_service import ToolFeedbackService
-from .shared_workspace_service import SharedWorkspaceService
-from .context_optimizer import ContextWindowOptimizer
 
 __all__ = [
-    "PostgresSessionService",
     "UserPreferenceService",
-    "VectorMemoryService",
-    "AgentDecisionService",
-    "ToolFeedbackService",
-    "SharedWorkspaceService",
-    "ContextWindowOptimizer",
 ]

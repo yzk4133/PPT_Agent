@@ -11,6 +11,7 @@ import os
 import sys
 from datetime import datetime
 from typing import Dict, Any
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,10 +20,10 @@ from fastapi.responses import JSONResponse
 # 添加 backend 目录到 Python 路径
 backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if backend_path not in sys.path:
+    sys.path.insert(0, backend_path)
     
 # 导入路由
-from api.routes import presentation, ppt_generation
-from api.routes import auth  # 新增：认证路由
+from api.routes import ppt_generation
 
 # 导入基础设施
 from infrastructure.config.common_config import get_config
@@ -42,6 +43,31 @@ def get_uptime() -> float:
     """获取服务运行时间（秒）"""
     return time.time() - _start_time
 
+# ============================================================================
+# Lifespan 事件处理器
+# ============================================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理"""
+    # 启动时执行
+    logger.info("=" * 60)
+    logger.info("🚀 FastAPI 统一网关启动中...")
+    logger.info(f"   版本: 2.0.0")
+    logger.info(f"   环境: {os.environ.get('ENV', 'development')}")
+    logger.info("=" * 60)
+    logger.info("✅ FastAPI 统一网关启动成功!")
+    logger.info("   📖 API 文档: http://localhost:8000/docs")
+    logger.info("   🏥 健康检查: http://localhost:8000/api/health")
+    logger.info("=" * 60)
+
+    yield
+
+    # 关闭时执行
+    logger.info("=" * 60)
+    logger.info("🛑 FastAPI 统一网关正在关闭...")
+    logger.info("=" * 60)
+
 # 创建 FastAPI 应用
 app = FastAPI(
     title="Multi-Agent PPT Generation API",
@@ -56,7 +82,6 @@ app = FastAPI(
     ## 主要功能
     1. **大纲生成**：根据主题生成 PPT 大纲
     2. **幻灯片生成**：根据大纲生成完整的 PPT 幻灯片
-    3. **演示文稿管理**：创建、查询、删除演示文稿
 
     ## API 端点
     - `POST /api/ppt/outline/generate` - 生成大纲
@@ -65,7 +90,8 @@ app = FastAPI(
     """,
     version="2.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # ============================================================================
@@ -143,25 +169,11 @@ class APIException(Exception):
 # 注册路由
 # ============================================================================
 
-# 认证路由（登录、注册等）
-app.include_router(
-    auth.router,
-    prefix="/api",
-    tags=["Authentication"]
-)
-
 # PPT 生成路由（大纲生成、幻灯片生成）
 app.include_router(
     ppt_generation.router,
     prefix="/api",
     tags=["PPT Generation"]
-)
-
-# 演示文稿管理路由
-app.include_router(
-    presentation.router,
-    prefix="/api",
-    tags=["Presentation Management"]
 )
 
 # ============================================================================
@@ -196,30 +208,6 @@ async def health_check():
             "agent_services": "ok"
         }
     }
-
-# ============================================================================
-# 启动和关闭事件
-# ============================================================================
-
-@app.on_event("startup")
-async def startup_event():
-    """应用启动时的初始化"""
-    logger.info("=" * 60)
-    logger.info("🚀 FastAPI 统一网关启动中...")
-    logger.info(f"   版本: 2.0.0")
-    logger.info(f"   环境: {os.environ.get('ENV', 'development')}")
-    logger.info("=" * 60)
-    logger.info("✅ FastAPI 统一网关启动成功!")
-    logger.info("   📖 API 文档: http://localhost:8000/docs")
-    logger.info("   🏥 健康检查: http://localhost:8000/api/health")
-    logger.info("=" * 60)
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """应用关闭时的清理"""
-    logger.info("=" * 60)
-    logger.info("🛑 FastAPI 统一网关正在关闭...")
-    logger.info("=" * 60)
 
 # ============================================================================
 # 主程序入口

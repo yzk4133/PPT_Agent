@@ -1,25 +1,25 @@
 """
-Quality Module
+质量控制模块
 
-Provides self-assessment and iterative refinement capabilities for agents.
+为 LangGraph 工作流提供质量评估和改进功能。
 """
 
-from .feedback_loop import (
-    QualityDimension,
-    QualityScore,
-    QualityAssessment,
-    QualityAssessor,
-    RuleBasedAssessor,
-    FeedbackLoopAgent,
-    get_default_assessor
+from .nodes import (
+    check_content_quality,
+    check_framework_quality,
+    should_refine_content,
+    should_refine_framework,
+    refine_content,
+    refine_framework,
+    refine_with_llm,
 )
 
 __all__ = [
-    "QualityDimension",
-    "QualityScore",
-    "QualityAssessment",
-    "QualityAssessor",
-    "RuleBasedAssessor",
-    "FeedbackLoopAgent",
-    "get_default_assessor",
+    "check_content_quality",
+    "check_framework_quality",
+    "should_refine_content",
+    "should_refine_framework",
+    "refine_content",
+    "refine_framework",
+    "refine_with_llm",
 ]

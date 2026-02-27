@@ -42,7 +42,26 @@
       "Bash(test:*)",
       "Bash(taskkill:*)",
       "Bash(timeout:*)",
-      "Bash(set:*)"
+      "Bash(set:*)",
+      "Bash(for:*)",
+      "Bash(do python -c \"import sys; content = open\\(''$file'', ''r'', encoding=''utf-8''\\).read\\(\\); new_content = content.replace\\(''// --------'', ''# --------''\\); open\\(''$file'', ''w'', encoding=''utf-8''\\).write\\(new_content\\)\")",
+      "Bash(done:*)",
+      "Bash(del:*)",
+      "Bash(pytest:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(start:*)",
+      "Bash(tasklist:*)",
+      "Bash(where:*)",
+      "Bash(du:*)",
+      "Bash(git checkout:*)",
+      "Bash(python3:*)",
+      "Bash(grep:*)",
+      "Bash(move BACKEND_OPTIMIZATION_COMPLETE.md \"docs\\\\reports\"\" && move BACKEND_STRUCTURE_ANALYSIS.md \"docsreports\"\")",
+      "Bash(move:*)",
+      "Bash(move FINAL_CONFIG_UNIFICATION_REPORT.md \"docs\\\\reports\"\" && move INFRASTRUCTURE_ANALYSIS_REPORT.md \"docsreports\"\")",
+      "Bash(while read file)",
+      "Bash(xargs:*)"
     ]
   }
 }

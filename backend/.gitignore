@@ -1,0 +1,24 @@
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 测试覆盖和临时文件
+htmlcov/
+.coverage
+.pytest_cache/
+output/
+*.log
+nul
+
+# 归档目录
+archive/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

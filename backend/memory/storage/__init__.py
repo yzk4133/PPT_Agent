@@ -1,24 +1,29 @@
 """
-Storage Layer - 数据库和缓存
+Storage Layer - Database and Cache Management
+
+v5.1 简化：
+- ✅ 保留 BaseModel, UserProfile - 实际使用
+- ❌ 删除其他6个未使用的模型
 """
 
-from .database import DatabaseManager, get_db
+# Models
+from .models import Base, BaseModel, UserProfile
+
+# Database
+from .database import DatabaseManager, get_db, get_db_session
+
+# Cache
 from .redis_cache import RedisCache
-from .models import (
-    UserProfile,
-    SharedWorkspaceMemory,
-    VectorMemory,
-    AgentDecision,
-    ToolExecutionFeedback,
-)
 
 __all__ = [
+    # Models
+    "Base",
+    "BaseModel",
+    "UserProfile",
+    # Database
     "DatabaseManager",
     "get_db",
+    "get_db_session",
+    # Cache
     "RedisCache",
-    "UserProfile",
-    "SharedWorkspaceMemory",
-    "VectorMemory",
-    "AgentDecision",
-    "ToolExecutionFeedback",
 ]

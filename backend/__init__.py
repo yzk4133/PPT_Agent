@@ -4,17 +4,14 @@ Multi-Agent PPT Backend Package
 提供简洁的导入接口，优化项目内部模块引用。
 
 使用示例:
-    # 领域层
-    from backend import Task, TaskStatus, Requirement
+    # 导入模型
+    from backend import ExecutionMode, Checkpoint
 
-    # Agent 层
-    from backend import master_coordinator_agent, get_progress_tracker
+    # 导入协调器
+    from backend import MasterGraph, create_master_graph
 
-    # 基础设施层
-    from backend import get_config, JSONFallbackParser
-
-    # 服务层
-    from backend import TaskService, PresentationService
+    # 导入配置
+    from backend import get_config
 """
 
 # 确保路径配置正确（仅用于兼容性，优先使用 PYTHONPATH）
@@ -39,71 +36,28 @@ if _backend_root_str not in sys.path:
     sys.path.insert(0, _backend_root_str)
 
 # ============================================================================
-# Google ADK / GenAI - 常用导入
+# Models (formerly Domain)
 # ============================================================================
-from google.adk.agents import BaseAgent, LlmAgent
-from google.adk.agents.invocation_context import InvocationContext
-from google.adk.agents.callback_context import CallbackContext
-from google.adk.events.event import Event
-from google.adk.models import LlmRequest, LlmResponse
-from google.genai import types as genai_types
+from models.execution_mode import ExecutionMode
+from models.checkpoint import Checkpoint
 
 # ============================================================================
-# 领域层 (Domain)
+# Agent 层 (LangChain)
 # ============================================================================
-from domain.models import (
-    Task, TaskStatus, TaskStage,
-    Requirement, PPTFramework,
-    PageDefinition,
-)
-from domain.models.execution_mode import ExecutionMode
-from domain.models.checkpoint import Checkpoint
-from domain.services import (
-    TaskProgressService, task_progress_service,
-    TaskValidationService, task_validation_service,
-)
-from domain.exceptions import DomainError, ValidationError
-
-# ============================================================================
-# Agent 层
-# ============================================================================
-from agents import (
-    # Factory
-    AgentFactory, get_agent_factory,
-    # Core Agents
-    RequirementParserAgent, requirement_parser_agent,
-    FrameworkDesignerAgent, framework_designer_agent,
-    OptimizedResearchAgent, optimized_research_agent,
-    ContentMaterialAgent, content_material_agent,
-    TemplateRendererAgent, template_renderer_agent,
-    # Orchestrator
-    MasterCoordinatorAgent, master_coordinator_agent,
-    AgentGateway,
-)
-from agents.orchestrator.components import (
-    ProgressTracker, get_progress_tracker, ProgressUpdate,
-    RevisionHandler, get_revision_handler, RevisionType, RevisionResult,
-)
+from agents import MasterGraph, create_master_graph
 
 # ============================================================================
 # 基础设施层 (Infrastructure)
 # ============================================================================
 from infrastructure.config import get_config, AppConfig
-from infrastructure.llm.fallback import JSONFallbackParser
 from infrastructure.middleware.error_handler import setup_exception_handlers
 from infrastructure.checkpoint import CheckpointManager, get_checkpoint_manager
-from infrastructure.security import PasswordHandler, JWTHandler
 
 # ============================================================================
-# 服务层 (Services)
+# 服务层 (Services) - 已合并到 API 层
 # ============================================================================
-from services import (
-    TaskService,
-    PresentationService,
-    OutlineService,
-    AuthService,
-    UserService,
-)
+# 服务层已合并到 API 层以简化架构
+# from api.ppt_service import PptGenerationServiceLangChain, get_ppt_generation_service_langchain
 
 # ============================================================================
 # 工具层 (Utils)
@@ -115,42 +69,18 @@ from utils.context_compressor import ContextCompressor
 # 导出列表
 # ============================================================================
 __all__ = [
-    # Google ADK
-    "BaseAgent", "LlmAgent", "InvocationContext", "CallbackContext",
-    "Event", "LlmRequest", "LlmResponse", "genai_types",
-
-    # Domain
-    "Task", "TaskStatus", "TaskStage", "Requirement", "PPTFramework",
-    "PageDefinition", "ExecutionMode", "Checkpoint",
-    "TaskProgressService", "task_progress_service",
-    "TaskValidationService", "task_validation_service",
-    "DomainError", "ValidationError",
+    # Models
+    "ExecutionMode", "Checkpoint",
 
     # Agents
-    "AgentFactory", "get_agent_factory",
-    "RequirementParserAgent", "requirement_parser_agent",
-    "FrameworkDesignerAgent", "framework_designer_agent",
-    "OptimizedResearchAgent", "optimized_research_agent",
-    "ContentMaterialAgent", "content_material_agent",
-    "TemplateRendererAgent", "template_renderer_agent",
-    "MasterCoordinatorAgent", "master_coordinator_agent",
-    "AgentGateway",
-    "ProgressTracker", "get_progress_tracker", "ProgressUpdate",
-    "RevisionHandler", "get_revision_handler", "RevisionType", "RevisionResult",
+    "MasterGraph", "create_master_graph",
 
     # Infrastructure
     "get_config", "AppConfig",
-    "JSONFallbackParser",
     "setup_exception_handlers",
     "CheckpointManager", "get_checkpoint_manager",
-    "PasswordHandler", "JWTHandler",
-
-    # Services
-    "TaskService", "PresentationService", "OutlineService",
-    "AuthService", "UserService",
 
     # Utils
-    "PPTGenerator", "get_ppt_generator",
     "ContextCompressor",
 ]
 

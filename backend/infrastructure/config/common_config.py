@@ -65,6 +65,7 @@ class AgentConfig(BaseSettings):
     class Config:
         env_prefix = ""  # 不使用前缀，由父类处理
         case_sensitive = False
+        extra = "ignore"  # 忽略额外的环境变量
 
 class DatabaseConfig(BaseSettings):
     """数据库配置"""
@@ -100,6 +101,7 @@ class DatabaseConfig(BaseSettings):
     class Config:
         env_prefix = "DB_"
         case_sensitive = False
+        extra = "ignore"  # 忽略额外的环境变量
 
 class FeatureFlags(BaseSettings):
     """Feature Flag 配置，用于灰度发布和向后兼容"""
@@ -123,6 +125,7 @@ class FeatureFlags(BaseSettings):
     class Config:
         env_prefix = "FEATURE_"
         case_sensitive = False
+        extra = "ignore"  # 忽略额外的环境变量
 
 class AppConfig(BaseSettings):
     """应用全局配置"""
@@ -332,10 +335,61 @@ class AppConfig(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # 忽略额外的环境变量（如 USE_PERSISTENT_MEMORY, SQL_ECHO 等）
         # Note: fields config is not supported in Pydantic v2, use env_prefix per field instead
+
+class LLMConfig(BaseSettings):
+    """
+    LLM配置（统一管理）
+
+    消除项目中分散的 os.getenv() 调用，提供单一配置入口。
+    """
+
+    # API配置
+    api_key: str = Field(
+        default_factory=lambda: os.getenv("OPENAI_API_KEY") or os.getenv("DEEPSEEK_API_KEY") or "",
+        description="LLM API密钥"
+    )
+    base_url: str = Field(
+        default_factory=lambda: os.getenv("OPENAI_BASE_URL") or os.getenv("DEEPSEEK_BASE_URL") or "",
+        description="LLM Base URL"
+    )
+    model: str = Field(
+        default_factory=lambda: os.getenv("LLM_MODEL", "gpt-4o-mini"),
+        description="LLM模型名称"
+    )
+
+    # 可选配置
+    temperature: float = Field(0.7, ge=0.0, le=2.0, description="温度参数")
+    max_tokens: int = Field(4096, ge=1, le=128000, description="最大token数")
+    timeout: int = Field(60, ge=10, le=600, description="超时时间（秒）")
+
+    def to_langchain_config(self) -> Dict[str, Any]:
+        """
+        转换为LangChain ChatOpenAI所需的配置格式
+
+        Returns:
+            LangChain配置字典
+        """
+        return {
+            "model": self.model,
+            "api_key": self.api_key,
+            "base_url": self.base_url,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "timeout": self.timeout,
+        }
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+        extra = "ignore"
+
 
 # 全局配置实例（单例模式）
 _config_instance: Optional[AppConfig] = None
+_llm_config_instance: Optional[LLMConfig] = None
 
 def get_config(reload: bool = False) -> AppConfig:
     """
@@ -367,6 +421,57 @@ def update_config(**kwargs) -> AppConfig:
         if hasattr(config, key):
             setattr(config, key, value)
     return config
+
+
+def get_llm_config(
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    model: Optional[str] = None,
+) -> LLMConfig:
+    """
+    获取LLM配置实例（单例）
+
+    自动从环境变量读取配置，支持运行时覆盖。
+
+    Args:
+        temperature: 温度参数（可选，覆盖默认值）
+        max_tokens: 最大token数（可选，覆盖默认值）
+        model: 模型名称（可选，覆盖默认值）
+
+    Returns:
+        LLMConfig实例
+
+    Examples:
+        >>> # 使用默认配置
+        >>> config = get_llm_config()
+        >>> model = ChatOpenAI(**config.to_langchain_config())
+        >>>
+        >>> # 运行时覆盖
+        >>> config = get_llm_config(temperature=0.5, model="gpt-4")
+        >>> model = ChatOpenAI(**config.to_langchain_config())
+    """
+    global _llm_config_instance
+
+    if _llm_config_instance is None or any([temperature is not None, max_tokens is not None, model is not None]):
+        # 创建新的配置实例
+        _llm_config_instance = LLMConfig()
+
+        # 应用运行时覆盖
+        if temperature is not None:
+            _llm_config_instance.temperature = temperature
+        if max_tokens is not None:
+            _llm_config_instance.max_tokens = max_tokens
+        if model is not None:
+            _llm_config_instance.model = model
+
+    return _llm_config_instance
+
+
+def reset_llm_config():
+    """重置LLM配置（主要用于测试）"""
+    global _llm_config_instance
+    _llm_config_instance = None
+
 
 if __name__ == "__main__":
     # 配置日志

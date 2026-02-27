@@ -12,7 +12,7 @@ from datetime import datetime
 
 # Add parent directory to path
 
-from domain.models.checkpoint import Checkpoint, CheckpointSummary
+from models.checkpoint import Checkpoint, CheckpointSummary
 from .database_backend import ICheckpointBackend, DatabaseCheckpointBackend
 
 logger = logging.getLogger(__name__)
@@ -306,7 +306,7 @@ def set_checkpoint_manager(manager: CheckpointManager) -> None:
 if __name__ == "__main__":
     # 测试代码
     import asyncio
-    from domain.models.execution_mode import ExecutionMode
+    from models.execution_mode import ExecutionMode
 
     async def test_checkpoint_manager():
         print("Testing CheckpointManager")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-数据库连接管理
+数据库连接管理 - MySQL版本
 """
 import os
 import logging
@@ -11,12 +11,13 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import NullPool, QueuePool
 from contextlib import contextmanager
 
-from .models import Base, CREATE_VECTOR_INDEX_SQL
+from .models import Base
 
 logger = logging.getLogger(__name__)
 
+
 class DatabaseManager:
-    """数据库管理器 - 单例模式"""
+    """数据库管理器 - 单例模式 (支持MySQL和PostgreSQL)"""
 
     _instance: Optional["DatabaseManager"] = None
 
@@ -30,21 +31,62 @@ class DatabaseManager:
         if self._initialized:
             return
 
+        # 默认使用MySQL，可通过环境变量切换
         self.database_url = os.getenv(
             "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost:5432/multiagent_ppt",
+            "mysql+pymysql://root:password@localhost:3306/multiagent_ppt",
         )
 
+        # 准备引擎参数
+        engine_kwargs = {
+            "pool_pre_ping": True,  # 连接前先ping检查可用性
+            "echo": os.getenv("SQL_ECHO", "false").lower() == "true",
+            "pool_recycle": 3600,   # 1小时回收连接
+        }
+
+        # 根据数据库类型调整配置
+        if self.database_url.startswith("sqlite"):
+            # SQLite配置（开发用）
+            engine_kwargs.update({
+                "connect_args": {"check_same_thread": False},
+                "poolclass": NullPool,
+            })
+            logger.info("Using SQLite database (development mode)")
+
+        elif self.database_url.startswith("mysql"):
+            # MySQL特定配置
+            engine_kwargs.update({
+                "poolclass": QueuePool,
+                "pool_size": 10,
+                "max_overflow": 20,
+                "pool_recycle": 3600,  # MySQL默认8小时超时，这里设为1小时回收
+                "connect_args": {
+                    "charset": "utf8mb4",      # 支持emoji和中文
+                    "autocommit": False,
+                }
+            })
+            logger.info("Using MySQL database")
+
+        elif self.database_url.startswith("postgresql"):
+            # PostgreSQL配置（保留兼容性）
+            engine_kwargs.update({
+                "poolclass": QueuePool,
+                "pool_size": 10,
+                "max_overflow": 20,
+                "pool_recycle": 3600,
+            })
+            logger.info("Using PostgreSQL database")
+
+        else:
+            # 其他数据库使用默认配置
+            engine_kwargs.update({
+                "poolclass": QueuePool,
+                "pool_size": 10,
+                "max_overflow": 20,
+            })
+
         # 创建引擎
-        self.engine = create_engine(
-            self.database_url,
-            poolclass=QueuePool,
-            pool_size=10,
-            max_overflow=20,
-            pool_pre_ping=True,  # 连接前先ping检查可用性
-            pool_recycle=3600,  # 1小时回收连接
-            echo=os.getenv("SQL_ECHO", "false").lower() == "true",  # 是否打印SQL
-        )
+        self.engine = create_engine(self.database_url, **engine_kwargs)
 
         # 创建会话工厂
         self.SessionLocal = sessionmaker(
@@ -77,27 +119,29 @@ class DatabaseManager:
             Base.metadata.create_all(bind=self.engine)
             logger.info("Database tables created successfully")
 
-            # 创建pgvector扩展和索引
-            self._create_vector_extension()
+            # MySQL不需要创建pgvector扩展
+            if not self.database_url.startswith("mysql"):
+                self._create_vector_extension()
 
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise
 
     def _create_vector_extension(self):
-        """创建pgvector扩展和向量索引"""
+        """创建pgvector扩展和向量索引（仅PostgreSQL）"""
         try:
             with self.engine.connect() as conn:
-                # 执行创建扩展和索引的SQL
+                # 如果有向量索引的SQL（仅PostgreSQL）
+                from .models import CREATE_VECTOR_INDEX_SQL
                 for statement in CREATE_VECTOR_INDEX_SQL.strip().split(";"):
                     statement = statement.strip()
                     if statement:
                         conn.execute(text(statement))
                         conn.commit()
-            logger.info("pgvector extension and indexes created successfully")
+            logger.info("Vector extension and indexes created successfully")
         except Exception as e:
             logger.warning(
-                f"Failed to create pgvector extension (may already exist): {e}"
+                f"Failed to create vector extension (may already exist): {e}"
             )
 
     @contextmanager
@@ -124,8 +168,10 @@ class DatabaseManager:
             logger.error(f"Database health check failed: {e}")
             return False
 
+
 # 全局数据库管理器实例
 _db_manager: Optional[DatabaseManager] = None
+
 
 def get_db() -> DatabaseManager:
     """获取数据库管理器实例"""
@@ -134,10 +180,12 @@ def get_db() -> DatabaseManager:
         _db_manager = DatabaseManager()
     return _db_manager
 
+
 def get_db_session() -> Session:
     """获取数据库会话（用于依赖注入）"""
     db = get_db()
     return db.SessionLocal()
+
 
 # 初始化脚本（仅在直接运行时执行）
 if __name__ == "__main__":

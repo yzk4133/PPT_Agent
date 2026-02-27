@@ -1,0 +1,12 @@
+# Tool Cache
+
+This directory contains runtime cache files for tools.
+
+**Note**: This directory is ignored by Git (see .gitignore).
+The cache files are generated during application execution.
+
+**Purpose**:
+- MCP tool cache
+- Temporary tool execution data
+
+**Do not commit these files to version control.

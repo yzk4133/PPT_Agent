@@ -1,22 +1,19 @@
 """
-认证模型模块
+Models Module
 
-包含用户认证和授权相关的数据库模型：
-- User: 用户表
-- Role: 角色表
-- Permission: 权限表
-- RefreshToken: 刷新令牌表
+包含数据模型：
+- ExecutionMode: 执行模式
+- Checkpoint: 检查点
+- CheckpointSummary: 检查点摘要
 """
 
-from .user import User
-from .role import Role, Permission, user_roles, role_permissions
-from .token import RefreshToken
+# PPT generation models
+from .execution_mode import ExecutionMode
+from .checkpoint import Checkpoint, CheckpointSummary
 
 __all__ = [
-    "User",
-    "Role",
-    "Permission",
-    "RefreshToken",
-    "user_roles",
-    "role_permissions",
+    # PPT generation models
+    "ExecutionMode",
+    "Checkpoint",
+    "CheckpointSummary",
 ]

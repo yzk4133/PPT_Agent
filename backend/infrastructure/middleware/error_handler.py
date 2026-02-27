@@ -21,6 +21,7 @@ from infrastructure.config.common_config import get_config
 
 logger = logging.getLogger(__name__)
 
+
 async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSONResponse:
     """
     自定义 API 异常处理
@@ -48,6 +49,7 @@ async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSON
         "status": "error",
         "error_code": exc.error_code,
         "message": exc.message,
+        "detail": exc.message,
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
@@ -62,6 +64,7 @@ async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSON
         status_code=exc.status_code,
         content=response_data,
     )
+
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """
@@ -88,6 +91,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
         "status": "error",
         "error_code": "HTTP_ERROR",
         "message": str(exc.detail),
+        "detail": str(exc.detail),
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
@@ -103,7 +107,10 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
         content=response_data,
     )
 
-async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     """
     请求验证异常处理
 
@@ -137,6 +144,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         "status": "error",
         "error_code": "VALIDATION_ERROR",
         "message": f"字段 '{field}' {message}",
+        "detail": f"字段 '{field}' {message}",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
@@ -154,6 +162,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=response_data,
     )
+
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
@@ -192,6 +201,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         "status": "error",
         "error_code": "INTERNAL_ERROR",
         "message": message,
+        "detail": message,
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
@@ -202,6 +212,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=response_data,
     )
+
 
 def setup_exception_handlers(app):
     """

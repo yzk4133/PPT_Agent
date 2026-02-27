@@ -157,7 +157,7 @@ class TestTextProcessorIntegration:
 
     def test_html_to_ppt_workflow(self):
         """测试从HTML到PPT的文本处理工作流"""
-        from utils.save_ppt.ppt_generator import TextProcessor
+        from utils.save_ppt.text_processor import TextProcessor
 
         processor = TextProcessor()
 
@@ -238,7 +238,7 @@ class TestPresentationGenerationIntegration:
         ]
 
         with patch.object(mock_pres.slides, 'add_slide', return_value=mock_slide):
-            from utils.save_ppt.ppt_generator import PresentationGenerator
+            from utils.save_ppt.generator import PresentationGenerator
 
             generator = PresentationGenerator()
 
@@ -302,7 +302,7 @@ class TestErrorHandlingIntegration:
 
     def test_very_long_content_handling(self):
         """测试超长内容处理"""
-        from utils.save_ppt.ppt_generator import TextProcessor
+        from utils.save_ppt.text_processor import TextProcessor
 
         processor = TextProcessor()
 

@@ -15,8 +15,8 @@ from dataclasses import dataclass
 
 # Add parent directory to path
 
-from domain.models.checkpoint import Checkpoint
-from domain.models.execution_mode import ExecutionMode
+from models.checkpoint import Checkpoint
+from models.execution_mode import ExecutionMode
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import text, select, update, delete, insert, Table, Column, String, Integer, DateTime, MetaData
 from sqlalchemy.exc import SQLAlchemyError
@@ -573,7 +573,7 @@ def set_checkpoint_backend(backend: ICheckpointBackend) -> None:
 if __name__ == "__main__":
     # 测试代码
     import asyncio
-    from domain.models.execution_mode import ExecutionMode
+    from models.execution_mode import ExecutionMode
 
     async def test_backend():
         print("Testing InMemoryCheckpointBackend")

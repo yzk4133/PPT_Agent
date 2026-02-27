@@ -7,7 +7,10 @@ from .common_config import (
     FeatureFlags,
     ModelProvider,
     Environment,
+    LLMConfig,
     get_config,
+    get_llm_config,
+    reset_llm_config,
 )
 
 __all__ = [
@@ -17,5 +20,8 @@ __all__ = [
     "FeatureFlags",
     "ModelProvider",
     "Environment",
+    "LLMConfig",
     "get_config",
+    "get_llm_config",
+    "reset_llm_config",
 ]
