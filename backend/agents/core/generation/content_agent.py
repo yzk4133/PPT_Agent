@@ -14,8 +14,10 @@ from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 
 from ...models.state import (
-    PPTGenerationState, update_state_progress,
-    get_framework_pages, get_research_pages
+    PPTGenerationState,
+    update_state_progress,
+    get_framework_pages,
+    get_research_pages,
 )
 from ...models.framework import PageDefinition
 from ..base_agent import BaseAgent, BaseToolAgent
@@ -152,15 +154,19 @@ class ContentMaterialAgent(BaseToolAgent):
         - 使用 tool_names 精确指定需要的工具，避免加载不必要的工具
         """
         # Determine tool names (只加载内容生成相关的工具)
-        tool_names = [
-            # Python Skills
-            "content_generation",
-            "content_optimization",
-            "content_quality_check",
-            # MD Skills (Guides)
-            "content_generation_prompts",
-            "quality_check_prompts",
-        ] if use_tools else []
+        tool_names = (
+            [
+                # Python Skills
+                "content_generation",
+                "content_optimization",
+                "content_quality_check",
+                # MD Skills (Guides)
+                "content_generation_prompts",
+                "quality_check_guide",
+            ]
+            if use_tools
+            else []
+        )
 
         # Call parent constructor (BaseToolAgent)
         super().__init__(
@@ -168,7 +174,7 @@ class ContentMaterialAgent(BaseToolAgent):
             temperature=temperature,
             tool_names=tool_names,  # 使用 tool_names 替代 tool_categories
             agent_name=agent_name,
-            enable_memory=enable_memory
+            enable_memory=enable_memory,
         )
 
         # Create fallback chain
@@ -183,6 +189,10 @@ class ContentMaterialAgent(BaseToolAgent):
 
         prompt = ChatPromptTemplate.from_template(enhanced_prompt)
         return prompt | self.model
+
+    async def run_node(self, state: PPTGenerationState) -> PPTGenerationState:
+        """兼容工作流节点调用接口"""
+        return await self.execute_task(state)
 
     async def execute_task(self, state: PPTGenerationState) -> PPTGenerationState:
         """
@@ -213,18 +223,17 @@ class ContentMaterialAgent(BaseToolAgent):
         research_results = state.get("research_results", [])
 
         # 生成所有页面的内容
-        content_materials = await self.generate_content_for_all_pages(pages, research_results, state)
+        content_materials = await self.generate_content_for_all_pages(
+            pages, research_results, state
+        )
 
         # 使用便捷方法记住生成的内容
         await self.save_to_cache(
             "generated_content_materials",
-            {
-                "count": len(content_materials),
-                "materials": content_materials
-            },
+            {"count": len(content_materials), "materials": content_materials},
             importance=0.5,
             scope="TASK",
-            state=state
+            state=state,
         )
 
         # 更新状态
@@ -236,11 +245,7 @@ class ContentMaterialAgent(BaseToolAgent):
         logger.info(f"[{self.agent_name}] Task completed: {len(content_materials)} pages generated")
         return state
 
-    def _get_research_for_page(
-        self,
-        page_no: int,
-        research_results: List[Dict[str, Any]]
-    ) -> str:
+    def _get_research_for_page(self, page_no: int, research_results: List[Dict[str, Any]]) -> str:
         """
         获取页面的研究资料
 
@@ -261,7 +266,7 @@ class ContentMaterialAgent(BaseToolAgent):
         self,
         page: Dict[str, Any],
         research_results: List[Dict[str, Any]],
-        state: Optional[PPTGenerationState] = None
+        state: Optional[PPTGenerationState] = None,
     ) -> Dict[str, Any]:
         """
         为单个页面生成内容
@@ -311,7 +316,7 @@ class ContentMaterialAgent(BaseToolAgent):
             "word_count": word_count,
             "need_chart": "是" if need_chart else "否",
             "need_image": "是" if need_image else "否",
-            "research_section": research_section
+            "research_section": research_section,
         }
 
         # 从state获取requirement中的偏好
@@ -328,7 +333,9 @@ class ContentMaterialAgent(BaseToolAgent):
             generation_context["tone"] = tone
 
             # 应用模板类型偏好
-            template_type = user_preferences.get("template_type") or requirement.get("template_type", "business")
+            template_type = user_preferences.get("template_type") or requirement.get(
+                "template_type", "business"
+            )
             generation_context["template_type"] = template_type
 
             logger.debug(
@@ -343,33 +350,29 @@ class ContentMaterialAgent(BaseToolAgent):
                 content_data = await self._generate_with_tools(page, generation_context)
             else:
                 # 降级到直接使用 LLM
-                content_data = await self._generate_with_llm(generation_context, page_no)
+                content_data = await self._generate_with_llm(generation_context, page_no, page)
 
             # 添加页码
             content_data["page_no"] = page_no
 
             # 使用便捷方法缓存生成的内容
             await self.save_to_cache(
-                cache_key,
-                content_data,
-                importance=0.6,
-                scope="TASK",
-                state=state
+                cache_key, content_data, importance=0.6, scope="TASK", state=state
             )
 
             logger.info(f"[{self.agent_name}] Content generated for page {page_no}")
             return content_data
 
         except Exception as e:
-            logger.warning(f"[{self.agent_name}] Generation failed for page {page_no}: {e}, using fallback")
+            logger.warning(
+                f"[{self.agent_name}] Generation failed for page {page_no}: {e}, using fallback"
+            )
 
             # 降级策略：生成简单的占位内容
             return self._fallback_content(page, research_results)
 
     def _fallback_content(
-        self,
-        page: Dict[str, Any],
-        research_results: List[Dict[str, Any]]
+        self, page: Dict[str, Any], research_results: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
         降级内容生成：返回简单内容
@@ -400,23 +403,26 @@ class ContentMaterialAgent(BaseToolAgent):
             "page_no": page_no,
             "content_text": content_text,
             "has_chart": page.get("is_need_chart", False),
-            "chart_data": {} if not page.get("is_need_chart") else {
-                "chart_type": "bar",
-                "chart_title": f"{title}数据",
-                "data_description": "示例数据"
-            },
+            "chart_data": (
+                {}
+                if not page.get("is_need_chart")
+                else {
+                    "chart_type": "bar",
+                    "chart_title": f"{title}数据",
+                    "data_description": "示例数据",
+                }
+            ),
             "has_image": page.get("is_need_image", False),
-            "image_suggestion": {} if not page.get("is_need_image") else {
-                "search_query": title,
-                "description": f"与{title}相关的图片"
-            },
-            "key_points": [title, core_content[:50] if core_content else ""]
+            "image_suggestion": (
+                {}
+                if not page.get("is_need_image")
+                else {"search_query": title, "description": f"与{title}相关的图片"}
+            ),
+            "key_points": [title, core_content[:50] if core_content else ""],
         }
 
     async def _generate_with_tools(
-        self,
-        page: Dict[str, Any],
-        generation_context: Dict[str, Any]
+        self, page: Dict[str, Any], generation_context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         使用 ReAct Agent 生成内容（通过 LangChain Tools）
@@ -490,13 +496,9 @@ class ContentMaterialAgent(BaseToolAgent):
         except Exception as e:
             logger.warning(f"[{self.agent_name}] Tool execution failed: {e}, using LLM fallback")
             # 降级到 LLM 模式
-            return await self._generate_with_llm(generation_context, page_no)
+            return await self._generate_with_llm(generation_context, page_no, page)
 
-    def _parse_result(
-        self,
-        result: str,
-        page: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _parse_result(self, result: str, page: Dict[str, Any]) -> Dict[str, Any]:
         """
         解析工具返回的字符串为结构化数据
 
@@ -553,7 +555,8 @@ class ContentMaterialAgent(BaseToolAgent):
     async def _generate_with_llm(
         self,
         generation_context: Dict[str, Any],
-        page_no: int
+        page_no: int,
+        page: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         使用 LLM 直接生成内容（降级方案）
@@ -568,9 +571,42 @@ class ContentMaterialAgent(BaseToolAgent):
         # 使用 LLM 生成内容
         result = await self.chain.ainvoke(generation_context)
 
-        # 解析 JSON 结果
+        # 解析 JSON 结果（兼容 markdown 代码块或包裹文本）
         import json
-        content_data = json.loads(result.content)
+        import re
+
+        content = (result.content or "").strip()
+        content_data = None
+
+        try:
+            content_data = json.loads(content)
+        except (json.JSONDecodeError, ValueError):
+            code_block_match = re.search(
+                r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", content, re.IGNORECASE
+            )
+            if code_block_match:
+                try:
+                    content_data = json.loads(code_block_match.group(1))
+                except (json.JSONDecodeError, ValueError):
+                    content_data = None
+
+            if content_data is None:
+                start = content.find("{")
+                end = content.rfind("}") + 1
+                if start != -1 and end > start:
+                    try:
+                        content_data = json.loads(content[start:end])
+                    except (json.JSONDecodeError, ValueError):
+                        content_data = None
+
+        if not isinstance(content_data, dict):
+            if page is not None:
+                logger.warning(
+                    f"[{self.agent_name}] LLM returned non-JSON content for page {page_no}, using structured text parser"
+                )
+                content_data = self._parse_result(content, page)
+            else:
+                raise ValueError("LLM content is not valid JSON")
 
         logger.info(f"[{self.agent_name}] Content generated by LLM for page {page_no}")
         return content_data
@@ -579,7 +615,7 @@ class ContentMaterialAgent(BaseToolAgent):
         self,
         pages: List[Dict[str, Any]],
         research_results: List[Dict[str, Any]],
-        state: Optional[PPTGenerationState] = None
+        state: Optional[PPTGenerationState] = None,
     ) -> List[Dict[str, Any]]:
         """
         为所有页面生成内容
@@ -596,10 +632,8 @@ class ContentMaterialAgent(BaseToolAgent):
 
         # 并行生成所有页面的内容
         import asyncio
-        tasks = [
-            self.generate_content_for_page(page, research_results, state)
-            for page in pages
-        ]
+
+        tasks = [self.generate_content_for_page(page, research_results, state) for page in pages]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # 处理结果
@@ -612,7 +646,9 @@ class ContentMaterialAgent(BaseToolAgent):
             else:
                 content_materials.append(result)
 
-        logger.info(f"[{self.agent_name}] Completed content generation for {len(content_materials)} pages")
+        logger.info(
+            f"[{self.agent_name}] Completed content generation for {len(content_materials)} pages"
+        )
         return content_materials
 
     def get_fallback_result(self, state: PPTGenerationState) -> Optional[PPTGenerationState]:
@@ -621,10 +657,7 @@ class ContentMaterialAgent(BaseToolAgent):
         pages = framework.get("ppt_framework", [])
 
         # 为所有页面生成简单内容
-        content_materials = [
-            self._fallback_content(page, [])
-            for page in pages
-        ]
+        content_materials = [self._fallback_content(page, []) for page in pages]
 
         state["content_materials"] = content_materials
         update_state_progress(state, "content_generation", 80)
@@ -639,6 +672,7 @@ def create_content_agent(
     model: Optional[ChatOpenAI] = None,
     temperature: float = 0.5,
     enable_memory: bool = True,
+    use_tools: bool = False,
 ) -> ContentMaterialAgent:
     """
     创建内容生成智能体
@@ -654,7 +688,8 @@ def create_content_agent(
     return ContentMaterialAgent(
         model=model,
         temperature=temperature,
-        enable_memory=enable_memory
+        enable_memory=enable_memory,
+        use_tools=use_tools,
     )
 
 
@@ -664,7 +699,7 @@ def create_content_agent(
 async def generate_content(
     page: Dict[str, Any],
     research_results: List[Dict[str, Any]] = None,
-    model: Optional[ChatOpenAI] = None
+    model: Optional[ChatOpenAI] = None,
 ) -> Dict[str, Any]:
     """
     直接生成页面内容（便捷函数）
@@ -694,7 +729,7 @@ if __name__ == "__main__":
                 "core_content": "AI介绍封面",
                 "is_need_chart": False,
                 "is_need_image": True,
-                "estimated_word_count": 50
+                "estimated_word_count": 50,
             },
             {
                 "page_no": 3,
@@ -703,16 +738,11 @@ if __name__ == "__main__":
                 "core_content": "介绍人工智能从诞生到现在的发展",
                 "is_need_chart": True,
                 "is_need_image": False,
-                "estimated_word_count": 200
-            }
+                "estimated_word_count": 200,
+            },
         ]
 
-        test_research = [
-            {
-                "page_no": 3,
-                "research_content": "人工智能诞生于1956年达特茅斯会议..."
-            }
-        ]
+        test_research = [{"page_no": 3, "research_content": "人工智能诞生于1956年达特茅斯会议..."}]
 
         agent = create_content_agent()
 

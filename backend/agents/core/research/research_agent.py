@@ -15,8 +15,10 @@ from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 
 from ...models.state import (
-    PPTGenerationState, update_state_progress,
-    get_framework_pages, get_research_pages
+    PPTGenerationState,
+    update_state_progress,
+    get_framework_pages,
+    get_research_pages,
 )
 from ...models.framework import PageDefinition
 from ..base_agent import BaseAgent, BaseToolAgent
@@ -92,7 +94,9 @@ class ResearchAgent(BaseToolAgent):
         temperature: float = 0.3,
         agent_name: str = "ResearchAgent",
         enable_memory: bool = False,
-        use_skills: bool = True  # 是否使用研究相关的技能（Python + MD）
+        use_tools: bool = True,
+        use_skills: bool = True,  # 是否使用研究相关的技能（Python + MD）
+        tool_categories: Optional[List[str]] = None,
     ):
         """
         初始化研究智能体
@@ -103,6 +107,7 @@ class ResearchAgent(BaseToolAgent):
             agent_name: Agent名称
             enable_memory: 是否启用记忆功能
             use_skills: 是否使用研究相关的技能（包含 Python + MD Skills）
+            tool_categories: 兼容旧调用参数（可选）
 
         注意：
         - 现在所有工具（Python Skills + MD Skills）都统一在 NativeToolRegistry 中管理
@@ -111,17 +116,24 @@ class ResearchAgent(BaseToolAgent):
         # 构建工具名称列表
         tool_names = []
 
-        # 添加搜索工具（Domain Tools）
-        tool_names.extend(["web_search", "fetch_url", "weixin_search"])
+        if tool_categories is not None:
+            use_skills = "SKILL" in tool_categories
+            use_tools = use_skills or ("SEARCH" in tool_categories)
+
+        if use_tools:
+            # 添加搜索工具（Domain Tools）
+            tool_names.extend(["web_search", "fetch_url", "weixin_search"])
 
         # 如果启用技能，添加研究相关的 Skills
-        if use_skills:
-            tool_names.extend([
-                # Python Skills
-                "research_workflow",
-                # MD Skills (Guides)
-                "research_prompts",
-            ])
+        if use_tools and use_skills:
+            tool_names.extend(
+                [
+                    # Python Skills
+                    "research_workflow",
+                    # MD Skills (Guides)
+                    "research_guide",
+                ]
+            )
 
         # 调用 BaseToolAgent 的初始化
         super().__init__(
@@ -129,11 +141,22 @@ class ResearchAgent(BaseToolAgent):
             temperature=temperature,
             tool_names=tool_names,  # 使用 tool_names
             agent_name=agent_name,
-            enable_memory=enable_memory
+            enable_memory=enable_memory,
         )
 
         # 创建研究链（降级方案）
         self.chain = self._create_chain()
+
+    def _create_chain(self) -> Runnable:
+        """创建 LLM 研究链（用于工具失败时降级）"""
+        enhanced_prompt = RESEARCH_PROMPT.replace("{SKILL_INSTRUCTIONS}", "")
+        enhanced_prompt = enhanced_prompt.replace("\n\n你的任务", "\n你的任务")
+        prompt = ChatPromptTemplate.from_template(enhanced_prompt)
+        return prompt | self.model
+
+    async def run_node(self, state: PPTGenerationState) -> PPTGenerationState:
+        """兼容工作流节点调用接口"""
+        return await self.execute_task(state)
 
     async def execute_task(self, state: PPTGenerationState) -> PPTGenerationState:
         """
@@ -166,11 +189,8 @@ class ResearchAgent(BaseToolAgent):
             if self.has_memory:
                 await self.remember(
                     "research_results",
-                    {
-                        "count": len(research_results),
-                        "results": research_results
-                    },
-                    importance=0.7
+                    {"count": len(research_results), "results": research_results},
+                    importance=0.7,
                 )
 
         # Pass results through LangGraph State
@@ -179,13 +199,13 @@ class ResearchAgent(BaseToolAgent):
         # 研究阶段的进度是30% -> 50%
         update_state_progress(state, "research", 50)
 
-        logger.info(f"[{self.agent_name}] Task completed: {len(research_results) if research_results else 0} pages researched")
+        logger.info(
+            f"[{self.agent_name}] Task completed: {len(research_results) if research_results else 0} pages researched"
+        )
         return state
 
     async def research_page(
-        self,
-        page: Dict[str, Any],
-        state: Optional[PPTGenerationState] = None
+        self, page: Dict[str, Any], state: Optional[PPTGenerationState] = None
     ) -> Dict[str, Any]:
         """
         研究单个页面（LLM 自主判断是否使用工具）
@@ -212,8 +232,11 @@ class ResearchAgent(BaseToolAgent):
                 logger.info(f"[{self.agent_name}] Using cached research for page {page_no}")
                 return cached
 
-        # 使用 ReAct Agent 进行研究（LLM 自主判断是否搜索）
-        research_content = await self._research_with_agent(title, core_content, keywords)
+        # 使用工具研究或直接 LLM 研究
+        if self.has_tools():
+            research_content = await self._research_with_agent(title, core_content, keywords)
+        else:
+            research_content = await self._research_with_llm(title, core_content, keywords)
 
         result = {
             "page_no": page_no,
@@ -221,26 +244,17 @@ class ResearchAgent(BaseToolAgent):
             "research_content": research_content,
             "keywords": keywords,
             "status": "completed",
-            "has_tools": self.has_tools()
+            "has_tools": self.has_tools(),
         }
 
         # Cache result (if memory enabled)
         if self.has_memory:
             cache_key = f"research_page_{page_no}_{hash(title + core_content)}"
-            await self.remember(
-                cache_key,
-                result,
-                importance=0.7
-            )
+            await self.remember(cache_key, result, importance=0.7)
 
         return result
 
-    async def _research_with_agent(
-        self,
-        title: str,
-        core_content: str,
-        keywords: List[str]
-    ) -> str:
+    async def _research_with_agent(self, title: str, core_content: str, keywords: List[str]) -> str:
         """
         使用 ReAct Agent 进行研究（LLM 自主判断是否使用工具）
 
@@ -286,20 +300,17 @@ class ResearchAgent(BaseToolAgent):
             logger.info(f"[{self.agent_name}] Falling back to LLM-only mode")
             return await self._research_with_llm(title, core_content, keywords)
 
-    async def _research_with_llm(
-        self,
-        title: str,
-        core_content: str,
-        keywords: List[str]
-    ) -> str:
+    async def _research_with_llm(self, title: str, core_content: str, keywords: List[str]) -> str:
         """使用LLM生成研究资料（降级方案）"""
         try:
-            result = await self.chain.ainvoke({
-                "page_no": 1,
-                "page_title": title,
-                "core_content": core_content,
-                "keywords": ", ".join(keywords) if keywords else "无"
-            })
+            result = await self.chain.ainvoke(
+                {
+                    "page_no": 1,
+                    "page_title": title,
+                    "core_content": core_content,
+                    "keywords": ", ".join(keywords) if keywords else "无",
+                }
+            )
             return result.content
         except Exception as e:
             logger.warning(f"[{self.agent_name}] LLM research failed: {e}")
@@ -315,14 +326,14 @@ class ResearchAgent(BaseToolAgent):
             "title": title,
             "research_content": f"关于「{title}」的研究资料\n\n- 背景知识：[待补充]\n- 关键数据：[待补充]\n- 相关案例：[待补充]",
             "keywords": page.get("keywords", []),
-            "status": "fallback"
+            "status": "fallback",
         }
 
     async def research_all_pages(
         self,
         pages: List[Dict[str, Any]],
         research_indices: List[int],
-        state: Optional[PPTGenerationState] = None
+        state: Optional[PPTGenerationState] = None,
     ) -> List[Dict[str, Any]]:
         """
         研究所有需要研究的页面
@@ -342,10 +353,8 @@ class ResearchAgent(BaseToolAgent):
 
         # 并行研究所有页面
         import asyncio
-        tasks = [
-            self.research_page(page, state)
-            for page in pages_to_research
-        ]
+
+        tasks = [self.research_page(page, state) for page in pages_to_research]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # 处理结果
@@ -368,9 +377,7 @@ class ResearchAgent(BaseToolAgent):
 
         # 为所有页面返回占位研究
         research_results = [
-            self._fallback_research(page)
-            for page in pages
-            if page.get("is_need_research", False)
+            self._fallback_research(page) for page in pages if page.get("is_need_research", False)
         ]
 
         state["research_results"] = research_results
@@ -387,6 +394,7 @@ def create_research_agent(
     temperature: float = 0.3,
     tool_categories: Optional[List[str]] = None,
     enable_memory: bool = True,
+    use_tools: bool = False,
 ) -> ResearchAgent:
     """
     创建研究智能体
@@ -403,18 +411,17 @@ def create_research_agent(
     return ResearchAgent(
         model=model,
         temperature=temperature,
+        use_tools=use_tools,
+        use_skills=use_tools,
         tool_categories=tool_categories,
-        enable_memory=enable_memory
+        enable_memory=enable_memory,
     )
 
 
 # 便捷函数
 
 
-async def research_page(
-    page: Dict[str, Any],
-    model: Optional[ChatOpenAI] = None
-) -> Dict[str, Any]:
+async def research_page(page: Dict[str, Any], model: Optional[ChatOpenAI] = None) -> Dict[str, Any]:
     """
     直接研究页面（便捷函数）
 
@@ -438,7 +445,7 @@ if __name__ == "__main__":
             "page_no": 1,
             "title": "人工智能发展历程",
             "core_content": "介绍人工智能从诞生到现在的发展",
-            "keywords": ["AI", "人工智能", "机器学习"]
+            "keywords": ["AI", "人工智能", "机器学习"],
         }
 
         # 测试 LLM-only 模式

@@ -15,10 +15,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 
-from ...models.state import (
-    PPTGenerationState, update_state_progress,
-    get_framework_pages
-)
+from ...models.state import PPTGenerationState, update_state_progress, get_framework_pages
 from ...models.framework import PageType
 from ..base_agent import BaseAgent
 
@@ -81,7 +78,7 @@ class TemplateRendererAgent(BaseAgent):
             temperature=0.0,
             agent_name=agent_name,
             enable_memory=enable_memory,
-            skills=skills
+            skills=skills,
         )
 
         # 存储设计原则用于渲染
@@ -92,7 +89,9 @@ class TemplateRendererAgent(BaseAgent):
         if use_python_skills:
             self._load_python_skills()
 
-        logger.info(f"[{self.agent_name}] Initialized, output_dir: {self.output_dir}, memory={enable_memory}")
+        logger.info(
+            f"[{self.agent_name}] Initialized, output_dir: {self.output_dir}, memory={enable_memory}"
+        )
 
     def _create_chain(self) -> Runnable:
         """
@@ -146,10 +145,7 @@ class TemplateRendererAgent(BaseAgent):
             logger.info(f"[{self.agent_name}] Loading Python Skills...")
 
             # 加载布局选择 Skill
-            self._python_skills["layout_selection"] = load_skill(
-                "layout_selection",
-                llm=self.model
-            )
+            self._python_skills["layout_selection"] = load_skill("layout_selection", llm=self.model)
             logger.info(f"[{self.agent_name}] Loaded layout_selection skill")
 
         except Exception as e:
@@ -179,17 +175,11 @@ class TemplateRendererAgent(BaseAgent):
             raise ValueError("Missing content_materials in state")
 
         # 渲染PPT
-        ppt_output = await self.render(
-            framework, content_materials, requirement, task_id, state
-        )
+        ppt_output = await self.render(framework, content_materials, requirement, task_id, state)
 
         # 使用便捷方法记住渲染结果
         await self.save_to_cache(
-            f"final_output_{task_id}",
-            ppt_output,
-            importance=0.9,
-            scope="TASK",
-            state=state
+            f"final_output_{task_id}", ppt_output, importance=0.9, scope="TASK", state=state
         )
 
         # 更新状态
@@ -199,11 +189,15 @@ class TemplateRendererAgent(BaseAgent):
         logger.info(f"[{self.agent_name}] Task completed: {ppt_output['file_path']}")
         return state
 
+    async def run_node(self, state: PPTGenerationState) -> PPTGenerationState:
+        """兼容工作流节点调用接口"""
+        return await self.execute_task(state)
+
     def _generate_xml_content(
         self,
         framework: Dict[str, Any],
         content_materials: List[Dict[str, Any]],
-        requirement: Dict[str, Any]
+        requirement: Dict[str, Any],
     ) -> str:
         """
         生成XML格式的内容
@@ -243,7 +237,7 @@ class TemplateRendererAgent(BaseAgent):
                 page_def=page_def,
                 content_material=content_material,
                 requirement=requirement,
-                total_pages=len(pages)
+                total_pages=len(pages),
             )
 
             xml_parts.append(page_xml)
@@ -261,7 +255,7 @@ class TemplateRendererAgent(BaseAgent):
         page_def: Dict[str, Any],
         content_material: Dict[str, Any],
         requirement: Dict[str, Any],
-        total_pages: int
+        total_pages: int,
     ) -> str:
         """
         生成单个页面的XML
@@ -281,35 +275,34 @@ class TemplateRendererAgent(BaseAgent):
         if page_type == "cover":
             # 封面页
             topic = requirement.get("ppt_topic", page_title)
-            return f'''<SLIDE>
+            return f"""<SLIDE>
     <TITLE>{topic}</TITLE>
     <SUBTITLE>{page_def.get("core_content", "").split(chr(10))[0] if page_def.get("core_content") else ""}</SUBTITLE>
     <AUTHOR>汇报人</AUTHOR>
     <DATE>{datetime.now().strftime("%Y年%m月%d日")}</DATE>
-</SLIDE>'''
+</SLIDE>"""
 
         elif page_type == "directory":
             # 目录页
-            items = "\n".join([
-                f"        <ITEM>{i+1}. 章节{i+1}</ITEM>"
-                for i in range(min(5, total_pages - 2))
-            ])
-            return f'''<SLIDE>
+            items = "\n".join(
+                [f"        <ITEM>{i+1}. 章节{i+1}</ITEM>" for i in range(min(5, total_pages - 2))]
+            )
+            return f"""<SLIDE>
     <TITLE>目录</TITLE>
     <CONTENT>
 {items}
     </CONTENT>
-</SLIDE>'''
+</SLIDE>"""
 
         elif page_type in ("summary", "thanks"):
             # 总结/致谢页
-            return f'''<SLIDE>
+            return f"""<SLIDE>
     <TITLE>{page_title}</TITLE>
     <CONTENT>
         <POINT>感谢聆听</POINT>
         <POINT>欢迎提问与交流</POINT>
     </CONTENT>
-</SLIDE>'''
+</SLIDE>"""
 
         else:
             # 内容页
@@ -320,9 +313,19 @@ class TemplateRendererAgent(BaseAgent):
 
             # 获取内容类型
             content_type = page_def.get("content_type", "text_only")
-            has_chart = content_material.get("has_chart", False) if content_material else page_def.get("is_need_chart", False)
-            has_image = content_material.get("has_image", False) if content_material else page_def.get("is_need_image", False)
-            key_points_count = len(content_material.get("key_points", [])) if content_material else 0
+            has_chart = (
+                content_material.get("has_chart", False)
+                if content_material
+                else page_def.get("is_need_chart", False)
+            )
+            has_image = (
+                content_material.get("has_image", False)
+                if content_material
+                else page_def.get("is_need_image", False)
+            )
+            key_points_count = (
+                len(content_material.get("key_points", [])) if content_material else 0
+            )
 
             # 使用 layout_selection Skill 选择布局
             selected_layout = None
@@ -333,7 +336,9 @@ class TemplateRendererAgent(BaseAgent):
                     # 由于 layout_selection Skill 可能是异步的，我们需要使用 await
                     # 但 _generate_page_xml 是同步方法，所以我们先不在这里调用
                     # 而是标记需要在 render 时处理
-                    logger.debug(f"[{self.agent_name}] Layout selection available for page {page_no}")
+                    logger.debug(
+                        f"[{self.agent_name}] Layout selection available for page {page_no}"
+                    )
                 except Exception as e:
                     logger.warning(f"[{self.agent_name}] Layout selection error: {e}")
 
@@ -347,7 +352,7 @@ class TemplateRendererAgent(BaseAgent):
                     "text_with_image": "title_with_right_image",
                     "text_with_both": "title_with_chart_and_image",
                 },
-                "summary": "title_with_bottom_summary"
+                "summary": "title_with_bottom_summary",
             }
 
             # 根据页面类型和内容类型选择布局
@@ -367,12 +372,16 @@ class TemplateRendererAgent(BaseAgent):
 
                 if content_material.get("has_image"):
                     image_suggestion = content_material.get("image_suggestion", {})
-                    image_info = f'        <IMAGE suggestion="{image_suggestion.get("search_query", "")}"/>'
+                    image_info = (
+                        f'        <IMAGE suggestion="{image_suggestion.get("search_query", "")}"/>'
+                    )
 
             # 限制内容长度
-            display_content = content_text[:200] if content_text else page_def.get("core_content", "")
+            display_content = (
+                content_text[:200] if content_text else page_def.get("core_content", "")
+            )
 
-            return f'''<SLIDE>
+            return f"""<SLIDE>
     <TITLE>{page_title}</TITLE>
     <CONTENT>
         <TEXT>{display_content}</TEXT>
@@ -382,12 +391,10 @@ class TemplateRendererAgent(BaseAgent):
     <LAYOUTS>
 {layout_info}
     </LAYOUTS>
-</SLIDE>'''
+</SLIDE>"""
 
     def _generate_preview_data(
-        self,
-        framework: Dict[str, Any],
-        content_materials: List[Dict[str, Any]]
+        self, framework: Dict[str, Any], content_materials: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
         生成前端预览数据
@@ -422,7 +429,9 @@ class TemplateRendererAgent(BaseAgent):
                 "type": page_def.get("page_type", "content"),
                 "has_chart": content_material.get("has_chart", False),
                 "has_image": content_material.get("has_image", False),
-                "preview_text": content_material.get("content_text", "")[:100] if content_material else ""
+                "preview_text": (
+                    content_material.get("content_text", "")[:100] if content_material else ""
+                ),
             }
 
             preview_pages.append(preview_page)
@@ -430,14 +439,10 @@ class TemplateRendererAgent(BaseAgent):
         return {
             "total_pages": len(preview_pages),
             "pages": preview_pages,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
         }
 
-    def _save_output(
-        self,
-        xml_content: str,
-        task_id: str
-    ) -> str:
+    def _save_output(self, xml_content: str, task_id: str) -> str:
         """
         保存输出文件
 
@@ -464,7 +469,7 @@ class TemplateRendererAgent(BaseAgent):
         content_materials: List[Dict[str, Any]],
         requirement: Dict[str, Any],
         task_id: str,
-        state: Optional[PPTGenerationState] = None
+        state: Optional[PPTGenerationState] = None,
     ) -> Dict[str, Any]:
         """
         渲染PPT
@@ -497,17 +502,11 @@ class TemplateRendererAgent(BaseAgent):
 
             # 使用便捷方法缓存预览数据
             await self.save_to_cache(
-                cache_key,
-                {"preview_data": preview_data},
-                importance=0.4,
-                scope="TASK",
-                state=state
+                cache_key, {"preview_data": preview_data}, importance=0.4, scope="TASK", state=state
             )
 
         # 生成XML内容
-        xml_content = self._generate_xml_content(
-            framework, content_materials, requirement
-        )
+        xml_content = self._generate_xml_content(framework, content_materials, requirement)
 
         # 保存文件
         file_path = self._save_output(xml_content, task_id)
@@ -516,7 +515,7 @@ class TemplateRendererAgent(BaseAgent):
             "file_path": file_path,
             "preview_data": preview_data,
             "xml_content": xml_content,
-            "total_pages": total_pages
+            "total_pages": total_pages,
         }
 
     def get_fallback_result(self, state: PPTGenerationState) -> Optional[PPTGenerationState]:
@@ -534,10 +533,10 @@ class TemplateRendererAgent(BaseAgent):
             "preview_data": {
                 "total_pages": total_pages,
                 "pages": [],
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat(),
             },
             "xml_content": "<PRESENTATION>Fallback content</PRESENTATION>",
-            "total_pages": total_pages
+            "total_pages": total_pages,
         }
         update_state_progress(state, "template_rendering", 100)
 
@@ -563,11 +562,7 @@ def create_renderer_agent(
     Returns:
         TemplateRendererAgent 实例
     """
-    return TemplateRendererAgent(
-        model=model,
-        output_dir=output_dir,
-        enable_memory=enable_memory
-    )
+    return TemplateRendererAgent(model=model, output_dir=output_dir, enable_memory=enable_memory)
 
 
 # 便捷函数
@@ -578,7 +573,7 @@ async def render_ppt(
     content_materials: List[Dict[str, Any]],
     requirement: Dict[str, Any],
     task_id: str = "output",
-    output_dir: str = "output"
+    output_dir: str = "output",
 ) -> Dict[str, Any]:
     """
     直接渲染 PPT（便捷函数）
@@ -609,55 +604,28 @@ if __name__ == "__main__":
                     "page_no": 1,
                     "title": "封面",
                     "page_type": "cover",
-                    "core_content": "主题\\n副标题"
+                    "core_content": "主题\\n副标题",
                 },
-                {
-                    "page_no": 2,
-                    "title": "目录",
-                    "page_type": "directory",
-                    "core_content": ""
-                },
-                {
-                    "page_no": 3,
-                    "title": "总结",
-                    "page_type": "summary",
-                    "core_content": ""
-                }
-            ]
+                {"page_no": 2, "title": "目录", "page_type": "directory", "core_content": ""},
+                {"page_no": 3, "title": "总结", "page_type": "summary", "core_content": ""},
+            ],
         }
 
         test_content = [
-            {
-                "page_no": 1,
-                "content_text": "封面内容",
-                "has_chart": False,
-                "has_image": True
-            },
-            {
-                "page_no": 2,
-                "content_text": "目录内容",
-                "has_chart": False,
-                "has_image": False
-            },
-            {
-                "page_no": 3,
-                "content_text": "总结内容",
-                "has_chart": False,
-                "has_image": False
-            }
+            {"page_no": 1, "content_text": "封面内容", "has_chart": False, "has_image": True},
+            {"page_no": 2, "content_text": "目录内容", "has_chart": False, "has_image": False},
+            {"page_no": 3, "content_text": "总结内容", "has_chart": False, "has_image": False},
         ]
 
         test_requirement = {
             "ppt_topic": "测试主题",
             "page_num": 3,
-            "template_type": "business_template"
+            "template_type": "business_template",
         }
 
         agent = create_renderer_agent()
 
-        result = await agent.render(
-            test_framework, test_content, test_requirement, "test_001"
-        )
+        result = await agent.render(test_framework, test_content, test_requirement, "test_001")
 
         print(f"文件已保存至: {result['file_path']}")
         print(f"总页数: {result['total_pages']}")

@@ -15,7 +15,7 @@
 """
 
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Dict, Any, Optional, List
 
 from langchain_openai import ChatOpenAI
@@ -48,6 +48,7 @@ class BaseAgent(ABC):
         temperature: float = 0.0,
         agent_name: str = "BaseAgent",
         enable_memory: bool = False,  # 保留参数但不使用
+        **kwargs,
     ):
         """
         初始化Agent
@@ -63,17 +64,18 @@ class BaseAgent(ABC):
         )
         self.temperature = temperature
         self.agent_name = agent_name
+        self.enable_memory = enable_memory
         self.has_memory = False  # 简化版本不支持记忆
+        self._skills = kwargs.get("skills") or []
 
         logger.info(
             f"[{self.agent_name}] Initialized with model: {self.model.model_name}, "
             f"temperature: {self.temperature}"
         )
 
-    @abstractmethod
     async def run(self, *args, **kwargs):
         """
-        Agent 的主要执行方法（子类必须实现）
+        Agent 的主要执行方法（默认实现）
 
         Args:
             *args: 位置参数
@@ -82,7 +84,70 @@ class BaseAgent(ABC):
         Returns:
             Agent执行结果
         """
-        pass
+        run_node = getattr(self, "run_node", None)
+        if callable(run_node):
+            if args:
+                return await run_node(*args)
+            if "state" in kwargs:
+                return await run_node(kwargs["state"])
+
+        execute_task = getattr(self, "execute_task", None)
+        if callable(execute_task):
+            if args:
+                return await execute_task(*args)
+            if "state" in kwargs:
+                return await execute_task(kwargs["state"])
+        raise NotImplementedError(f"{self.agent_name} must implement run() or run_node()")
+
+    def get_skill(self, skill_name: str):
+        """兼容旧接口：检查是否声明了指定技能"""
+        if isinstance(self._skills, dict):
+            return self._skills.get(skill_name)
+        if isinstance(self._skills, list):
+            return skill_name if skill_name in self._skills else None
+        return None
+
+    def _get_memory(self, state: Optional[Dict[str, Any]] = None):
+        """兼容旧记忆接口（无操作）"""
+        return None
+
+    async def remember(self, key: str, value: Any, importance: float = 0.5, **kwargs):
+        """兼容旧记忆接口（无操作）"""
+        return None
+
+    async def recall(self, key: str, **kwargs):
+        """兼容旧记忆接口（默认无缓存）"""
+        return None
+
+    async def forget(self, key: str, **kwargs):
+        """兼容旧记忆接口（无操作）"""
+        return None
+
+    async def retrieve_shared_data(self, namespace: str, key: str, **kwargs):
+        """兼容共享数据接口（默认无共享数据）"""
+        return None
+
+    async def save_to_cache(self, key: str, value: Any, ttl: Optional[int] = None, **kwargs):
+        """兼容缓存接口（无操作）"""
+        return None
+
+    async def check_cache(self, key: str, *args, **kwargs):
+        """兼容缓存查询接口（默认无缓存）"""
+        return None
+
+    async def share_data(self, namespace: str, key: str, value: Any, **kwargs):
+        """兼容共享数据接口（无操作）"""
+        return None
+
+    async def apply_user_preferences_to_requirement(
+        self, requirement: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """兼容用户偏好接口（不修改输入）"""
+        return requirement
+
+    async def get_user_preferences(self) -> Dict[str, Any]:
+        """兼容用户偏好接口（默认空）"""
+        return {}
 
     def _log_start(self, message: str = ""):
         """记录任务开始"""
@@ -98,10 +163,7 @@ class BaseAgent(ABC):
 
     def _log_error(self, error: Exception, message: str = ""):
         """记录错误"""
-        logger.error(
-            f"[{self.agent_name}] Error: {message} - {str(error)}",
-            exc_info=True
-        )
+        logger.error(f"[{self.agent_name}] Error: {message} - {str(error)}", exc_info=True)
 
 
 class BaseToolAgent(BaseAgent):
@@ -172,10 +234,7 @@ Thought: {agent_scratchpad}"""
         """
         # 先初始化基类
         super().__init__(
-            model=model,
-            temperature=temperature,
-            agent_name=agent_name,
-            enable_memory=enable_memory
+            model=model, temperature=temperature, agent_name=agent_name, enable_memory=enable_memory
         )
 
         # 设置工具参数
@@ -214,11 +273,17 @@ Thought: {agent_scratchpad}"""
             # 优先级2: 否则按类别加载
             elif self.tool_categories:
                 valid_categories = [
-                    registry.SEARCH, registry.MEDIA, registry.UTILITY,
-                    registry.VECTOR, registry.DATABASE, registry.SKILL
+                    registry.SEARCH,
+                    registry.MEDIA,
+                    registry.UTILITY,
+                    registry.VECTOR,
+                    registry.DATABASE,
+                    registry.SKILL,
                 ]
 
-                logger.info(f"[{self.agent_name}] Loading tools by categories: {self.tool_categories}")
+                logger.info(
+                    f"[{self.agent_name}] Loading tools by categories: {self.tool_categories}"
+                )
                 for category in self.tool_categories:
                     if category.upper() in valid_categories:
                         category_tools = registry.get_tools_by_category(category.upper())
@@ -245,19 +310,13 @@ Thought: {agent_scratchpad}"""
 
             # 创建 ReAct Agent prompt
             tool_names = [tool.name for tool in tools]
-            prompt_template = PromptTemplate.from_template(
-                self.DEFAULT_TOOL_PROMPT.format(
-                    tools="\n".join([f"- {tool.name}: {tool.description}" for tool in tools]),
-                    tool_names=", ".join(tool_names)
-                )
+            prompt_template = PromptTemplate.from_template(self.DEFAULT_TOOL_PROMPT).partial(
+                tools="\n".join([f"- {tool.name}: {tool.description}" for tool in tools]),
+                tool_names=", ".join(tool_names),
             )
 
             # 创建 ReAct Agent
-            agent = create_react_agent(
-                llm=self.model,
-                tools=tools,
-                prompt=prompt_template
-            )
+            agent = create_react_agent(llm=self.model, tools=tools, prompt=prompt_template)
 
             # 创建 Agent Executor
             self.agent_executor = AgentExecutor(
@@ -266,7 +325,7 @@ Thought: {agent_scratchpad}"""
                 verbose=self.verbose,
                 handle_parsing_errors=True,
                 max_iterations=self.max_iterations,
-                return_intermediate_steps=False
+                return_intermediate_steps=False,
             )
 
             logger.info(
@@ -306,16 +365,13 @@ Thought: {agent_scratchpad}"""
             logger.info(f"[{self.agent_name}] Executing with tools: {query[:100]}...")
 
             # 执行 Agent（LLM 自主决定是否使用工具）
-            result = await self.agent_executor.ainvoke({
-                "input": query
-            })
+            result = await self.agent_executor.ainvoke({"input": query})
 
             # 提取输出
             output = result.get("output", "")
 
             logger.info(
-                f"[{self.agent_name}] Tool execution completed. "
-                f"Output length: {len(output)}"
+                f"[{self.agent_name}] Tool execution completed. " f"Output length: {len(output)}"
             )
 
             return output
@@ -353,12 +409,25 @@ Thought: {agent_scratchpad}"""
         """
         return len(self._loaded_tools)
 
-    @abstractmethod
     async def run(self, *args, **kwargs):
         """
-        Agent 的主要执行方法（子类必须实现）
+        Agent 的主要执行方法（默认实现）
 
-        BaseToolAgent 仍然需要子类实现具体的 run 方法，
-        因为不同的 Agent 有不同的执行逻辑。
+        优先级：
+        1. 若子类提供 run_node(state) 则走节点执行
+        2. 若传入 input/query 则走 execute_with_tools
         """
-        pass
+        run_node = getattr(self, "run_node", None)
+        if callable(run_node):
+            if args:
+                return await run_node(*args)
+            if "state" in kwargs:
+                return await run_node(kwargs["state"])
+
+        user_input = kwargs.get("input") or kwargs.get("query")
+        if isinstance(user_input, str):
+            return await self.execute_with_tools(user_input)
+
+        raise NotImplementedError(
+            f"{self.agent_name} must implement run(), run_node(), or provide input/query"
+        )

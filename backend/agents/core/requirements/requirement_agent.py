@@ -109,8 +109,12 @@ class RequirementParserAgent(BaseAgent):
             self.remember = MemoryAwareAgent.remember.__get__(self, type(self))
             self.recall = MemoryAwareAgent.recall.__get__(self, type(self))
             self.forget = MemoryAwareAgent.forget.__get__(self, type(self))
-            self.apply_user_preferences_to_requirement = MemoryAwareAgent.apply_user_preferences_to_requirement.__get__(self, type(self))
-            self.get_user_preferences = MemoryAwareAgent.get_user_preferences.__get__(self, type(self))
+            self.apply_user_preferences_to_requirement = (
+                MemoryAwareAgent.apply_user_preferences_to_requirement.__get__(self, type(self))
+            )
+            self.get_user_preferences = MemoryAwareAgent.get_user_preferences.__get__(
+                self, type(self)
+            )
 
             # 初始化 MemoryAwareAgent 属性
             self._task_id = None
@@ -129,7 +133,16 @@ class RequirementParserAgent(BaseAgent):
     @property
     def has_memory(self) -> bool:
         """检查是否有记忆功能"""
-        return self._memory_methods_bound and hasattr(self, '_memory_manager') and self._memory_manager is not None
+        if not getattr(self, "_memory_methods_bound", False):
+            return False
+        if not hasattr(self, "_memory_manager"):
+            return False
+        return self._memory_manager is not None
+
+    @has_memory.setter
+    def has_memory(self, value: bool):
+        """兼容 BaseAgent 初始化时对 has_memory 的赋值"""
+        self._has_memory_flag = bool(value)
 
     def _setup_parser_chain(self):
         """设置解析链"""
@@ -165,6 +178,21 @@ class RequirementParserAgent(BaseAgent):
             # 降级：使用规则提取
             return self._fallback_parse(user_input)
 
+    async def run(self, *args, **kwargs) -> Dict[str, Any]:
+        """实现 BaseAgent 抽象接口"""
+        if args and isinstance(args[0], dict):
+            return await self.run_node(args[0])
+
+        state = kwargs.get("state")
+        if isinstance(state, dict):
+            return await self.run_node(state)
+
+        user_input = kwargs.get("user_input")
+        if isinstance(user_input, str):
+            return await self.parse(user_input)
+
+        raise ValueError("RequirementParserAgent.run requires state dict or user_input string")
+
     def _validate_and_fill_defaults(self, requirement: Dict[str, Any]) -> Dict[str, Any]:
         """验证并填充默认值"""
         # 页数
@@ -175,7 +203,7 @@ class RequirementParserAgent(BaseAgent):
         # 语言
         if not requirement.get("language"):
             topic = requirement.get("ppt_topic", "")
-            has_chinese = any('\u4e00' <= c <= '\u9fff' for c in topic)
+            has_chinese = any("\u4e00" <= c <= "\u9fff" for c in topic)
             requirement["language"] = "ZH-CN" if has_chinese else "EN-US"
 
         # 模板类型
@@ -198,7 +226,7 @@ class RequirementParserAgent(BaseAgent):
 
     def _fallback_parse(self, user_input: str) -> Dict[str, Any]:
         """降级解析：使用规则提取"""
-        has_chinese = any('\u4e00' <= c <= '\u9fff' for c in user_input)
+        has_chinese = any("\u4e00" <= c <= "\u9fff" for c in user_input)
 
         return {
             "ppt_topic": user_input[:100],
@@ -263,9 +291,7 @@ class RequirementParserAgent(BaseAgent):
         else:
             personalized_requirements = base_requirements
 
-        logger.info(
-            f"[{self.agent_name}] Completed: {personalized_requirements.get('ppt_topic')}"
-        )
+        logger.info(f"[{self.agent_name}] Completed: {personalized_requirements.get('ppt_topic')}")
 
         return {"structured_requirements": personalized_requirements}
 
@@ -302,7 +328,7 @@ if __name__ == "__main__":
         test_inputs = [
             "生成一份关于人工智能的PPT，15页，学术风格",
             "Create a Q3 sales report presentation",
-            "帮我做一个产品介绍PPT"
+            "帮我做一个产品介绍PPT",
         ]
 
         agent = create_requirement_parser()

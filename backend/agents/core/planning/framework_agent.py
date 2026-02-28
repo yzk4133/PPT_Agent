@@ -120,14 +120,18 @@ class FrameworkDesignerAgent(BaseToolAgent):
         - 使用 tool_names 精确指定需要的工具
         """
         # 构建工具名称列表（只加载框架设计相关的工具）
-        tool_names = [
-            # Python Skills
-            "framework_design",
-            "topic_decomposition",
-            "section_planning",
-            # MD Skills (Guides)
-            "framework_prompts",
-        ] if use_tools else []
+        tool_names = (
+            [
+                # Python Skills
+                "framework_design",
+                "topic_decomposition",
+                "section_planning",
+                # MD Skills (Guides)
+                "framework_design_guide",
+            ]
+            if use_tools
+            else []
+        )
 
         # Call parent constructor (BaseToolAgent)
         super().__init__(
@@ -135,7 +139,7 @@ class FrameworkDesignerAgent(BaseToolAgent):
             temperature=temperature,
             tool_names=tool_names,  # 使用 tool_names 替代 tool_categories
             agent_name=agent_name,
-            enable_memory=enable_memory
+            enable_memory=enable_memory,
         )
 
         # Create fallback chain
@@ -150,6 +154,10 @@ class FrameworkDesignerAgent(BaseToolAgent):
         prompt = ChatPromptTemplate.from_template(enhanced_prompt)
         parser = JsonOutputParser()
         return prompt | self.model | parser
+
+    async def run_node(self, state: PPTGenerationState) -> PPTGenerationState:
+        """兼容工作流节点调用接口"""
+        return await self.execute_task(state)
 
     async def execute_task(self, state: PPTGenerationState) -> PPTGenerationState:
         """
@@ -225,20 +233,20 @@ class FrameworkDesignerAgent(BaseToolAgent):
 
         # Cache the result (if memory enabled)
         if self.has_memory:
-            await self.remember(
-                f"framework_{page_num}_{template_type}",
-                result,
-                importance=0.8
-            )
+            await self.remember(f"framework_{page_num}_{template_type}", result, importance=0.8)
 
         # Update state (data passing through LangGraph State)
         state["ppt_framework"] = result
         update_state_progress(state, "framework_design", 30)
 
-        logger.info(f"[{self.agent_name}] Framework designed successfully: {result['total_page']} pages")
+        logger.info(
+            f"[{self.agent_name}] Framework designed successfully: {result['total_page']} pages"
+        )
         return state
 
-    def _validate_and_fix(self, framework: Dict[str, Any], expected_page_num: int) -> Dict[str, Any]:
+    def _validate_and_fix(
+        self, framework: Dict[str, Any], expected_page_num: int
+    ) -> Dict[str, Any]:
         """
         验证并修复框架
 
@@ -256,7 +264,9 @@ class FrameworkDesignerAgent(BaseToolAgent):
         pages = framework.get("ppt_framework", [])
 
         if len(pages) != expected_page_num:
-            logger.warning(f"[{self.agent_name}] Page count mismatch: {len(pages)} != {expected_page_num}, fixing")
+            logger.warning(
+                f"[{self.agent_name}] Page count mismatch: {len(pages)} != {expected_page_num}, fixing"
+            )
             pages = self._fix_page_count(pages, expected_page_num)
 
         # 重新编号
@@ -278,9 +288,7 @@ class FrameworkDesignerAgent(BaseToolAgent):
         return framework
 
     def _apply_preferences_to_framework(
-        self,
-        framework: Dict[str, Any],
-        preferences: Dict[str, Any]
+        self, framework: Dict[str, Any], preferences: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Apply user preferences to adjust framework structure
@@ -311,7 +319,9 @@ class FrameworkDesignerAgent(BaseToolAgent):
                     charts_added += 1
 
             if charts_added > 0:
-                logger.info(f"[{self.agent_name}] Added charts to {charts_added} pages based on user preference")
+                logger.info(
+                    f"[{self.agent_name}] Added charts to {charts_added} pages based on user preference"
+                )
 
         # Apply "prefer_more_images" preference
         if preferences.get("prefer_more_images", False):
@@ -328,7 +338,9 @@ class FrameworkDesignerAgent(BaseToolAgent):
                     images_added += 1
 
             if images_added > 0:
-                logger.info(f"[{self.agent_name}] Added images to {images_added} pages based on user preference")
+                logger.info(
+                    f"[{self.agent_name}] Added images to {images_added} pages based on user preference"
+                )
 
         # Recalculate indices after modifications
         research_indices = [p["page_no"] for p in pages if p.get("is_need_research", False)]
@@ -340,7 +352,9 @@ class FrameworkDesignerAgent(BaseToolAgent):
 
         return framework
 
-    def _fix_page_count(self, pages: List[Dict[str, Any]], target_count: int) -> List[Dict[str, Any]]:
+    def _fix_page_count(
+        self, pages: List[Dict[str, Any]], target_count: int
+    ) -> List[Dict[str, Any]]:
         """
         修复页数
 
@@ -356,19 +370,21 @@ class FrameworkDesignerAgent(BaseToolAgent):
         if current_count < target_count:
             # 添加缺失的页面
             for i in range(current_count, target_count):
-                pages.append({
-                    "page_no": i + 1,
-                    "title": f"第{i-1}部分",
-                    "page_type": "content",
-                    "core_content": f"第{i-1}部分的核心内容",
-                    "is_need_chart": False,
-                    "is_need_research": False,
-                    "is_need_image": False,
-                    "content_type": "text_only",
-                    "keywords": [],
-                    "estimated_word_count": 100,
-                    "layout_suggestion": ""
-                })
+                pages.append(
+                    {
+                        "page_no": i + 1,
+                        "title": f"补充内容 {i + 1}",
+                        "page_type": "content",
+                        "core_content": "围绕主题展开关键要点与实践建议",
+                        "is_need_chart": False,
+                        "is_need_research": False,
+                        "is_need_image": False,
+                        "content_type": "text_only",
+                        "keywords": [],
+                        "estimated_word_count": 100,
+                        "layout_suggestion": "",
+                    }
+                )
         elif current_count > target_count:
             # 删除多余的页面
             pages = pages[:target_count]
@@ -376,9 +392,7 @@ class FrameworkDesignerAgent(BaseToolAgent):
         return pages
 
     async def _design_with_tools(
-        self,
-        design_context: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, design_context: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         使用 ReAct Agent 设计框架（通过 LangChain Tools）
@@ -445,10 +459,7 @@ class FrameworkDesignerAgent(BaseToolAgent):
             # 降级到 LLM 模式
             return await self._design_with_llm(design_context)
 
-    async def _design_with_llm(
-        self,
-        design_context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _design_with_llm(self, design_context: Dict[str, Any]) -> Dict[str, Any]:
         """
         使用 LLM 直接生成框架（降级方案）
 
@@ -467,11 +478,7 @@ class FrameworkDesignerAgent(BaseToolAgent):
             # 降级到模板框架
             return self._fallback_design(design_context)
 
-    def _parse_framework_result(
-        self,
-        result: str,
-        requirement: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _parse_framework_result(self, result: str, requirement: Dict[str, Any]) -> Dict[str, Any]:
         """
         解析工具返回的字符串为框架字典
 
@@ -530,6 +537,7 @@ class FrameworkDesignerAgent(BaseToolAgent):
         if core_modules and len(core_modules) >= 3:
             # 简单替换内容页标题
             from ...models.framework import PageType
+
             content_pages = [p for p in framework_obj.pages if p.page_type == PageType.CONTENT]
             module_index = 0
             for page in content_pages:
@@ -541,6 +549,7 @@ class FrameworkDesignerAgent(BaseToolAgent):
         # 如果需要研究，标记部分页面
         if need_research:
             from ...models.framework import PageType
+
             content_pages = [p for p in framework_obj.pages if p.page_type == PageType.CONTENT]
             for i, page in enumerate(content_pages):
                 if i % 2 == 0:  # 每隔一个内容页需要研究
@@ -577,6 +586,7 @@ def create_framework_designer(
     model: Optional[ChatOpenAI] = None,
     temperature: float = 0.0,
     enable_memory: bool = True,
+    use_tools: bool = False,
 ) -> FrameworkDesignerAgent:
     """
     创建框架设计智能体
@@ -592,7 +602,8 @@ def create_framework_designer(
     return FrameworkDesignerAgent(
         model=model,
         temperature=temperature,
-        enable_memory=enable_memory
+        enable_memory=enable_memory,
+        use_tools=use_tools,
     )
 
 
@@ -600,8 +611,7 @@ def create_framework_designer(
 
 
 async def design_framework(
-    requirement: Dict[str, Any],
-    model: Optional[ChatOpenAI] = None
+    requirement: Dict[str, Any], model: Optional[ChatOpenAI] = None
 ) -> Dict[str, Any]:
     """
     直接设计框架（便捷函数）
@@ -632,7 +642,7 @@ if __name__ == "__main__":
                 "scene": "business_report",
                 "core_modules": ["封面", "目录", "AI介绍", "应用场景", "未来展望", "总结"],
                 "need_research": True,
-                "language": "ZH-CN"
+                "language": "ZH-CN",
             },
             {
                 "ppt_topic": "Q3 销售报告",
@@ -641,8 +651,8 @@ if __name__ == "__main__":
                 "scene": "business_report",
                 "core_modules": ["概述", "销售数据", "分析", "结论"],
                 "need_research": False,
-                "language": "EN-US"
-            }
+                "language": "EN-US",
+            },
         ]
 
         agent = create_framework_designer()
