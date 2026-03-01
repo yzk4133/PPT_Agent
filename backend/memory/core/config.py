@@ -4,13 +4,18 @@ Memory System Configuration
 import os
 import logging
 from typing import Any, Dict, Optional
-from dataclasses import dataclass, field
+
+# Pydantic v2 compatibility
+try:
+    from pydantic_settings import BaseSettings
+    from pydantic import Field, field_validator, model_validator
+except ImportError:
+    from pydantic import BaseSettings, Field, validator as field_validator, model_validator
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class MemoryConfig:
+class MemoryConfig(BaseSettings):
     """
     记忆系统配置
 
@@ -18,55 +23,66 @@ class MemoryConfig:
     """
 
     # === 数据库配置 ===
-    database_url: str = field(
-        default_factory=lambda: os.getenv(
-            "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost:5432/multiagent_ppt"
-        )
+    database_url: str = Field(
+        default="mysql+pymysql://root:postgres@localhost:3306/multiagent_ppt",
+        description="数据库连接URL"
     )
-    redis_url: str = field(
-        default_factory=lambda: os.getenv(
-            "REDIS_URL",
-            "redis://localhost:6379/0"
-        )
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        description="Redis连接URL"
     )
 
     # === 性能配置 ===
-    l1_cache_size: int = 1000  # L1缓存最大条目数
-    l2_ttl_seconds: int = 3600  # L2缓存默认TTL（秒）
-    connection_pool_size: int = 10  # 数据库连接池大小
-    max_overflow: int = 20  # 连接池最大溢出
+    l1_cache_size: int = Field(default=1000, ge=1, le=100000, description="L1缓存最大条目数")
+    l2_ttl_seconds: int = Field(default=3600, ge=1, description="L2缓存默认TTL（秒）")
+    connection_pool_size: int = Field(default=10, ge=1, le=1000, description="数据库连接池大小")
+    max_overflow: int = Field(default=20, ge=0, le=500, description="连接池最大溢出")
 
     # === 功能开关 ===
-    enable_user_preferences: bool = True  # 启用用户偏好
-    enable_decision_tracking: bool = True  # 启用决策追踪
-    enable_workspace: bool = True  # 启用工作空间
-    enable_vector_search: bool = False  # 启用向量搜索
-    enable_cache: bool = True  # 启用Redis缓存
+    enable_user_preferences: bool = Field(default=True, description="启用用户偏好")
+    enable_decision_tracking: bool = Field(default=True, description="启用决策追踪")
+    enable_workspace: bool = Field(default=True, description="启用工作空间")
+    enable_vector_search: bool = Field(default=False, description="启用向量搜索")
+    enable_cache: bool = Field(default=True, description="启用Redis缓存")
 
     # === TTL配置 ===
-    session_ttl: int = 3600  # 会话缓存TTL（秒）
-    user_pref_ttl: int = 86400  # 用户偏好缓存TTL（秒）
-    vector_ttl: int = 7200  # 向量检索结果缓存TTL（秒）
-    workspace_default_ttl: int = 3600  # 工作空间数据默认TTL（秒）
+    session_ttl: int = Field(default=3600, ge=1, description="会话缓存TTL（秒）")
+    user_pref_ttl: int = Field(default=86400, ge=1, description="用户偏好缓存TTL（秒）")
+    vector_ttl: int = Field(default=7200, ge=1, description="向量检索结果缓存TTL（秒）")
+    workspace_default_ttl: int = Field(default=3600, ge=1, description="工作空间数据默认TTL（秒）")
 
     # === 日志配置 ===
-    log_level: str = "INFO"
-    log_memory_operations: bool = True  # 记录记忆操作日志
-    log_sql: bool = False  # 记录SQL语句
+    log_level: str = Field(default="INFO", description="日志级别")
+    log_memory_operations: bool = Field(default=True, description="记录记忆操作日志")
+    log_sql: bool = Field(default=False, description="记录SQL语句")
 
     # === 向量配置 ===
-    vector_dimension: int = 1536  # OpenAI text-embedding-3-small 维度
-    embedding_model: str = "text-embedding-3-small"  # 默认嵌入模型
+    vector_dimension: int = Field(default=1536, ge=1, description="OpenAI text-embedding-3-small 维度")
+    embedding_model: str = Field(default="text-embedding-3-small", description="默认嵌入模型")
 
-    def __post_init__(self):
-        """初始化后处理"""
-        # 设置日志级别
+    class Config:
+        env_prefix = "MEMORY_"
+        case_sensitive = False
+        extra = "ignore"
+
+    @model_validator(mode='after')
+    def setup_logging(self):
+        """设置日志级别（替代 __post_init__）"""
         if self.log_level:
             logging.getLogger("backend.memory").setLevel(self.log_level)
+        return self
+
+    @field_validator('log_level')
+    @classmethod
+    def validate_log_level(cls, v):
+        """验证日志级别"""
+        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        if v.upper() not in valid_levels:
+            raise ValueError(f"Invalid log level: {v}. Must be one of {valid_levels}")
+        return v.upper()
 
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
+        """转换为字典（向后兼容）"""
         return {
             "database_url": self._mask_password(self.database_url),
             "redis_url": self._mask_password(self.redis_url),
@@ -100,6 +116,11 @@ class MemoryConfig:
                 return f"{user_pass[0].split('//')[0]}//****:****@{parts[1]}"
         return url
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MemoryConfig":
+        """从字典创建实例（向后兼容）"""
+        return cls(**data)
+
 
 def load_config_from_env() -> MemoryConfig:
     """
@@ -108,59 +129,9 @@ def load_config_from_env() -> MemoryConfig:
     Returns:
         MemoryConfig实例
     """
+    # Pydantic BaseSettings 会自动从环境变量加载
     config = MemoryConfig()
-
-    # 覆盖布尔值配置
-    config.enable_user_preferences = os.getenv(
-        "MEMORY_ENABLE_USER_PREFERENCES",
-        str(config.enable_user_preferences)
-    ).lower() == "true"
-
-    config.enable_decision_tracking = os.getenv(
-        "MEMORY_ENABLE_DECISION_TRACKING",
-        str(config.enable_decision_tracking)
-    ).lower() == "true"
-
-    config.enable_workspace = os.getenv(
-        "MEMORY_ENABLE_WORKSPACE",
-        str(config.enable_workspace)
-    ).lower() == "true"
-
-    config.enable_vector_search = os.getenv(
-        "MEMORY_ENABLE_VECTOR_SEARCH",
-        str(config.enable_vector_search)
-    ).lower() == "true"
-
-    config.enable_cache = os.getenv(
-        "MEMORY_ENABLE_CACHE",
-        str(config.enable_cache)
-    ).lower() == "true"
-
-    # 覆盖数值配置
-    if os.getenv("MEMORY_L1_CACHE_SIZE"):
-        config.l1_cache_size = int(os.getenv("MEMORY_L1_CACHE_SIZE"))
-
-    if os.getenv("MEMORY_L2_TTL_SECONDS"):
-        config.l2_ttl_seconds = int(os.getenv("MEMORY_L2_TTL_SECONDS"))
-
-    if os.getenv("MEMORY_CONNECTION_POOL_SIZE"):
-        config.connection_pool_size = int(os.getenv("MEMORY_CONNECTION_POOL_SIZE"))
-
-    # 覆盖日志配置
-    if os.getenv("MEMORY_LOG_LEVEL"):
-        config.log_level = os.getenv("MEMORY_LOG_LEVEL")
-
-    config.log_memory_operations = os.getenv(
-        "MEMORY_LOG_OPERATIONS",
-        str(config.log_memory_operations)
-    ).lower() == "true"
-
-    config.log_sql = os.getenv(
-        "MEMORY_LOG_SQL",
-        str(config.log_sql)
-    ).lower() == "true"
-
-    logger.info(f"[MemoryConfig] Loaded configuration from environment")
+    logger.info("[MemoryConfig] Loaded configuration from environment")
     return config
 
 
@@ -181,7 +152,7 @@ def validate_config(config: MemoryConfig) -> bool:
         logger.error("[MemoryConfig] database_url is required")
         is_valid = False
 
-    # 检查数值范围
+    # 检查数值范围（Pydantic 已自动验证）
     if config.l1_cache_size <= 0:
         logger.error("[MemoryConfig] l1_cache_size must be positive")
         is_valid = False

@@ -11,7 +11,8 @@ import os
 from abc import ABC, abstractmethod
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from dataclasses import dataclass
+
+from pydantic import BaseModel, Field
 
 # Add parent directory to path
 
@@ -60,10 +61,14 @@ class ICheckpointBackend(ABC):
         """列出所有checkpoint"""
         pass
 
-@dataclass
-class DatabaseConfig:
+class DatabaseConfig(BaseModel):
     """数据库配置"""
-    db_path: str = "data/checkpoints.db"
+    db_path: str = Field(default="data/checkpoints.db", description="数据库文件路径")
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DatabaseConfig":
+        """从字典创建实例（向后兼容）"""
+        return cls(db_path=data.get("db_path", "data/checkpoints.db"))
 
 class InMemoryCheckpointBackend(ICheckpointBackend):
     """

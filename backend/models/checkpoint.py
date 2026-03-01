@@ -6,15 +6,15 @@ PPT generation workflow at intermediate stages.
 """
 
 import json
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, Dict, Any
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .execution_mode import ExecutionMode
 
 
-@dataclass
-class Checkpoint:
+class Checkpoint(BaseModel):
     """
     Execution Checkpoint
 
@@ -40,19 +40,28 @@ class Checkpoint:
         metadata: Additional metadata
     """
 
-    task_id: str
-    user_id: str
-    execution_mode: ExecutionMode
-    phase: int
-    raw_user_input: str
-    structured_requirements: Dict[str, Any]
-    ppt_framework: Dict[str, Any]
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
-    status: str = "editing"  # editing, completed, expired, deleted
-    version: int = 1
-    parent_task_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    task_id: str = Field(min_length=1, description="Unique task identifier")
+    user_id: str = Field(min_length=1, description="User ID")
+    execution_mode: ExecutionMode = Field(description="Execution mode")
+    phase: int = Field(ge=1, le=5, description="Current phase (1-5)")
+    raw_user_input: str = Field(min_length=1, description="Original user input")
+    structured_requirements: Dict[str, Any] = Field(default_factory=dict, description="Structured requirements")
+    ppt_framework: Dict[str, Any] = Field(default_factory=dict, description="PPT framework (outline)")
+    created_at: datetime = Field(default_factory=datetime.now, description="Creation timestamp")
+    updated_at: datetime = Field(default_factory=datetime.now, description="Last update timestamp")
+    status: str = Field(default="editing", description="Status (editing, completed, expired, deleted)")
+    version: int = Field(default=1, ge=1, description="Version number")
+    parent_task_id: Optional[str] = Field(default=None, description="Parent task ID")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v):
+        """验证状态值"""
+        valid_statuses = ["editing", "completed", "expired", "deleted"]
+        if v not in valid_statuses:
+            raise ValueError(f"Invalid status: {v}. Must be one of {valid_statuses}")
+        return v
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary (for JSON serialization)"""
@@ -221,24 +230,32 @@ class Checkpoint:
         )
 
 
-@dataclass
-class CheckpointSummary:
+class CheckpointSummary(BaseModel):
     """
     Checkpoint Summary
 
     Lightweight checkpoint information for list display
     """
 
-    task_id: str
-    user_id: str
-    phase: int
-    status: str
-    version: int
-    total_pages: int
-    ppt_topic: str
-    created_at: str
-    updated_at: str
-    age_hours: float
+    task_id: str = Field(min_length=1, description="Unique task identifier")
+    user_id: str = Field(min_length=1, description="User ID")
+    phase: int = Field(ge=1, le=5, description="Current phase")
+    status: str = Field(description="Status")
+    version: int = Field(ge=1, description="Version number")
+    total_pages: int = Field(ge=0, description="Total pages in framework")
+    ppt_topic: str = Field(description="PPT topic/title")
+    created_at: str = Field(description="Creation timestamp (ISO format)")
+    updated_at: str = Field(description="Update timestamp (ISO format)")
+    age_hours: float = Field(ge=0, description="Age in hours")
+
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v):
+        """验证状态值"""
+        valid_statuses = ["editing", "completed", "expired", "deleted"]
+        if v not in valid_statuses:
+            raise ValueError(f"Invalid status: {v}. Must be one of {valid_statuses}")
+        return v
 
     @classmethod
     def from_checkpoint(cls, checkpoint: Checkpoint) -> "CheckpointSummary":
