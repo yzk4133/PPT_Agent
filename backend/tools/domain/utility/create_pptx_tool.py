@@ -13,7 +13,7 @@ from typing import Optional, List, Dict
 from pptx import Presentation
 from pptx.util import Inches
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from backend.tools.core.monitoring import monitor_tool
 from backend.tools.application.tool_registry import get_native_registry
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 # Input schema
 class CreatePptxInput(BaseModel):
     """PowerPoint creation input schema"""
+
     slides: List[Dict] = Field(description="List of slide data dictionaries")
     output_path: Optional[str] = Field(default=None, description="Output file path (optional)")
     template_path: Optional[str] = Field(default=None, description="Template file path (optional)")
@@ -31,9 +32,7 @@ class CreatePptxInput(BaseModel):
 
 @monitor_tool
 async def create_pptx(
-    slides: List[Dict],
-    output_path: Optional[str] = None,
-    template_path: Optional[str] = None
+    slides: List[Dict], output_path: Optional[str] = None, template_path: Optional[str] = None
 ) -> dict:
     """
     Create PowerPoint file from structured data
@@ -93,7 +92,7 @@ async def create_pptx(
             "output_path": str(output_path),
             "total_slides": len(slides),
             "file_size_mb": round(file_size, 2),
-            "template_used": template_path is not None
+            "template_used": template_path is not None,
         }
 
     except Exception as e:
@@ -199,7 +198,7 @@ def _add_image(slide, img_data):
                 left=Inches(img_x),
                 top=Inches(img_y),
                 width=Inches(img_w),
-                height=Inches(img_h)
+                height=Inches(img_h),
             )
         except Exception as e:
             logger.warning(f"[create_pptx] Failed to add image {img_url}: {e}")
@@ -214,7 +213,7 @@ def _get_layout(prs: Presentation, layout_name: str):
         "Two Content": 3,
         "Comparison": 4,
         "Title Only": 5,
-        "Blank": 6
+        "Blank": 6,
     }
     idx = layout_map.get(layout_name, 1)
     if idx < len(prs.slide_layouts):
@@ -227,7 +226,7 @@ tool = StructuredTool.from_function(
     func=create_pptx,
     name="create_pptx",
     description="Create PowerPoint files from structured data. Use this to generate PPT presentations.",
-    args_schema=CreatePptxInput
+    args_schema=CreatePptxInput,
 )
 
 # Auto-register with global registry

@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 import httpx
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from backend.tools.core.monitoring import monitor_tool
 from backend.tools.application.tool_registry import get_native_registry
@@ -26,21 +26,20 @@ logger = logging.getLogger(__name__)
 # Input schema
 class WebSearchInput(BaseModel):
     """Web search input schema"""
+
     query: str = Field(description="Search query string")
-    num_results: int = Field(default=5, ge=1, le=10, description="Number of results to return (1-10)")
+    num_results: int = Field(
+        default=5, ge=1, le=10, description="Number of results to return (1-10)"
+    )
     language: str = Field(default="zh-CN", description="Search language code (e.g., zh-CN, en-US)")
     time_range: Literal["any", "day", "week", "month", "year"] = Field(
-        default="any",
-        description="Time range filter for search results"
+        default="any", description="Time range filter for search results"
     )
 
 
 @monitor_tool
 async def web_search(
-    query: str,
-    num_results: int = 5,
-    language: str = "zh-CN",
-    time_range: str = "any"
+    query: str, num_results: int = 5, language: str = "zh-CN", time_range: str = "any"
 ) -> dict:
     """
     Execute web search using Bing Search API
@@ -70,17 +69,12 @@ async def web_search(
         "mkt": language,
         "safeSearch": "Moderate",
         "textFormat": "HTML",
-        "textDecorations": "true"
+        "textDecorations": "true",
     }
 
     # Add time range filter
     if time_range != "any":
-        time_filter_map = {
-            "day": "Day",
-            "week": "Week",
-            "month": "Month",
-            "year": "Year"
-        }
+        time_filter_map = {"day": "Day", "week": "Week", "month": "Month", "year": "Year"}
         params["freshness"] = time_filter_map.get(time_range, "Day")
 
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -93,23 +87,21 @@ async def web_search(
     web_pages = data.get("webPages", {}).get("value", [])
 
     for item in web_pages:
-        results.append({
-            "title": item.get("name", ""),
-            "url": item.get("url", ""),
-            "snippet": item.get("snippet", ""),
-            "display_url": item.get("displayUrl", ""),
-            "date": item.get("date"),
-            "published_date": item.get("dateLastCrawled"),
-            "source": _extract_domain(item.get("url", "")),
-        })
+        results.append(
+            {
+                "title": item.get("name", ""),
+                "url": item.get("url", ""),
+                "snippet": item.get("snippet", ""),
+                "display_url": item.get("displayUrl", ""),
+                "date": item.get("date"),
+                "published_date": item.get("dateLastCrawled"),
+                "source": _extract_domain(item.get("url", "")),
+            }
+        )
 
     logger.info(f"[web_search] Found {len(results)} results for '{query}'")
 
-    return {
-        "results": results,
-        "total": len(results),
-        "query": query
-    }
+    return {"results": results, "total": len(results), "query": query}
 
 
 def _extract_domain(url: str) -> str:
@@ -126,7 +118,7 @@ tool = StructuredTool.from_function(
     func=web_search,
     name="web_search",
     description="Execute web search using Bing Search API. Use this when you need current or specific information from the internet.",
-    args_schema=WebSearchInput
+    args_schema=WebSearchInput,
 )
 
 # Auto-register with global registry

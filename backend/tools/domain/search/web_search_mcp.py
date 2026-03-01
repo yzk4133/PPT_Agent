@@ -8,22 +8,23 @@ import logging
 from typing import Optional
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
+
 class MCPWebSearchInput(BaseModel):
     """MCP Web search input schema"""
+
     query: str = Field(description="Search query string")
     num_results: int = Field(
-        default=5,
-        ge=1,
-        le=10,
-        description="Number of results to return (1-10)"
+        default=5, ge=1, le=10, description="Number of results to return (1-10)"
     )
+
 
 # MCP Client（懒加载单例）
 _mcp_client: Optional[object] = None
+
 
 async def get_mcp_client():
     """
@@ -43,9 +44,7 @@ async def get_mcp_client():
 
         # 配置 Server 参数
         server_params = StdioServerParameters(
-            command="python",
-            args=["-m", "backend.tools.mcp.server"],
-            env=None  # 继承当前环境变量
+            command="python", args=["-m", "backend.tools.mcp.server"], env=None  # 继承当前环境变量
         )
 
         # 创建 Client
@@ -61,10 +60,8 @@ async def get_mcp_client():
 
     return _mcp_client
 
-async def web_search_mcp_func(
-    query: str,
-    num_results: int = 5
-) -> str:
+
+async def web_search_mcp_func(query: str, num_results: int = 5) -> str:
     """
     Web search via MCP Server
 
@@ -91,15 +88,13 @@ async def web_search_mcp_func(
         client = await get_mcp_client()
 
         # 调用 MCP Server 的工具
-        result = await client.call_tool("web_search", {
-            "query": query,
-            "num_results": num_results,
-            "language": "zh-CN"
-        })
+        result = await client.call_tool(
+            "web_search", {"query": query, "num_results": num_results, "language": "zh-CN"}
+        )
 
         # MCP SDK 返回的结果格式
         # result 可能是不同类型，需要处理
-        if hasattr(result, 'content'):
+        if hasattr(result, "content"):
             # ToolContent 类型
             content = result.content
             if isinstance(content, list) and len(content) > 0:
@@ -108,10 +103,10 @@ async def web_search_mcp_func(
             return str(content)
         elif isinstance(result, dict):
             # 可能是原始结果字典
-            if 'content' in result:
-                return str(result['content'])
-            elif 'results' in result:
-                return str(result['results'])
+            if "content" in result:
+                return str(result["content"])
+            elif "results" in result:
+                return str(result["results"])
         elif isinstance(result, str):
             return result
         else:
@@ -127,7 +122,7 @@ web_search_mcp_tool = StructuredTool.from_function(
     func=web_search_mcp_func,
     name="web_search_mcp",
     description="Web search via MCP Server - experimental implementation",
-    args_schema=MCPWebSearchInput
+    args_schema=MCPWebSearchInput,
 )
 
 __all__ = ["web_search_mcp_tool"]

@@ -12,7 +12,7 @@ import requests
 from lxml import html
 from urllib.parse import quote
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from backend.tools.core.monitoring import monitor_tool
 from backend.tools.application.tool_registry import get_native_registry
@@ -23,17 +23,16 @@ logger = logging.getLogger(__name__)
 # Input schema
 class WeixinSearchInput(BaseModel):
     """WeChat article search input schema"""
+
     query: str = Field(description="Search keywords for WeChat articles")
-    num_results: int = Field(default=5, ge=1, le=20, description="Number of results to return (1-20)")
+    num_results: int = Field(
+        default=5, ge=1, le=20, description="Number of results to return (1-20)"
+    )
     fetch_content: bool = Field(default=True, description="Whether to fetch article content")
 
 
 @monitor_tool
-async def weixin_search(
-    query: str,
-    num_results: int = 5,
-    fetch_content: bool = True
-) -> dict:
+async def weixin_search(query: str, num_results: int = 5, fetch_content: bool = True) -> dict:
     """
     Search WeChat official account articles
 
@@ -62,7 +61,7 @@ async def weixin_search(
             "query": query,
             "total": 0,
             "articles": [],
-            "message": f"No articles found for '{query}'"
+            "message": f"No articles found for '{query}'",
         }
 
     # Step 2: Fetch content if requested
@@ -72,28 +71,28 @@ async def weixin_search(
             real_url = await _get_real_url(result["link"])
             if real_url:
                 content = await _get_article_content(real_url, result["link"])
-                articles.append({
-                    "title": result["title"],
-                    "publish_time": result["publish_time"],
-                    "sogou_url": result["link"],
-                    "real_url": real_url,
-                    "content": content[:5000] + "..." if len(content) > 5000 else content
-                })
+                articles.append(
+                    {
+                        "title": result["title"],
+                        "publish_time": result["publish_time"],
+                        "sogou_url": result["link"],
+                        "real_url": real_url,
+                        "content": content[:5000] + "..." if len(content) > 5000 else content,
+                    }
+                )
             else:
-                articles.append({
-                    "title": result["title"],
-                    "publish_time": result["publish_time"],
-                    "sogou_url": result["link"],
-                    "real_url": "",
-                    "content": "Unable to fetch article content"
-                })
+                articles.append(
+                    {
+                        "title": result["title"],
+                        "publish_time": result["publish_time"],
+                        "sogou_url": result["link"],
+                        "real_url": "",
+                        "content": "Unable to fetch article content",
+                    }
+                )
     else:
         articles = [
-            {
-                "title": r["title"],
-                "publish_time": r["publish_time"],
-                "sogou_url": r["link"]
-            }
+            {"title": r["title"], "publish_time": r["publish_time"], "sogou_url": r["link"]}
             for r in search_results
         ]
 
@@ -103,7 +102,7 @@ async def weixin_search(
         "query": query,
         "total": len(articles),
         "articles": articles,
-        "fetched_content": fetch_content
+        "fetched_content": fetch_content,
     }
 
 
@@ -130,10 +129,7 @@ async def _sogou_weixin_search(query: str, num_results: int) -> list:
 
     try:
         response = requests.get(
-            "https://weixin.sogou.com/weixin",
-            params=params,
-            headers=headers,
-            timeout=15
+            "https://weixin.sogou.com/weixin", params=params, headers=headers, timeout=15
         )
 
         if response.status_code == 200:
@@ -150,11 +146,13 @@ async def _sogou_weixin_search(query: str, num_results: int) -> list:
                 link = element.get("href")
                 if link and not link.startswith("http"):
                     link = "https://weixin.sogou.com" + link
-                results.append({
-                    "title": title,
-                    "link": link,
-                    "publish_time": time_elem.text_content().strip(),
-                })
+                results.append(
+                    {
+                        "title": title,
+                        "link": link,
+                        "publish_time": time_elem.text_content().strip(),
+                    }
+                )
 
             logger.info(f"[weixin_search] Sogou found {len(results)} results")
             return results
@@ -230,7 +228,7 @@ tool = StructuredTool.from_function(
     func=weixin_search,
     name="weixin_search",
     description="Search WeChat official account articles. Use this to find articles from WeChat public accounts.",
-    args_schema=WeixinSearchInput
+    args_schema=WeixinSearchInput,
 )
 
 # Auto-register with global registry

@@ -8,7 +8,7 @@ import logging
 from typing import Optional, Dict, List
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from backend.tools.core.monitoring import monitor_tool
 from backend.tools.application.tool_registry import get_native_registry
@@ -51,17 +51,14 @@ def _init_vector_service():
 # Input schema
 class VectorSearchInput(BaseModel):
     """Vector search input schema"""
+
     query: str = Field(description="Search query for semantic search")
     collection: str = Field(default="default", description="Collection name to search")
     top_k: int = Field(default=5, ge=1, le=20, description="Number of results to return")
 
 
 @monitor_tool
-async def vector_search(
-    query: str,
-    collection: str = "default",
-    top_k: int = 5
-) -> dict:
+async def vector_search(query: str, collection: str = "default", top_k: int = 5) -> dict:
     """
     Execute semantic vector search in knowledge base
 
@@ -85,7 +82,9 @@ async def vector_search(
     vector_service = _init_vector_service()
 
     if not vector_service:
-        raise RuntimeError("VectorMemoryService not initialized. Check memory system configuration.")
+        raise RuntimeError(
+            "VectorMemoryService not initialized. Check memory system configuration."
+        )
 
     try:
         # Validate top_k
@@ -94,31 +93,22 @@ async def vector_search(
         results = []
 
         # Try HierarchicalMemoryManager search
-        if hasattr(vector_service, 'search'):
+        if hasattr(vector_service, "search"):
             vector_results = await vector_service.search(
-                query_text=query,
-                top_k=top_k,
-                layer="l2"  # Search in short-term memory
+                query_text=query, top_k=top_k, layer="l2"  # Search in short-term memory
             )
             results = _format_hierarchical_results(vector_results)
 
         # Try direct vector search if available
-        elif hasattr(vector_service, 'vector_search'):
+        elif hasattr(vector_service, "vector_search"):
             vector_results = await vector_service.vector_search(
-                query=query,
-                collection=collection,
-                top_k=top_k
+                query=query, collection=collection, top_k=top_k
             )
             results = _format_vector_results(vector_results)
 
         logger.info(f"[vector_search] Found {len(results)} results")
 
-        return {
-            "results": results,
-            "total": len(results),
-            "query": query,
-            "collection": collection
-        }
+        return {"results": results, "total": len(results), "query": query, "collection": collection}
 
     except Exception as e:
         logger.error(f"[vector_search] Error: {e}", exc_info=True)
@@ -130,17 +120,16 @@ def _format_hierarchical_results(raw_results: List) -> List[Dict]:
     formatted = []
     for result in raw_results:
         if isinstance(result, dict):
-            formatted.append({
-                "id": result.get("id", ""),
-                "content": result.get("content", result.get("text", "")),
-                "score": result.get("score", result.get("similarity", 0.0)),
-                "metadata": result.get("metadata", {})
-            })
+            formatted.append(
+                {
+                    "id": result.get("id", ""),
+                    "content": result.get("content", result.get("text", "")),
+                    "score": result.get("score", result.get("similarity", 0.0)),
+                    "metadata": result.get("metadata", {}),
+                }
+            )
         else:
-            formatted.append({
-                "content": str(result),
-                "score": 0.0
-            })
+            formatted.append({"content": str(result), "score": 0.0})
     return formatted
 
 
@@ -149,12 +138,14 @@ def _format_vector_results(raw_results: List) -> List[Dict]:
     formatted = []
     for result in raw_results:
         if isinstance(result, dict):
-            formatted.append({
-                "id": result.get("id", ""),
-                "content": result.get("content", ""),
-                "score": result.get("score", result.get("similarity", 0.0)),
-                "metadata": result.get("metadata", {})
-            })
+            formatted.append(
+                {
+                    "id": result.get("id", ""),
+                    "content": result.get("content", ""),
+                    "score": result.get("score", result.get("similarity", 0.0)),
+                    "metadata": result.get("metadata", {}),
+                }
+            )
     return formatted
 
 
@@ -163,7 +154,7 @@ tool = StructuredTool.from_function(
     func=vector_search,
     name="vector_search",
     description="Semantic vector search in knowledge base. Use this to find relevant content using semantic similarity.",
-    args_schema=VectorSearchInput
+    args_schema=VectorSearchInput,
 )
 
 # Auto-register with global registry

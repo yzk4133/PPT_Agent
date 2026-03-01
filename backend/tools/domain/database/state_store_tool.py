@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Literal, Optional, Any
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from backend.tools.core.monitoring import monitor_tool
 from backend.tools.application.tool_registry import get_native_registry
@@ -39,6 +39,7 @@ def _init_backend():
     if REDIS_URL:
         try:
             import redis
+
             _redis_client = redis.from_url(REDIS_URL, decode_responses=True)
             _redis_client.ping()
             _backend = "redis"
@@ -57,6 +58,7 @@ def _init_backend():
 # Input schemas
 class StateStoreGetInput(BaseModel):
     """State store get input schema"""
+
     operation: Literal["get"] = Field(default="get", description="Operation type")
     key: str = Field(description="State key to retrieve")
     namespace: str = Field(default=DEFAULT_NAMESPACE, description="Namespace for isolation")
@@ -64,6 +66,7 @@ class StateStoreGetInput(BaseModel):
 
 class StateStoreSetInput(BaseModel):
     """State store set input schema"""
+
     operation: Literal["set"] = Field(default="set", description="Operation type")
     key: str = Field(description="State key to set")
     value: Any = Field(description="State value to store")
@@ -72,6 +75,7 @@ class StateStoreSetInput(BaseModel):
 
 class StateStoreDeleteInput(BaseModel):
     """State store delete input schema"""
+
     operation: Literal["delete"] = Field(default="delete", description="Operation type")
     key: str = Field(description="State key to delete")
     namespace: str = Field(default=DEFAULT_NAMESPACE, description="Namespace for isolation")
@@ -79,6 +83,7 @@ class StateStoreDeleteInput(BaseModel):
 
 class StateStoreListInput(BaseModel):
     """State store list input schema"""
+
     operation: Literal["list"] = Field(default="list", description="Operation type")
     namespace: str = Field(default=DEFAULT_NAMESPACE, description="Namespace to list")
 
@@ -88,7 +93,7 @@ async def state_store(
     operation: str,
     key: Optional[str] = None,
     value: Optional[Any] = None,
-    namespace: str = DEFAULT_NAMESPACE
+    namespace: str = DEFAULT_NAMESPACE,
 ) -> dict:
     """
     Store and retrieve agent execution state
@@ -166,7 +171,7 @@ async def _get(key: str, namespace: str, backend: str) -> Optional[Any]:
     else:
         path = _state_dir / namespace / f"{key}.json"
         if path.exists():
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return None
 
@@ -181,7 +186,7 @@ async def _set(key: str, value: Any, namespace: str, backend: str):
         namespace_dir = _state_dir / namespace
         namespace_dir.mkdir(exist_ok=True)
         path = namespace_dir / f"{key}.json"
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(value, f, ensure_ascii=False, indent=2)
 
 
@@ -218,7 +223,7 @@ tool = StructuredTool.from_function(
     func=state_store,
     name="state_store",
     description="Store and retrieve agent execution state. Use this to persist data across agent runs.",
-    args_schema=StateStoreGetInput  # Use get schema as default
+    args_schema=StateStoreGetInput,  # Use get schema as default
 )
 
 # Auto-register with global registry

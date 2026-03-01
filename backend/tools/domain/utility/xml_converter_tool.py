@@ -16,7 +16,7 @@ import dotenv
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from backend.tools.core.monitoring import monitor_tool
 from backend.tools.application.tool_registry import get_native_registry
@@ -32,6 +32,7 @@ DOWNLOAD_URL = os.environ.get("DOWNLOAD_URL", "")
 # Input schema
 class XmlConverterInput(BaseModel):
     """XML converter input schema"""
+
     xml_content: str = Field(description="XML-formatted PPT content")
     title: str = Field(default="Presentation", description="Presentation title")
     generate_ppt: bool = Field(default=False, description="Whether to generate PPT file")
@@ -39,9 +40,7 @@ class XmlConverterInput(BaseModel):
 
 @monitor_tool
 async def xml_converter(
-    xml_content: str,
-    title: str = "Presentation",
-    generate_ppt: bool = False
+    xml_content: str, title: str = "Presentation", generate_ppt: bool = False
 ) -> dict:
     """
     Convert XML-formatted PPT content to JSON
@@ -68,7 +67,7 @@ async def xml_converter(
             "title": title,
             "sections": sections_data,
             "total_sections": len(sections_data),
-            "references": []
+            "references": [],
         }
 
         # Generate PPT if requested
@@ -124,12 +123,12 @@ def _clean_xml(xml_content: str) -> str:
     start_delimiter = "```xml\n"
     end_delimiter = "```"
     if xml_content.startswith(start_delimiter):
-        xml_content = xml_content[len(start_delimiter):]
+        xml_content = xml_content[len(start_delimiter) :]
     if xml_content.endswith(end_delimiter):
-        xml_content = xml_content[:-len(end_delimiter)]
+        xml_content = xml_content[: -len(end_delimiter)]
 
     # Remove XML comments
-    xml_content = re.sub(r'<!--.*?-->\n?', '', xml_content)
+    xml_content = re.sub(r"<!--.*?-->\n?", "", xml_content)
 
     return xml_content.strip()
 
@@ -141,16 +140,13 @@ def _parse_section(section) -> Dict:
         "content": [],
         "rootImage": None,
         "layoutType": section.attrib.get("layout", "vertical"),
-        "alignment": "center"
+        "alignment": "center",
     }
 
     # H1 title
     h1 = section.find("H1")
     if h1 is not None and h1.text:
-        result["content"].append({
-            "type": "h1",
-            "children": [{"text": h1.text.strip()}]
-        })
+        result["content"].append({"type": "h1", "children": [{"text": h1.text.strip()}]})
 
     # Structured tags
     structured_tags = ["BULLETS", "COLUMNS", "STAIRCASE", "TIMELINE"]
@@ -160,10 +156,7 @@ def _parse_section(section) -> Dict:
             bullets = []
             for div in node.findall("DIV"):
                 bullets.append(_parse_div(div))
-            result["content"].append({
-                "type": "bullets",
-                "children": bullets
-            })
+            result["content"].append({"type": "bullets", "children": bullets})
 
     # Image
     img = section.find("IMG")
@@ -172,7 +165,7 @@ def _parse_section(section) -> Dict:
             "url": img.attrib.get("src", ""),
             "query": "",
             "background": img.attrib.get("background", "false").lower() == "true",
-            "alt": img.attrib.get("alt", "")
+            "alt": img.attrib.get("alt", ""),
         }
 
     return result
@@ -183,39 +176,20 @@ def _parse_div(div) -> Dict:
     children = []
     for elem in div:
         if elem.tag == "H3" and elem.text:
-            children.append({
-                "type": "h3",
-                "children": [{"text": elem.text.strip()}]
-            })
+            children.append({"type": "h3", "children": [{"text": elem.text.strip()}]})
         elif elem.tag == "P" and elem.text:
-            children.append({
-                "type": "p",
-                "children": [{"text": elem.text.strip()}]
-            })
-    return {
-        "type": "bullet",
-        "children": children
-    }
+            children.append({"type": "p", "children": [{"text": elem.text.strip()}]})
+    return {"type": "bullet", "children": children}
 
 
 async def _generate_pptx_file(
-    title: str,
-    sections: List[Dict],
-    references: List[Dict]
+    title: str, sections: List[Dict], references: List[Dict]
 ) -> Optional[str]:
     """Call PPT generation service to create PPT file"""
     try:
-        front_data = {
-            "title": title,
-            "sections": sections,
-            "references": references
-        }
+        front_data = {"title": title, "sections": sections, "references": references}
 
-        response = requests.post(
-            f"{DOWNLOAD_URL}/generate-ppt",
-            json=front_data,
-            timeout=120
-        )
+        response = requests.post(f"{DOWNLOAD_URL}/generate-ppt", json=front_data, timeout=120)
 
         logger.info(f"[xml_converter] PPT generation status: {response.status_code}")
 
@@ -229,7 +203,9 @@ async def _generate_pptx_file(
                 logger.error(f"[xml_converter] Invalid response: {response_json}")
                 return None
         else:
-            logger.error(f"[xml_converter] PPT generation failed with status {response.status_code}")
+            logger.error(
+                f"[xml_converter] PPT generation failed with status {response.status_code}"
+            )
             return None
 
     except Exception as e:
@@ -242,7 +218,7 @@ tool = StructuredTool.from_function(
     func=xml_converter,
     name="xml_converter",
     description="Convert XML-formatted PPT content to JSON. Use this to parse presentation data.",
-    args_schema=XmlConverterInput
+    args_schema=XmlConverterInput,
 )
 
 # Auto-register with global registry
