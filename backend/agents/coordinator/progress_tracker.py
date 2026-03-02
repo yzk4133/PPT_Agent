@@ -5,17 +5,17 @@ LangGraph 协调器的进度跟踪器
 """
 
 import logging
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 from ..models.state import PPTGenerationState
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ProgressUpdate:
+class ProgressUpdate(BaseModel):
     """
     进度更新数据结构
 
@@ -27,11 +27,11 @@ class ProgressUpdate:
         metadata: 额外元数据
     """
 
-    stage: str
-    progress: int
-    message: str
-    timestamp: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    stage: str = Field(description="当前阶段名称")
+    progress: int = Field(ge=0, le=100, description="进度百分比 (0-100)")
+    message: str = Field(description="进度消息")
+    timestamp: datetime = Field(default_factory=datetime.now, description="更新时间戳")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="额外元数据")
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
@@ -42,6 +42,21 @@ class ProgressUpdate:
             "timestamp": self.timestamp.isoformat(),
             "metadata": self.metadata,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ProgressUpdate":
+        """从字典创建实例（向后兼容）"""
+        timestamp = data.get("timestamp")
+        if isinstance(timestamp, str):
+            timestamp = datetime.fromisoformat(timestamp)
+
+        return cls(
+            stage=data.get("stage", ""),
+            progress=data.get("progress", 0),
+            message=data.get("message", ""),
+            timestamp=timestamp or datetime.now(),
+            metadata=data.get("metadata", {})
+        )
 
 
 class ProgressTracker:

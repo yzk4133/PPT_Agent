@@ -5,9 +5,10 @@ LangGraph 协调器的修订处理器
 """
 
 import logging
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Literal
+
+from pydantic import BaseModel, Field, field_validator
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -19,8 +20,7 @@ from ..models.state import PPTGenerationState
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class RevisionRequest:
+class RevisionRequest(BaseModel):
     """
     修订请求数据结构
 
@@ -31,11 +31,24 @@ class RevisionRequest:
         page_indices: 要修订的具体页面索引（针对性修订）
     """
 
-    type: Literal["content", "style", "structure", "research"]
-    target: Literal["page_index", "all", "section"]
-    instructions: str
-    page_indices: Optional[List[int]] = None
-    section_name: Optional[str] = None  # For section-based revisions
+    type: Literal["content", "style", "structure", "research"] = Field(
+        default="content", description="修订类型"
+    )
+    target: Literal["page_index", "all", "section"] = Field(
+        default="all", description="目标范围"
+    )
+    instructions: str = Field(min_length=1, description="用户指令")
+    page_indices: Optional[List[int]] = Field(default=None, description="要修订的页面索引")
+    section_name: Optional[str] = Field(default=None, description="章节名称")
+
+    @field_validator('page_indices')
+    @classmethod
+    def validate_page_indices(cls, v):
+        """验证页面索引"""
+        if v is not None:
+            if not all(idx >= 0 for idx in v):
+                raise ValueError("页面索引必须大于等于0")
+        return v
 
 
 class RevisionHandler:

@@ -16,6 +16,7 @@
 import logging
 import os
 import uuid
+import asyncio
 from typing import Dict, Any, Optional, Literal
 
 from langchain_openai import ChatOpenAI
@@ -97,9 +98,11 @@ class MasterGraph:
         self.model = model or self._create_default_model()
 
         self.requirement_agent = requirement_agent or create_requirement_parser(self.model)
-        self.framework_agent = framework_agent or create_framework_designer(self.model)
-        self.research_agent = research_agent or create_research_agent(self.model)
-        self.content_agent = content_agent or create_content_agent(self.model)
+        self.framework_agent = framework_agent or create_framework_designer(
+            self.model, use_tools=False
+        )
+        self.research_agent = research_agent or create_research_agent(self.model, use_tools=False)
+        self.content_agent = content_agent or create_content_agent(self.model, use_tools=False)
         self.renderer_agent = renderer_agent or create_renderer_agent(self.model)
 
         # 创建页面流水线
@@ -124,9 +127,7 @@ class MasterGraph:
                 temperature=0.0,
             )
 
-        return ChatOpenAI(
-            **llm_config.to_langchain_config()
-        )
+        return ChatOpenAI(**llm_config.to_langchain_config())
 
     def _build_graph(self) -> StateGraph:
         """
@@ -153,18 +154,13 @@ class MasterGraph:
             def quality_check_with_threshold(state: PPTGenerationState) -> PPTGenerationState:
                 import asyncio
 
-                # 运行异步节点
-                loop = asyncio.get_event_loop()
-                return loop.run_until_complete(
-                    check_content_quality(state, threshold=self.quality_threshold)
-                )
+                return asyncio.run(check_content_quality(state, threshold=self.quality_threshold))
 
             # 创建带模型引用的改进节点
             def refine_content_with_model(state: PPTGenerationState) -> PPTGenerationState:
                 import asyncio
 
-                loop = asyncio.get_event_loop()
-                return loop.run_until_complete(refine_content(state, model=self.model))
+                return asyncio.run(refine_content(state, model=self.model))
 
             builder.add_node("quality_check", quality_check_with_threshold)
             builder.add_node("refine_content", refine_content_with_model)
@@ -360,9 +356,7 @@ class MasterGraph:
 
         tracker = create_progress_tracker(
             state=initial_state,
-            on_progress=lambda update: (
-                on_progress(update.progress, update.message) if on_progress else None
-            ),
+            on_progress=on_progress,
             on_stage_complete=on_stage_complete,
             on_error=on_error,
         )
@@ -372,14 +366,21 @@ class MasterGraph:
 
         try:
             # 使用 LangGraph streaming
-            final_state = None
+            # 兼容不同 LangGraph 版本：有些版本不会发送 __end__ 事件
+            final_state = dict(initial_state)
             async for event in self.graph.astream(initial_state):
                 # event 格式: {"node_name": {"key": "value"}} 或 {"__end__": final_state}
                 for node_name, node_output in event.items():
                     if node_name == "__end__":
                         # 工作流完成
-                        final_state = node_output
+                        if isinstance(node_output, dict):
+                            final_state.update(node_output)
+                        else:
+                            final_state = node_output
                         break
+
+                    if isinstance(node_output, dict):
+                        final_state.update(node_output)
 
                     # 更新进度
                     progress = self._get_stage_progress(node_name)
