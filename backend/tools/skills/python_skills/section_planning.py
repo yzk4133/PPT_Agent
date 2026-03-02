@@ -29,10 +29,7 @@ class SectionPlanningSkill(BaseSkill):
     category = "framework"
 
     async def execute(
-        self,
-        subtopics: List[str],
-        total_pages: int = 10,
-        structure_type: str = "linear"
+        self, subtopics: List[str], total_pages: int = 10, structure_type: str = "linear"
     ) -> str:
         """
         执行章节规划
@@ -65,10 +62,11 @@ class SectionPlanningSkill(BaseSkill):
 
             # 返回 JSON 格式
             import json
+
             result = {
                 "sections": sections,
                 "total_pages": total_pages,
-                "structure_type": structure_type
+                "structure_type": structure_type,
             }
 
             return json.dumps(result, ensure_ascii=False)
@@ -78,9 +76,7 @@ class SectionPlanningSkill(BaseSkill):
             return f"错误：{str(e)}"
 
     async def _organize_sections(
-        self,
-        subtopics: List[str],
-        structure_type: str
+        self, subtopics: List[str], structure_type: str
     ) -> List[Dict[str, Any]]:
         """
         将子主题组织成章节
@@ -112,10 +108,7 @@ class SectionPlanningSkill(BaseSkill):
         else:
             return await self._organize_linear(subtopics)
 
-    async def _organize_linear(
-        self,
-        subtopics: List[str]
-    ) -> List[Dict[str, Any]]:
+    async def _organize_linear(self, subtopics: List[str]) -> List[Dict[str, Any]]:
         """
         线性组织
 
@@ -154,7 +147,7 @@ class SectionPlanningSkill(BaseSkill):
                 {
                     "title": item["title"],
                     "subtopics": item["subtopics"],
-                    "subtopic_count": len(item["subtopics"])
+                    "subtopic_count": len(item["subtopics"]),
                 }
                 for item in sections_data
             ]
@@ -163,10 +156,7 @@ class SectionPlanningSkill(BaseSkill):
             logger.warning(f"[SectionPlanning] 线性组织失败: {e}")
             return self._fallback_organize(subtopics)
 
-    async def _organize_parallel(
-        self,
-        subtopics: List[str]
-    ) -> List[Dict[str, Any]]:
+    async def _organize_parallel(self, subtopics: List[str]) -> List[Dict[str, Any]]:
         """
         并行组织
 
@@ -174,18 +164,11 @@ class SectionPlanningSkill(BaseSkill):
         """
         # 每个子主题独立成章
         return [
-            {
-                "title": subtopic,
-                "subtopics": [subtopic],
-                "subtopic_count": 1
-            }
+            {"title": subtopic, "subtopics": [subtopic], "subtopic_count": 1}
             for subtopic in subtopics
         ]
 
-    async def _organize_hierarchical(
-        self,
-        subtopics: List[str]
-    ) -> List[Dict[str, Any]]:
+    async def _organize_hierarchical(self, subtopics: List[str]) -> List[Dict[str, Any]]:
         """
         层级组织
 
@@ -195,34 +178,24 @@ class SectionPlanningSkill(BaseSkill):
             return await self._organize_linear(subtopics)
 
         # 第一个章节：总览
-        sections = [
-            {
-                "title": "总览",
-                "subtopics": [subtopics[0]],
-                "subtopic_count": 1
-            }
-        ]
+        sections = [{"title": "总览", "subtopics": [subtopics[0]], "subtopic_count": 1}]
 
         # 中间章节：详细展开
-        sections.append({
-            "title": "详细展开",
-            "subtopics": subtopics[1:-1],
-            "subtopic_count": len(subtopics) - 2
-        })
+        sections.append(
+            {
+                "title": "详细展开",
+                "subtopics": subtopics[1:-1],
+                "subtopic_count": len(subtopics) - 2,
+            }
+        )
 
         # 最后章节：总结
-        sections.append({
-            "title": "总结",
-            "subtopics": [subtopics[-1]],
-            "subtopic_count": 1
-        })
+        sections.append({"title": "总结", "subtopics": [subtopics[-1]], "subtopic_count": 1})
 
         return sections
 
     async def _allocate_pages(
-        self,
-        sections: List[Dict[str, Any]],
-        total_pages: int
+        self, sections: List[Dict[str, Any]], total_pages: int
     ) -> List[Dict[str, Any]]:
         """
         为章节分配页数
@@ -257,10 +230,7 @@ class SectionPlanningSkill(BaseSkill):
                 proportion = section["subtopic_count"] / total_subtopics
                 page_count = max(1, int(proportion * content_pages))
 
-            allocated_sections.append({
-                **section,
-                "page_count": page_count
-            })
+            allocated_sections.append({**section, "page_count": page_count})
 
         # 调整页数，确保总和正确
         allocated_total = sum(s["page_count"] for s in allocated_sections)
@@ -276,10 +246,7 @@ class SectionPlanningSkill(BaseSkill):
 
         return allocated_sections
 
-    async def _generate_pages(
-        self,
-        sections: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    async def _generate_pages(self, sections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         为每个章节生成具体页面
 
@@ -309,12 +276,14 @@ class SectionPlanningSkill(BaseSkill):
                 # 如果章节只有1页，所有子主题合并在一页
                 if section["page_count"] == 1:
                     page_title = section["title"]
-                    pages.append({
-                        "page_no": current_page,
-                        "title": page_title,
-                        "type": "content",
-                        "subtopics": section["subtopics"]
-                    })
+                    pages.append(
+                        {
+                            "page_no": current_page,
+                            "title": page_title,
+                            "type": "content",
+                            "subtopics": section["subtopics"],
+                        }
+                    )
                     current_page += 1
                     break
 
@@ -328,12 +297,14 @@ class SectionPlanningSkill(BaseSkill):
                     else:
                         page_title = subtopic
 
-                    pages.append({
-                        "page_no": current_page,
-                        "title": page_title,
-                        "type": "content",
-                        "subtopic": subtopic if j == 0 else f"{subtopic}（续）"
-                    })
+                    pages.append(
+                        {
+                            "page_no": current_page,
+                            "title": page_title,
+                            "type": "content",
+                            "subtopic": subtopic if j == 0 else f"{subtopic}（续）",
+                        }
+                    )
                     current_page += 1
 
                     if current_page > page_range_start + section["page_count"]:
@@ -347,17 +318,14 @@ class SectionPlanningSkill(BaseSkill):
 
         return sections
 
-    def _fallback_organize(
-        self,
-        subtopics: List[str]
-    ) -> List[Dict[str, Any]]:
+    def _fallback_organize(self, subtopics: List[str]) -> List[Dict[str, Any]]:
         """降级组织：简单的线性组织"""
         # 每 2-3 个子主题一组
         sections = []
         group_size = 3
 
         for i in range(0, len(subtopics), group_size):
-            group = subtopics[i:i+group_size]
+            group = subtopics[i : i + group_size]
 
             # 生成章节标题
             if i == 0:
@@ -367,11 +335,9 @@ class SectionPlanningSkill(BaseSkill):
             else:
                 section_title = f"第{i//group_size + 1}部分"
 
-            sections.append({
-                "title": section_title,
-                "subtopics": group,
-                "subtopic_count": len(group)
-            })
+            sections.append(
+                {"title": section_title, "subtopics": group, "subtopic_count": len(group)}
+            )
 
         return sections
 
@@ -388,30 +354,22 @@ class PageDistributionSkill(BaseSkill):
     version = "1.0.0"
     category = "framework"
 
-    async def execute(
-        self,
-        subtopics: List[str],
-        total_pages: int
-    ) -> Dict[str, Any]:
+    async def execute(self, subtopics: List[str], total_pages: int) -> Dict[str, Any]:
         """快速分配"""
         # 平均分配
         pages_per_topic = total_pages // len(subtopics)
 
         distribution = []
         for i, subtopic in enumerate(subtopics):
-            distribution.append({
-                "title": subtopic,
-                "page_count": pages_per_topic,
-                "page_no": i * pages_per_topic + 1
-            })
+            distribution.append(
+                {
+                    "title": subtopic,
+                    "page_count": pages_per_topic,
+                    "page_no": i * pages_per_topic + 1,
+                }
+            )
 
-        return {
-            "success": True,
-            "data": {
-                "distribution": distribution,
-                "total_pages": total_pages
-            }
-        }
+        return {"success": True, "data": {"distribution": distribution, "total_pages": total_pages}}
 
 
 # ============================================================================
@@ -419,14 +377,17 @@ class PageDistributionSkill(BaseSkill):
 # ============================================================================
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class SectionPlanningInput(BaseModel):
     """章节规划输入参数"""
+
     subtopics: List[str] = Field(..., description="子主题列表")
     total_pages: int = Field(default=10, description="总页数")
-    structure_type: str = Field(default="linear", description="结构类型 (linear/parallel/hierarchical)")
+    structure_type: str = Field(
+        default="linear", description="结构类型 (linear/parallel/hierarchical)"
+    )
 
 
 # 创建 LangChain Tool
@@ -434,5 +395,5 @@ section_planning_tool = StructuredTool.from_function(
     func=SectionPlanningSkill().execute,
     name="section_planning",
     description="将子主题规划成逻辑章节并分配页数",
-    args_schema=SectionPlanningInput
+    args_schema=SectionPlanningInput,
 )

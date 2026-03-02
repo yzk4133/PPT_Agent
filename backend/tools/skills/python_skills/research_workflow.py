@@ -37,11 +37,7 @@ class ResearchWorkflowSkill(BaseSkill):
         self.search_tool = search_tool
 
     async def execute(
-        self,
-        topic: str,
-        num_sources: int = 5,
-        depth: str = "medium",
-        keywords: List[str] = None
+        self, topic: str, num_sources: int = 5, depth: str = "medium", keywords: List[str] = None
     ) -> str:
         """
         执行研究工作流程
@@ -130,11 +126,7 @@ class ResearchWorkflowSkill(BaseSkill):
             logger.warning(f"[ResearchSkill] 关键词提取失败，使用默认: {e}")
             return topic.split()
 
-    async def _search_sources(
-        self,
-        keywords: List[str],
-        num_sources: int
-    ) -> List[Dict[str, Any]]:
+    async def _search_sources(self, keywords: List[str], num_sources: int) -> List[Dict[str, Any]]:
         """
         步骤 2: 搜索多个来源
 
@@ -154,10 +146,7 @@ class ResearchWorkflowSkill(BaseSkill):
 
         for keyword in keywords[:3]:  # 限制前 3 个关键词
             try:
-                result = await self.search_tool.execute(
-                    query=keyword,
-                    num_results=num_per_keyword
-                )
+                result = await self.search_tool.execute(query=keyword, num_results=num_per_keyword)
 
                 if result.get("success"):
                     sources.extend(result.get("data", {}).get("results", []))
@@ -175,10 +164,7 @@ class ResearchWorkflowSkill(BaseSkill):
 
         return unique_sources
 
-    async def _fetch_content(
-        self,
-        sources: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    async def _fetch_content(self, sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         步骤 3: 获取完整内容（可选）
 
@@ -193,9 +179,7 @@ class ResearchWorkflowSkill(BaseSkill):
         return sources
 
     async def _filter_sources(
-        self,
-        sources: List[Dict[str, Any]],
-        topic: str
+        self, sources: List[Dict[str, Any]], topic: str
     ) -> List[Dict[str, Any]]:
         """
         步骤 4: 过滤和排序来源
@@ -214,11 +198,9 @@ class ResearchWorkflowSkill(BaseSkill):
         # 准备来源摘要
         sources_summary = []
         for i, source in enumerate(sources):
-            sources_summary.append({
-                "index": i,
-                "title": source.get("title", ""),
-                "snippet": source.get("snippet", "")
-            })
+            sources_summary.append(
+                {"index": i, "title": source.get("title", ""), "snippet": source.get("snippet", "")}
+            )
 
         prompt = f"""
         评估以下搜索结果与研究主题的相关性，并选择最相关的 3-5 个。
@@ -258,12 +240,7 @@ class ResearchWorkflowSkill(BaseSkill):
             logger.warning(f"[ResearchSkill] 过滤失败，返回原始列表: {e}")
             return sources[:5]
 
-    async def _synthesize_info(
-        self,
-        sources: List[Dict[str, Any]],
-        topic: str,
-        depth: str
-    ) -> str:
+    async def _synthesize_info(self, sources: List[Dict[str, Any]], topic: str, depth: str) -> str:
         """
         步骤 5: 综合信息
 
@@ -277,25 +254,24 @@ class ResearchWorkflowSkill(BaseSkill):
         """
         if not self.llm:
             # 简单拼接
-            return "\n".join([
-                f"- {s.get('title', '')}: {s.get('snippet', '')}"
-                for s in sources
-            ])
+            return "\n".join([f"- {s.get('title', '')}: {s.get('snippet', '')}" for s in sources])
 
         # 根据深度调整指令
         depth_instructions = {
             "shallow": "简要总结（150字以内），突出核心要点",
             "medium": "中等详细度总结（300-500字），包含主要信息和数据",
-            "deep": "详细综合分析（500字以上），深入分析多个来源，识别共性、差异和趋势"
+            "deep": "详细综合分析（500字以上），深入分析多个来源，识别共性、差异和趋势",
         }
 
         instruction = depth_instructions.get(depth, depth_instructions["medium"])
 
         # 准备来源信息
-        sources_text = "\n\n".join([
-            f"【来源{i+1}】\n标题: {s.get('title', '')}\n内容: {s.get('snippet', '')}"
-            for i, s in enumerate(sources)
-        ])
+        sources_text = "\n\n".join(
+            [
+                f"【来源{i+1}】\n标题: {s.get('title', '')}\n内容: {s.get('snippet', '')}"
+                for i, s in enumerate(sources)
+            ]
+        )
 
         prompt = f"""
         基于以下研究资料，{instruction}：
@@ -334,13 +310,7 @@ class ResearchKeywordSkill(BaseSkill):
         """提取关键词"""
         # 简化实现
         keywords = topic.split()
-        return {
-            "success": True,
-            "data": {
-                "topic": topic,
-                "keywords": keywords[:num_keywords]
-            }
-        }
+        return {"success": True, "data": {"topic": topic, "keywords": keywords[:num_keywords]}}
 
 
 class ResearchSynthesisSkill(BaseSkill):
@@ -354,16 +324,10 @@ class ResearchSynthesisSkill(BaseSkill):
     category = "research"
 
     async def execute(
-        self,
-        sources: List[Dict[str, Any]],
-        topic: str,
-        depth: str = "medium"
+        self, sources: List[Dict[str, Any]], topic: str, depth: str = "medium"
     ) -> str:
         """综合信息"""
-        synthesis = "\n".join([
-            f"- {s.get('title', '')}: {s.get('snippet', '')}"
-            for s in sources
-        ])
+        synthesis = "\n".join([f"- {s.get('title', '')}: {s.get('snippet', '')}" for s in sources])
 
         return synthesis
 
@@ -373,11 +337,12 @@ class ResearchSynthesisSkill(BaseSkill):
 # ============================================================================
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class ResearchWorkflowInput(BaseModel):
     """研究工作流程输入参数"""
+
     topic: str = Field(..., description="研究主题")
     num_sources: int = Field(default=5, description="需要的来源数量")
     depth: str = Field(default="medium", description="研究深度 (shallow/medium/deep)")
@@ -389,5 +354,5 @@ research_workflow_tool = StructuredTool.from_function(
     func=ResearchWorkflowSkill().execute,
     name="research_workflow",
     description="系统化的研究工作流程：关键词提取 → 并行搜索 → 信息过滤 → 综合分析",
-    args_schema=ResearchWorkflowInput
+    args_schema=ResearchWorkflowInput,
 )

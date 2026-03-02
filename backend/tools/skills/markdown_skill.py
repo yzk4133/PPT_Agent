@@ -7,7 +7,7 @@ Markdown Skill - 解析 MD 文件并封装为 LangChain Tool
 from pathlib import Path
 from typing import Dict, Optional
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 import logging
 import yaml
 import re
@@ -40,14 +40,14 @@ class MarkdownSkill:
     def _load(self):
         """解析 MD 文件"""
         try:
-            content = self.file_path.read_text(encoding='utf-8')
+            content = self.file_path.read_text(encoding="utf-8")
         except Exception as e:
             logger.error(f"[MarkdownSkill] Failed to read {self.file_path}: {e}")
             raise
 
         # 提取 frontmatter
-        if content.startswith('---'):
-            end_idx = content.find('---', 3)
+        if content.startswith("---"):
+            end_idx = content.find("---", 3)
             if end_idx != -1:
                 frontmatter_text = content[3:end_idx].strip()
                 try:
@@ -55,7 +55,7 @@ class MarkdownSkill:
                 except yaml.YAMLError as e:
                     logger.warning(f"[MarkdownSkill] Failed to parse frontmatter: {e}")
                     self.metadata = {}
-                body_content = content[end_idx+3:].strip()
+                body_content = content[end_idx + 3 :].strip()
             else:
                 body_content = content
         else:
@@ -73,17 +73,17 @@ class MarkdownSkill:
         或
         ## Level 1：快速指南
         """
-        pattern = r'##+\s*Level\s+(\d+)[:：]\s*(.+)'
+        pattern = r"##+\s*Level\s+(\d+)[:：]\s*(.+)"
 
         current_level = None
         current_content = []
 
-        for line in content.split('\n'):
+        for line in content.split("\n"):
             match = re.match(pattern, line)
             if match:
                 # 保存上一级内容
                 if current_level is not None:
-                    self.levels[current_level] = '\n'.join(current_content).strip()
+                    self.levels[current_level] = "\n".join(current_content).strip()
 
                 # 开始新级别
                 current_level = int(match.group(1))
@@ -94,7 +94,7 @@ class MarkdownSkill:
 
         # 保存最后一级
         if current_level is not None:
-            self.levels[current_level] = '\n'.join(current_content).strip()
+            self.levels[current_level] = "\n".join(current_content).strip()
 
     def get_content(self, level: int = 1) -> str:
         """
@@ -123,27 +123,27 @@ class MarkdownSkill:
             if lvl > max_level:
                 break
             sections.append(self.levels[lvl])
-        return '\n\n---\n\n'.join(sections)
+        return "\n\n---\n\n".join(sections)
 
     @property
     def name(self) -> str:
         """Skill 名称（从 frontmatter 或文件名）"""
-        return self.metadata.get('name', self.file_path.stem)
+        return self.metadata.get("name", self.file_path.stem)
 
     @property
     def description(self) -> str:
         """Skill 描述（从 frontmatter）"""
-        return self.metadata.get('description', '')
+        return self.metadata.get("description", "")
 
     @property
     def category(self) -> str:
         """Skill 分类（从 frontmatter）"""
-        return self.metadata.get('category', 'general')
+        return self.metadata.get("category", "general")
 
     @property
     def version(self) -> str:
         """Skill 版本（从 frontmatter）"""
-        return self.metadata.get('version', '1.0.0')
+        return self.metadata.get("version", "1.0.0")
 
 
 def create_md_skill_tool(md_skill: MarkdownSkill) -> StructuredTool:
@@ -158,10 +158,8 @@ def create_md_skill_tool(md_skill: MarkdownSkill) -> StructuredTool:
     Returns:
         LangChain StructuredTool
     """
-    def md_skill_function(
-        level: int = 1,
-        progressive: bool = True
-    ) -> str:
+
+    def md_skill_function(level: int = 1, progressive: bool = True) -> str:
         """
         获取分层指南内容
 
@@ -201,15 +199,9 @@ def create_md_skill_tool(md_skill: MarkdownSkill) -> StructuredTool:
 
     # 创建参数 Schema
     class MdSkillInput(BaseModel):
-        level: int = Field(
-            default=1,
-            ge=1,
-            le=3,
-            description="详细程度（1=快速, 2=详细, 3=高级）"
-        )
+        level: int = Field(default=1, ge=1, le=3, description="详细程度（1=快速, 2=详细, 3=高级）")
         progressive: bool = Field(
-            default=True,
-            description="是否包含所有较低级别的内容（推荐True）"
+            default=True, description="是否包含所有较低级别的内容（推荐True）"
         )
 
     # 封装为 Tool
@@ -217,5 +209,5 @@ def create_md_skill_tool(md_skill: MarkdownSkill) -> StructuredTool:
         func=md_skill_function,
         name=md_skill.name,
         description=tool_description,
-        args_schema=MdSkillInput
+        args_schema=MdSkillInput,
     )

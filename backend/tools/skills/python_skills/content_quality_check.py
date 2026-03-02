@@ -28,11 +28,7 @@ class ContentQualityCheckSkill(BaseSkill):
     version = "1.0.0"
     category = "content"
 
-    async def execute(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any] = None
-    ) -> str:
+    async def execute(self, content: Dict[str, Any], requirement: Dict[str, Any] = None) -> str:
         """
         执行质量检查
 
@@ -89,9 +85,7 @@ class ContentQualityCheckSkill(BaseSkill):
             return f"错误：{str(e)}"
 
     async def _run_all_checks(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, bool]:
         """
         运行所有检查项
@@ -124,7 +118,7 @@ class ContentQualityCheckSkill(BaseSkill):
         return {
             "has_title": bool(content.get("title")),
             "has_key_points": len(content.get("key_points", [])) > 0,
-            "has_content": bool(content.get("content_text"))
+            "has_content": bool(content.get("content_text")),
         }
 
     def _check_title(self, content: Dict[str, Any]) -> Dict[str, bool]:
@@ -134,7 +128,7 @@ class ContentQualityCheckSkill(BaseSkill):
         return {
             "title_length": 5 <= len(title) <= 20,
             "title_not_generic": not title.startswith("关于") and not title.startswith("介绍"),
-            "title_attractive": self._is_title_attractive(title)
+            "title_attractive": self._is_title_attractive(title),
         }
 
     def _check_key_points(self, content: Dict[str, Any]) -> Dict[str, bool]:
@@ -147,13 +141,11 @@ class ContentQualityCheckSkill(BaseSkill):
         return {
             "key_points_count": 3 <= len(key_points) <= 5,
             "key_points_length": all(len(p) <= 50 for p in key_points),
-            "key_points_parallel": self._check_parallel_structure(key_points)
+            "key_points_parallel": self._check_parallel_structure(key_points),
         }
 
     def _check_audience_match(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, bool]:
         """检查受众匹配"""
         audience = requirement.get("audience", "general")
@@ -183,26 +175,19 @@ class ContentQualityCheckSkill(BaseSkill):
         # 要点数量检查（3-5个）
         points_count_ok = 3 <= len(key_points) <= 5
 
-        return {
-            "content_length_ok": content_length_ok,
-            "points_count_ok": points_count_ok
-        }
+        return {"content_length_ok": content_length_ok, "points_count_ok": points_count_ok}
 
     def _is_title_attractive(self, title: str) -> bool:
         """判断标题是否有吸引力"""
         # 吸引力的特征
         attractive_patterns = [
-            "?",          # 疑问式
-            "！",         # 感叹式
-            str.isdigit, # 包含数字
+            "?",  # 疑问式
+            "！",  # 感叹式
+            str.isdigit,  # 包含数字
         ]
 
         # 排除不吸引力的模式
-        unattractive_patterns = [
-            "关于",
-            "介绍",
-            "概述"
-        ]
+        unattractive_patterns = ["关于", "介绍", "概述"]
 
         # 检查吸引力特征
         has_attractive = any(pattern in title for pattern in attractive_patterns)
@@ -268,7 +253,7 @@ class ContentQualityCheckSkill(BaseSkill):
             "有要点过长": "精简要点，每个不超过50字",
             "要点结构不平行": "使用相同的语法结构（都是动词开头或都是名词开头）",
             "内容长度与受众不匹配": "根据目标受众调整内容长度：专家≥200字，大众100-500字",
-            "正文长度不合理": "调整正文长度到100-2000字"
+            "正文长度不合理": "调整正文长度到100-2000字",
         }
 
         for issue in issues:
@@ -291,15 +276,12 @@ class QuickQualityCheckSkill(BaseSkill):
     version = "1.0.0"
     category = "content"
 
-    async def execute(
-        self,
-        content: Dict[str, Any]
-    ) -> str:
+    async def execute(self, content: Dict[str, Any]) -> str:
         """快速检查"""
         checks = {
             "has_title": bool(content.get("title")),
             "has_key_points": len(content.get("key_points", [])) >= 3,
-            "title_length": 5 <= len(content.get("title", "")) <= 20
+            "title_length": 5 <= len(content.get("title", "")) <= 20,
         }
 
         score = sum(checks.values()) / len(checks)
@@ -312,17 +294,19 @@ class QuickQualityCheckSkill(BaseSkill):
 # ============================================================================
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class ContentQualityCheckInput(BaseModel):
     """内容质量检查输入参数"""
+
     content: Dict[str, Any] = Field(..., description="内容字典")
     requirement: Dict[str, Any] = Field(default=None, description="需求字典（可选）")
 
 
 class QuickQualityCheckInput(BaseModel):
     """快速质量检查输入参数"""
+
     content: Dict[str, Any] = Field(..., description="内容字典")
 
 
@@ -331,12 +315,12 @@ content_quality_check_tool = StructuredTool.from_function(
     func=ContentQualityCheckSkill().execute,
     name="content_quality_check",
     description="检查内容质量并给出评分，识别需要改进的部分",
-    args_schema=ContentQualityCheckInput
+    args_schema=ContentQualityCheckInput,
 )
 
 quick_quality_check_tool = StructuredTool.from_function(
     func=QuickQualityCheckSkill().execute,
     name="quick_quality_check",
     description="快速检查核心质量指标",
-    args_schema=QuickQualityCheckInput
+    args_schema=QuickQualityCheckInput,
 )

@@ -33,23 +33,19 @@ class LayoutSelectionSkill(BaseSkill):
     LAYOUT_RULES = {
         # 封面页
         "cover": "title_center",
-
         # 目录页
         "directory": "vertical_list",
-
         # 内容页（根据内容类型）
         "content": {
             "text_only": "title_with_bullet_points",
             "text_with_chart": "title_with_left_chart",
             "text_with_image": "title_with_right_image",
-            "text_with_both": "title_with_chart_and_image"
+            "text_with_both": "title_with_chart_and_image",
         },
-
         # 总结页
         "summary": "title_with_bottom_summary",
-
         # 致谢页
-        "thanks": "centered_text"
+        "thanks": "centered_text",
     }
 
     async def execute(
@@ -58,7 +54,7 @@ class LayoutSelectionSkill(BaseSkill):
         content_type: str = "text_only",
         has_chart: bool = False,
         has_image: bool = False,
-        key_points_count: int = 3
+        key_points_count: int = 3,
     ) -> str:
         """
         执行布局选择
@@ -124,11 +120,7 @@ class LayoutSelectionSkill(BaseSkill):
         return self.LAYOUT_RULES.get(page_type, "title_with_bullet_points")
 
     def _adjust_for_content(
-        self,
-        base_layout: str,
-        content_type: str,
-        has_chart: bool,
-        has_image: bool
+        self, base_layout: str, content_type: str, has_chart: bool, has_image: bool
     ) -> str:
         """根据内容类型调整布局"""
         # 如果指定了 content_type
@@ -165,71 +157,68 @@ class LayoutSelectionSkill(BaseSkill):
                 "title_position": "center",
                 "content_position": "center",
                 "alignment": "center",
-                "use_large_title": True
+                "use_large_title": True,
             },
             "vertical_list": {
                 "title_position": "top",
                 "content_position": "left",
                 "list_orientation": "vertical",
-                "indentation": True
+                "indentation": True,
             },
             "title_with_bullet_points": {
                 "title_position": "top",
                 "content_position": "left",
                 "bullet_style": "disc",
-                "alignment": "left"
+                "alignment": "left",
             },
             "title_with_left_chart": {
                 "title_position": "top",
                 "content_position": "left",
                 "chart_position": "right",
-                "split_ratio": "60:40"
+                "split_ratio": "60:40",
             },
             "title_with_right_image": {
                 "title_position": "top",
                 "content_position": "left",
                 "image_position": "right",
-                "split_ratio": "60:40"
+                "split_ratio": "60:40",
             },
             "title_with_chart_and_image": {
                 "title_position": "top",
                 "content_position": "left",
                 "media_position": "right",
-                "media_layout": "vertical_stack"
+                "media_layout": "vertical_stack",
             },
             "title_with_bottom_summary": {
                 "title_position": "top",
                 "content_position": "left",
                 "summary_position": "bottom",
-                "summary_style": "highlight"
+                "summary_style": "highlight",
             },
             "centered_text": {
                 "title_position": "center",
                 "content_position": "center",
                 "alignment": "center",
-                "max_width": "70%"
+                "max_width": "70%",
             },
             "two_column_text": {
                 "title_position": "top",
                 "content_position": "split",
                 "column_count": 2,
-                "split_ratio": "50:50"
+                "split_ratio": "50:50",
             },
             "title_with_large_text": {
                 "title_position": "top",
                 "content_position": "center",
                 "font_size": "large",
-                "alignment": "center"
-            }
+                "alignment": "center",
+            },
         }
 
         return configs.get(layout, {})
 
     def _get_alternatives(
-        self,
-        selected_layout: str,
-        page_type: str,
-        content_type: str
+        self, selected_layout: str, page_type: str, content_type: str
     ) -> List[str]:
         """生成替代布局方案"""
         alternatives = []
@@ -240,17 +229,13 @@ class LayoutSelectionSkill(BaseSkill):
             "title_with_left_chart": ["title_with_chart_and_image", "title_with_bullet_points"],
             "title_with_right_image": ["title_with_chart_and_image", "title_with_bullet_points"],
             "title_with_chart_and_image": ["title_with_left_chart", "title_with_right_image"],
-            "two_column_text": ["title_with_bullet_points", "title_with_large_text"]
+            "two_column_text": ["title_with_bullet_points", "title_with_large_text"],
         }
 
         return alternative_map.get(selected_layout, ["title_with_bullet_points"])
 
     def _explain_reasoning(
-        self,
-        page_type: str,
-        content_type: str,
-        has_chart: bool,
-        has_image: bool
+        self, page_type: str, content_type: str, has_chart: bool, has_image: bool
     ) -> str:
         """解释选择原因"""
         reasons = []
@@ -282,11 +267,7 @@ class LayoutRecommendationSkill(BaseSkill):
     category = "rendering"
 
     async def execute(
-        self,
-        content_text: str,
-        title: str,
-        has_chart: bool = False,
-        has_image: bool = False
+        self, content_text: str, title: str, has_chart: bool = False, has_image: bool = False
     ) -> str:
         """
         基于内容分析推荐布局
@@ -327,11 +308,11 @@ class LayoutRecommendationSkill(BaseSkill):
         length = len(content_text)
 
         # 判断文本密度（字数/行数）
-        lines = [line for line in content_text.split('\n') if line.strip()]
+        lines = [line for line in content_text.split("\n") if line.strip()]
         text_density = length / len(lines) if lines else 0
 
         # 检测是否有列表
-        has_list = any(line.strip().startswith(('-', '*', '•')) for line in lines)
+        has_list = any(line.strip().startswith(("-", "*", "•")) for line in lines)
 
         # 检测是否有段落
         has_paragraphs = len(lines) > 3
@@ -349,14 +330,11 @@ class LayoutRecommendationSkill(BaseSkill):
             "text_density": text_density,
             "has_list": has_list,
             "has_paragraphs": has_paragraphs,
-            "line_count": len(lines)
+            "line_count": len(lines),
         }
 
     def _recommend_by_analysis(
-        self,
-        analysis: Dict[str, Any],
-        has_chart: bool,
-        has_image: bool
+        self, analysis: Dict[str, Any], has_chart: bool, has_image: bool
     ) -> str:
         """根据分析推荐布局"""
         # 优先级：图表/图片 > 内容特征 > 默认
@@ -382,11 +360,7 @@ class LayoutRecommendationSkill(BaseSkill):
         else:
             return "title_with_bullet_points"
 
-    def _calculate_confidence(
-        self,
-        analysis: Dict[str, Any],
-        layout: str
-    ) -> float:
+    def _calculate_confidence(self, analysis: Dict[str, Any], layout: str) -> float:
         """计算推荐置信度"""
         # 简化实现
         confidence = 0.8
@@ -400,11 +374,7 @@ class LayoutRecommendationSkill(BaseSkill):
 
         return min(confidence, 1.0)
 
-    def _generate_reasoning(
-        self,
-        analysis: Dict[str, Any],
-        layout: str
-    ) -> str:
+    def _generate_reasoning(self, analysis: Dict[str, Any], layout: str) -> str:
         """生成推荐理由"""
         reasoning_parts = []
 
@@ -426,11 +396,12 @@ class LayoutRecommendationSkill(BaseSkill):
 # ============================================================================
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class LayoutSelectionInput(BaseModel):
     """布局选择输入参数"""
+
     page_type: str = Field(..., description="页面类型 (cover/directory/content/summary/thanks)")
     content_type: str = Field(default="text_only", description="内容类型")
     has_chart: bool = Field(default=False, description="是否有图表")
@@ -440,6 +411,7 @@ class LayoutSelectionInput(BaseModel):
 
 class LayoutRecommendationInput(BaseModel):
     """布局推荐输入参数"""
+
     content_text: str = Field(..., description="正文内容")
     title: str = Field(..., description="标题")
     has_chart: bool = Field(default=False, description="是否有图表")
@@ -451,12 +423,12 @@ layout_selection_tool = StructuredTool.from_function(
     func=LayoutSelectionSkill().execute,
     name="layout_selection",
     description="根据页面类型和内容选择最佳PPT布局",
-    args_schema=LayoutSelectionInput
+    args_schema=LayoutSelectionInput,
 )
 
 layout_recommendation_tool = StructuredTool.from_function(
     func=LayoutRecommendationSkill().execute,
     name="layout_recommendation",
     description="基于具体内容分析推荐最佳布局",
-    args_schema=LayoutRecommendationInput
+    args_schema=LayoutRecommendationInput,
 )

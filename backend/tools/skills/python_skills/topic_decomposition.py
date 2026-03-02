@@ -29,11 +29,7 @@ class TopicDecompositionSkill(BaseSkill):
     category = "framework"
 
     async def execute(
-        self,
-        topic: str,
-        num_parts: int = 5,
-        strategy: str = "logical",
-        audience: str = "general"
+        self, topic: str, num_parts: int = 5, strategy: str = "logical", audience: str = "general"
     ) -> str:
         """
         执行主题分解
@@ -52,7 +48,9 @@ class TopicDecompositionSkill(BaseSkill):
             str: JSON 格式的子主题列表
         """
         try:
-            logger.info(f"[TopicDecomposition] 分解主题: {topic}, 数量: {num_parts}, 策略: {strategy}")
+            logger.info(
+                f"[TopicDecomposition] 分解主题: {topic}, 数量: {num_parts}, 策略: {strategy}"
+            )
 
             # 步骤 1: 分析主题类型
             topic_type = await self._analyze_topic_type(topic)
@@ -81,11 +79,12 @@ class TopicDecompositionSkill(BaseSkill):
 
             # 返回 JSON 格式
             import json
+
             result = {
                 "topic": topic,
                 "subtopics": subtopics,
                 "strategy": strategy,
-                "total": len(subtopics)
+                "total": len(subtopics),
             }
 
             return json.dumps(result, ensure_ascii=False)
@@ -121,10 +120,7 @@ class TopicDecompositionSkill(BaseSkill):
             return "general"
 
     async def _decompose_logically(
-        self,
-        topic: str,
-        num_parts: int,
-        audience: str
+        self, topic: str, num_parts: int, audience: str
     ) -> List[Dict[str, Any]]:
         """
         逻辑递进分解
@@ -167,11 +163,7 @@ class TopicDecompositionSkill(BaseSkill):
 
             # 添加顺序
             return [
-                {
-                    "title": item["title"],
-                    "description": item.get("description", ""),
-                    "order": i + 1
-                }
+                {"title": item["title"], "description": item.get("description", ""), "order": i + 1}
                 for i, item in enumerate(subtopics_data)
             ]
 
@@ -180,10 +172,7 @@ class TopicDecompositionSkill(BaseSkill):
             return self._fallback_decompose(topic, num_parts)
 
     async def _decompose_chronologically(
-        self,
-        topic: str,
-        num_parts: int,
-        audience: str
+        self, topic: str, num_parts: int, audience: str
     ) -> List[Dict[str, Any]]:
         """
         时间顺序分解
@@ -226,7 +215,7 @@ class TopicDecompositionSkill(BaseSkill):
                     "title": item["title"],
                     "description": item.get("description", ""),
                     "order": i + 1,
-                    "time_period": item.get("time_period", "")
+                    "time_period": item.get("time_period", ""),
                 }
                 for i, item in enumerate(subtopics_data)
             ]
@@ -236,10 +225,7 @@ class TopicDecompositionSkill(BaseSkill):
             return self._fallback_decompose(topic, num_parts)
 
     async def _decompose_problem_solution(
-        self,
-        topic: str,
-        num_parts: int,
-        audience: str
+        self, topic: str, num_parts: int, audience: str
     ) -> List[Dict[str, Any]]:
         """
         问题解决分解
@@ -278,11 +264,7 @@ class TopicDecompositionSkill(BaseSkill):
             subtopics_data = json.loads(result)
 
             return [
-                {
-                    "title": item["title"],
-                    "description": item.get("description", ""),
-                    "order": i + 1
-                }
+                {"title": item["title"], "description": item.get("description", ""), "order": i + 1}
                 for i, item in enumerate(subtopics_data)
             ]
 
@@ -291,10 +273,7 @@ class TopicDecompositionSkill(BaseSkill):
             return self._fallback_decompose(topic, num_parts)
 
     async def _decompose_by_components(
-        self,
-        topic: str,
-        num_parts: int,
-        audience: str
+        self, topic: str, num_parts: int, audience: str
     ) -> List[Dict[str, Any]]:
         """
         组件分解
@@ -334,11 +313,7 @@ class TopicDecompositionSkill(BaseSkill):
             subtopics_data = json.loads(result)
 
             return [
-                {
-                    "title": item["title"],
-                    "description": item.get("description", ""),
-                    "order": i + 1
-                }
+                {"title": item["title"], "description": item.get("description", ""), "order": i + 1}
                 for i, item in enumerate(subtopics_data)
             ]
 
@@ -347,10 +322,7 @@ class TopicDecompositionSkill(BaseSkill):
             return self._fallback_decompose(topic, num_parts)
 
     async def _auto_decompose(
-        self,
-        topic: str,
-        num_parts: int,
-        audience: str
+        self, topic: str, num_parts: int, audience: str
     ) -> List[Dict[str, Any]]:
         """自动选择分解策略"""
         # 先分析主题类型
@@ -362,7 +334,7 @@ class TopicDecompositionSkill(BaseSkill):
             "technical": "logical",
             "problem": "problem_solution",
             "component": "component",
-            "general": "logical"
+            "general": "logical",
         }
 
         strategy = strategy_map.get(topic_type, "logical")
@@ -378,9 +350,7 @@ class TopicDecompositionSkill(BaseSkill):
             return await self._decompose_logically(topic, num_parts, audience)
 
     async def _validate_logic(
-        self,
-        subtopics: List[Dict[str, Any]],
-        original_topic: str
+        self, subtopics: List[Dict[str, Any]], original_topic: str
     ) -> List[Dict[str, Any]]:
         """验证子主题的逻辑性"""
         # 检查数量
@@ -422,11 +392,7 @@ class TopicDecompositionSkill(BaseSkill):
         except:
             return title.split()[:3]
 
-    def _fallback_decompose(
-        self,
-        topic: str,
-        num_parts: int
-    ) -> List[Dict[str, Any]]:
+    def _fallback_decompose(self, topic: str, num_parts: int) -> List[Dict[str, Any]]:
         """降级分解：使用模板"""
         subtopics = []
 
@@ -438,15 +404,13 @@ class TopicDecompositionSkill(BaseSkill):
             f"{topic}的应用场景",
             f"{topic}的发展趋势",
             f"{topic}的挑战与机遇",
-            f"{topic}的未来展望"
+            f"{topic}的未来展望",
         ]
 
         for i in range(min(num_parts, len(templates))):
-            subtopics.append({
-                "title": templates[i],
-                "description": f"{templates[i]}的详细内容",
-                "order": i + 1
-            })
+            subtopics.append(
+                {"title": templates[i], "description": f"{templates[i]}的详细内容", "order": i + 1}
+            )
 
         return subtopics
 
@@ -456,14 +420,17 @@ class TopicDecompositionSkill(BaseSkill):
 # ============================================================================
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class TopicDecompositionInput(BaseModel):
     """主题分解输入参数"""
+
     topic: str = Field(..., description="主题")
     num_parts: int = Field(default=5, description="分解数量（3-7）")
-    strategy: str = Field(default="logical", description="分解策略 (logical/chronological/problem_solution/component)")
+    strategy: str = Field(
+        default="logical", description="分解策略 (logical/chronological/problem_solution/component)"
+    )
     audience: str = Field(default="general", description="目标受众")
 
 
@@ -472,5 +439,5 @@ topic_decomposition_tool = StructuredTool.from_function(
     func=TopicDecompositionSkill().execute,
     name="topic_decomposition",
     description="将复杂主题分解为逻辑清晰的子主题",
-    args_schema=TopicDecompositionInput
+    args_schema=TopicDecompositionInput,
 )

@@ -33,7 +33,7 @@ class ContentOptimizationSkill(BaseSkill):
         content: Dict[str, Any],
         failed_checks: List[str],
         requirement: Dict[str, Any] = None,
-        target_score: float = 0.9
+        target_score: float = 0.9,
     ) -> str:
         """
         执行内容优化
@@ -58,7 +58,9 @@ class ContentOptimizationSkill(BaseSkill):
             # 按优先级处理失败项
             for check_name in self._prioritize_checks(failed_checks):
                 # 优化这个检查项
-                optimized, improvement = await self._optimize_check(current, check_name, requirement)
+                optimized, improvement = await self._optimize_check(
+                    current, check_name, requirement
+                )
 
                 if optimized is not None:
                     current = optimized
@@ -67,10 +69,11 @@ class ContentOptimizationSkill(BaseSkill):
 
             # 返回 JSON 格式的优化内容
             import json
+
             result = {
                 "optimized": current,
                 "improvements": improvements,
-                "iterations": len(improvements)
+                "iterations": len(improvements),
             }
 
             return json.dumps(result, ensure_ascii=False)
@@ -94,29 +97,23 @@ class ContentOptimizationSkill(BaseSkill):
             "has_title": 0,
             "has_key_points": 0,
             "has_content": 0,
-
             # P1: 标题
             "title_length": 1,
             "title_attractive": 1,
             "title_not_generic": 1,
-
             # P2: 要点
             "key_points_count": 2,
             "key_points_length": 2,
             "key_points_parallel": 2,
-
             # P3: 其他
             "audience_match": 3,
-            "content_length_ok": 3
+            "content_length_ok": 3,
         }
 
         return sorted(failed_checks, key=lambda x: priority.get(x, 3))
 
     async def _optimize_check(
-        self,
-        content: Dict[str, Any],
-        check_name: str,
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], check_name: str, requirement: Dict[str, Any]
     ) -> tuple:
         """
         优化单个检查项
@@ -139,9 +136,7 @@ class ContentOptimizationSkill(BaseSkill):
             return None, None
 
     async def _fix_title_length(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """修复标题长度"""
         title = content.get("title", "")
@@ -168,14 +163,12 @@ class ContentOptimizationSkill(BaseSkill):
         """
 
         result = await self.llm.ainvoke(prompt)
-        content["title"] = result.strip().strip('"\''')
+        content["title"] = result.strip().strip("\"'")
 
         return content
 
     async def _fix_title_attractive(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """提升标题吸引力"""
         title = content.get("title", "")
@@ -197,14 +190,12 @@ class ContentOptimizationSkill(BaseSkill):
         """
 
         result = await self.llm.ainvoke(prompt)
-        content["title"] = result.strip().strip('"\'')
+        content["title"] = result.strip().strip("\"'")
 
         return content
 
     async def _fix_title_not_generic(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """去除通用性"""
         title = content.get("title", "")
@@ -229,14 +220,12 @@ class ContentOptimizationSkill(BaseSkill):
         """
 
         result = await self.llm.ainvoke(prompt)
-        content["title"] = result.strip().strip('"\'')
+        content["title"] = result.strip().strip("\"'")
 
         return content
 
     async def _fix_key_points_count(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """修复要点数量"""
         key_points = content.get("key_points", [])
@@ -248,7 +237,7 @@ class ContentOptimizationSkill(BaseSkill):
             # 需要增加要点
             if not self.llm:
                 # 从正文提取
-                lines = content_text.split('\n')
+                lines = content_text.split("\n")
                 for line in lines:
                     if line.strip() and len(key_points) < 3:
                         key_points.append(line.strip()[:50])
@@ -286,9 +275,7 @@ class ContentOptimizationSkill(BaseSkill):
         return content
 
     async def _fix_key_points_length(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """修复要点长度"""
         key_points = content.get("key_points", [])
@@ -311,7 +298,7 @@ class ContentOptimizationSkill(BaseSkill):
                     """
 
                     result = await self.llm.ainvoke(prompt)
-                    key_points[i] = result.strip().strip('"\'')
+                    key_points[i] = result.strip().strip("\"'")
 
                 else:
                     # 截断
@@ -322,9 +309,7 @@ class ContentOptimizationSkill(BaseSkill):
         return content
 
     async def _fix_key_points_parallel(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """修复要点平行结构"""
         key_points = content.get("key_points", [])
@@ -374,9 +359,7 @@ class ContentOptimizationSkill(BaseSkill):
         return content
 
     async def _fix_audience_match(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """修复受众匹配"""
         audience = requirement.get("audience", "general")
@@ -409,9 +392,7 @@ class ContentOptimizationSkill(BaseSkill):
         return content
 
     async def _fix_content_length_ok(
-        self,
-        content: Dict[str, Any],
-        requirement: Dict[str, Any]
+        self, content: Dict[str, Any], requirement: Dict[str, Any]
     ) -> Dict[str, Any]:
         """修复内容长度"""
         content_text = content.get("content_text", "")
@@ -436,7 +417,7 @@ class ContentOptimizationSkill(BaseSkill):
             "key_points_length": "缩短过长的要点",
             "key_points_parallel": "统一要点语法结构",
             "audience_match": "调整内容长度适配受众",
-            "content_length_ok": "调整内容长度到合理范围"
+            "content_length_ok": "调整内容长度到合理范围",
         }
 
         return improvements.get(check_name, f"优化 {check_name}")
@@ -447,11 +428,12 @@ class ContentOptimizationSkill(BaseSkill):
 # ============================================================================
 
 from langchain_core.tools import StructuredTool
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class ContentOptimizationInput(BaseModel):
     """内容优化输入参数"""
+
     content: Dict[str, Any] = Field(..., description="内容字典")
     failed_checks: List[str] = Field(..., description="失败的检查项")
     requirement: Dict[str, Any] = Field(default=None, description="需求字典（可选）")
@@ -463,7 +445,7 @@ content_optimization_tool = StructuredTool.from_function(
     func=ContentOptimizationSkill().execute,
     name="content_optimization",
     description="根据质量检查结果优化内容，提升质量分数",
-    args_schema=ContentOptimizationInput
+    args_schema=ContentOptimizationInput,
 )
 
 
@@ -485,7 +467,7 @@ class IterativeOptimizationSkill(BaseSkill):
         quality_check_skill,
         requirement: Dict[str, Any] = None,
         max_iterations: int = 3,
-        target_score: float = 0.9
+        target_score: float = 0.9,
     ) -> str:
         """
         迭代优化内容
@@ -510,7 +492,8 @@ class IterativeOptimizationSkill(BaseSkill):
             quality_result_str = await quality_check_skill.execute(current_content, requirement)
             # 从字符串中解析分数（简化处理）
             import re
-            score_match = re.search(r'质量分数: ([\d.]+)', quality_result_str)
+
+            score_match = re.search(r"质量分数: ([\d.]+)", quality_result_str)
             initial_score = float(score_match.group(1)) if score_match else 0.7
 
             logger.info(f"[IterativeOptimization] 初始分数: {initial_score}")
@@ -524,14 +507,13 @@ class IterativeOptimizationSkill(BaseSkill):
                 # 优化
                 optimizer = ContentOptimizationSkill(llm=self.llm)
                 optimization_result_str = await optimizer.execute(
-                    current_content,
-                    [],  # 简化：不传入具体检查项
-                    requirement
+                    current_content, [], requirement  # 简化：不传入具体检查项
                 )
 
                 # 解析优化结果
                 try:
                     import json
+
                     optimization_result = json.loads(optimization_result_str)
                     current_content = optimization_result.get("optimized", current_content)
                     improvements.extend(optimization_result.get("improvements", []))
@@ -540,7 +522,7 @@ class IterativeOptimizationSkill(BaseSkill):
 
                 # 重新检查质量
                 quality_result_str = await quality_check_skill.execute(current_content, requirement)
-                score_match = re.search(r'质量分数: ([\d.]+)', quality_result_str)
+                score_match = re.search(r"质量分数: ([\d.]+)", quality_result_str)
                 current_score = float(score_match.group(1)) if score_match else initial_score
 
                 logger.info(f"[IterativeOptimization] 第 {iteration + 1} 轮后分数: {current_score}")
@@ -548,13 +530,14 @@ class IterativeOptimizationSkill(BaseSkill):
 
             # 返回 JSON 格式结果
             import json
+
             result = {
                 "final_content": current_content,
                 "initial_score": initial_score,
                 "final_score": current_score,
                 "iterations": len(improvements),
                 "improvements": improvements,
-                "target_met": current_score >= target_score
+                "target_met": current_score >= target_score,
             }
 
             return json.dumps(result, ensure_ascii=False)
