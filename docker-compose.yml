@@ -1,20 +1,19 @@
 version: "3.8"
 services:
-  # PostgreSQL 数据库服务（持久化记忆）
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: multiagent_postgres
+  # MySQL 数据库服务（持久化记忆）
+  mysql:
+    image: mysql:8.0
+    container_name: multiagent_mysql
     environment:
-      POSTGRES_DB: multiagent_ppt
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST_AUTH_METHOD: trust
+      MYSQL_ROOT_PASSWORD: postgres
+      MYSQL_DATABASE: multiagent_ppt
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,7 +45,7 @@ services:
       - "10012:10012"
     env_file: ./slide_agent/.env
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -62,7 +61,7 @@ services:
     env_file: ./slide_outline/.env
     depends_on:
       - rag_tool
-      - postgres
+      - mysql
       - redis
     restart: always
 
@@ -92,7 +91,7 @@ services:
 
 # 持久化卷
 volumes:
-  postgres_data:
+  mysql_data:
     driver: local
   redis_data:
     driver: local

@@ -1,65 +1,34 @@
-# FastAPI 统一网关依赖
+# Web API
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
-
-# Google ADK 依赖
-google-genai
-google-adk>=1.24.0
-google-cloud-aiplatform>=1.70.0
-google-cloud-storage>=3.0.0
-
-# HTTP 客户端
-httpx
-a2a-sdk==0.2.10
-
-# LLM 相关
-litellm
-
-# 配置管理
 python-dotenv
 
-# MCP 工具
-fastmcp==2.2.5
+# Agent / Workflow
+langchain==0.1.20
+langchain-openai==0.1.7
+langgraph==0.0.45
 
-# 命令行工具
-asyncclick
-click
+# Protocol / Network
+httpx
+requests>=2.31.0
+a2a-sdk==0.2.10
+mcp>=1.6.0,<2.0.0
 
-# 数据处理
-BeautifulSoup4
+# Data / Parsing
+beautifulsoup4
+readability-lxml>=0.8.1
+html2text>=2020.1.16
+lxml>=4.9.0
+python-pptx>=0.6.21
+PyYAML>=6.0
 
-# 测试
-pytest
-
-# Redis 缓存
+# Storage
 redis>=5.0.0
-
-# ===========================================
-# Authentication & Security Dependencies
-# ===========================================
-
-# JWT Token handling
-python-jose[cryptography]>=3.3.0
-
-# Password hashing
-passlib[bcrypt]>=1.7.4
-
-# Email validation
-email-validator>=2.0.0
-
-# Database
 sqlalchemy>=2.0.0
-alembic>=1.12.0
-pymysql>=1.1.0              # MySQL驱动
-aiomysql>=0.2.0             # 异步MySQL驱动
-cryptography>=41.0.0        # MySQL密码加密需要
-# psycopg2-binary>=2.9.0   # PostgreSQL驱动（已禁用）
-# asyncpg>=0.28.0           # 异步PostgreSQL驱动（已禁用）
+pymysql>=1.1.0
+cryptography>=41.0.0
 
-# MCP Tools Dependencies
-readability-lxml>=0.8.1      # Web content extraction
-html2text>=2020.1.16          # HTML to text conversion
-python-pptx>=0.6.21           # PowerPoint generation
-lxml>=4.9.0                   # XML processing (required by readability)
+# Test
+pytest

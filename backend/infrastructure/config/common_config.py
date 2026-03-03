@@ -70,12 +70,12 @@ class AgentConfig(BaseSettings):
 class DatabaseConfig(BaseSettings):
     """数据库配置"""
 
-    # PostgreSQL
-    postgres_host: str = Field("localhost", description="PostgreSQL 主机")
-    postgres_port: int = Field(5432, description="PostgreSQL 端口")
-    postgres_db: str = Field("multiagent_ppt", description="数据库名")
-    postgres_user: str = Field("postgres", description="用户名")
-    postgres_password: str = Field("password", description="密码")
+    # MySQL
+    mysql_host: str = Field("localhost", description="MySQL 主机")
+    mysql_port: int = Field(3306, description="MySQL 端口")
+    mysql_db: str = Field("multiagent_ppt", description="数据库名")
+    mysql_user: str = Field("root", description="用户名")
+    mysql_password: str = Field("postgres", description="密码")
 
     # Redis
     redis_host: str = Field("localhost", description="Redis 主机")
@@ -89,8 +89,8 @@ class DatabaseConfig(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        """生成 PostgreSQL 连接 URL"""
-        return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        """生成 MySQL 连接 URL"""
+        return f"mysql+pymysql://{self.mysql_user}:{self.mysql_password}@{self.mysql_host}:{self.mysql_port}/{self.mysql_db}"
 
     @property
     def redis_url(self) -> str:
