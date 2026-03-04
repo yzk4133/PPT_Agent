@@ -12,6 +12,7 @@ import sys
 from datetime import datetime
 from typing import Dict, Any
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,7 +22,13 @@ from fastapi.responses import JSONResponse
 backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
-    
+
+# 加载环境变量（优先读取 api/.env，其次 backend/.env）
+api_env_path = os.path.join(os.path.dirname(__file__), ".env")
+backend_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(api_env_path, override=False)
+load_dotenv(backend_env_path, override=False)
+
 # 导入路由
 from api.routes import ppt_generation
 
@@ -31,21 +38,23 @@ from infrastructure.middleware.error_handler import setup_exception_handlers
 
 # 配置日志
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 # 记录启动时间
 _start_time = time.time()
 
+
 def get_uptime() -> float:
     """获取服务运行时间（秒）"""
     return time.time() - _start_time
 
+
 # ============================================================================
 # Lifespan 事件处理器
 # ============================================================================
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -67,6 +76,7 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("🛑 FastAPI 统一网关正在关闭...")
     logger.info("=" * 60)
+
 
 # 创建 FastAPI 应用
 app = FastAPI(
@@ -91,7 +101,7 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # ============================================================================
@@ -100,10 +110,13 @@ app = FastAPI(
 
 # 从配置获取允许的来源
 config = get_config()
-allowed_origins = getattr(config, 'cors_allowed_origins', ["http://localhost:3000", "http://localhost:5173"])
+allowed_origins = getattr(
+    config, "cors_allowed_origins", ["http://localhost:3000", "http://localhost:5173"]
+)
 
 # 如果环境变量设置了 ALLOWED_ORIGINS，使用环境变量的值
 import os
+
 env_origins = os.getenv("ALLOWED_ORIGINS", "")
 if env_origins:
     allowed_origins = [origin.strip() for origin in env_origins.split(",")]
@@ -119,6 +132,7 @@ app.add_middleware(
 # ============================================================================
 # 中间件：请求日志
 # ============================================================================
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -143,6 +157,7 @@ async def log_requests(request: Request, call_next):
 
     return response
 
+
 # ============================================================================
 # 异常处理器
 # ============================================================================
@@ -150,35 +165,35 @@ async def log_requests(request: Request, call_next):
 # 使用统一的异常处理器
 setup_exception_handlers(app)
 
+
 # 保留旧的 APIException 类以保持向后兼容
 class APIException(Exception):
     """自定义 API 异常（保留以保持向后兼容）"""
+
     def __init__(
         self,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
         error_code: str = "INTERNAL_ERROR",
         message: str = "内部错误",
-        details: Dict[str, Any] = None
+        details: Dict[str, Any] = None,
     ):
         self.status_code = status_code
         self.error_code = error_code
         self.message = message
         self.details = details
 
+
 # ============================================================================
 # 注册路由
 # ============================================================================
 
 # PPT 生成路由（大纲生成、幻灯片生成）
-app.include_router(
-    ppt_generation.router,
-    prefix="/api",
-    tags=["PPT Generation"]
-)
+app.include_router(ppt_generation.router, prefix="/api", tags=["PPT Generation"])
 
 # ============================================================================
 # 根路径和健康检查
 # ============================================================================
+
 
 @app.get("/", include_in_schema=False)
 async def root():
@@ -187,8 +202,9 @@ async def root():
         "message": "Multi-Agent PPT Generation API",
         "version": "2.0.0",
         "docs": "/docs",
-        "health": "/api/ppt/health"
+        "health": "/api/ppt/health",
     }
+
 
 @app.get("/api/health")
 async def health_check():
@@ -203,11 +219,9 @@ async def health_check():
         "version": "2.0.0",
         "uptime": f"{get_uptime():.2f}s",
         "timestamp": datetime.now().isoformat(),
-        "services": {
-            "gateway": "ok",
-            "agent_services": "ok"
-        }
+        "services": {"gateway": "ok", "agent_services": "ok"},
     }
+
 
 # ============================================================================
 # 主程序入口
@@ -222,9 +236,5 @@ if __name__ == "__main__":
 
     logger.info("启动 FastAPI 统一网关...")
     uvicorn.run(
-        "main:app",
-        host=host,
-        port=port,
-        reload=True,  # 开发模式启用热重载
-        log_level="info"
+        "main:app", host=host, port=port, reload=True, log_level="info"  # 开发模式启用热重载
     )

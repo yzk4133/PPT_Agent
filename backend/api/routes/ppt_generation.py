@@ -39,6 +39,7 @@ router = APIRouter(prefix="/ppt", tags=["PPT Generation"])
 
 class GeneratePPTRequest(BaseModel):
     """一次性完整生成 PPT"""
+
     user_input: str = Field(..., description="用户输入的自然语言描述")
     language: str = Field(default="zh-CN", description="语言: zh-CN, en-US")
     num_slides: int = Field(default=10, description="幻灯片数量", ge=1, le=50)
@@ -46,6 +47,7 @@ class GeneratePPTRequest(BaseModel):
 
 class GenerateSlidesRequest(BaseModel):
     """从大纲生成幻灯片"""
+
     title: str = Field(..., description="PPT 标题")
     outline: list = Field(..., description="大纲列表")
     language: str = Field(default="zh-CN", description="语言")
@@ -53,8 +55,17 @@ class GenerateSlidesRequest(BaseModel):
     num_slides: int = Field(default=10, description="幻灯片数量", ge=1, le=50)
 
 
+class GenerateOutlineRequest(BaseModel):
+    """生成大纲请求"""
+
+    prompt: str = Field(..., description="用户输入主题")
+    numberOfCards: int = Field(default=10, description="期望卡片数量", ge=1, le=50)
+    language: str = Field(default="zh-CN", description="语言")
+
+
 class PPTResponse(BaseModel):
     """PPT 生成响应"""
+
     status: str
     message: str
     data: Dict[str, Any] = Field(default={})
@@ -79,6 +90,56 @@ def get_checkpoint_manager() -> CheckpointManager:
 # ============================================================================
 # API Endpoints - 只保留 3 个核心端点
 # ============================================================================
+
+
+@router.post("/outline/generate")
+async def generate_outline(request: GenerateOutlineRequest, http_request: Request):
+    """
+    生成大纲（前端第一段）
+
+    返回 SSE 流，格式：
+    data: {"content": "..."}
+    """
+    try:
+        await rate_limit_middleware.rate_limit_check(http_request, limit=50, window=60)
+
+        logger.info(
+            f"Outline generation request: prompt={request.prompt[:50]}..., cards={request.numberOfCards}"
+        )
+
+        service = get_ppt_generation_service_langchain()
+
+        async def event_stream():
+            try:
+                user_input = f"{request.prompt}\n\n页数要求：{request.numberOfCards}页"
+                async for chunk in service.generate_outline(
+                    user_input=user_input,
+                    language=request.language,
+                    expected_cards=request.numberOfCards,
+                ):
+                    payload = {"content": chunk}
+                    yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+            except Exception as e:
+                logger.error(f"Outline generation error: {e}", exc_info=True)
+                err_payload = {"content": f"错误：{str(e)}"}
+                yield f"data: {json.dumps(err_payload, ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+                "X-Generation-Contract": "outline-v2",
+            },
+        )
+
+    except RateLimitExceededException:
+        raise
+    except Exception as e:
+        logger.error(f"Outline generation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"大纲生成失败: {str(e)}")
 
 
 @router.post("/generate", response_model=PPTResponse)
@@ -122,6 +183,7 @@ async def generate_ppt(request: GeneratePPTRequest, http_request: Request):
             headers={
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
+                "X-Generation-Contract": "ppt-v2",
             },
         )
 
@@ -156,7 +218,9 @@ async def generate_slides(request: GenerateSlidesRequest, http_request: Request)
             """流式生成幻灯片"""
             try:
                 # 转换 outline 为字符串
-                outline_text = "\n".join([f"{i+1}. {item}" for i, item in enumerate(request.outline)])
+                outline_text = "\n".join(
+                    [f"{i+1}. {item}" for i, item in enumerate(request.outline)]
+                )
 
                 async for event in service.generate_slides(
                     title=request.title,
@@ -178,6 +242,7 @@ async def generate_slides(request: GenerateSlidesRequest, http_request: Request)
             headers={
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
+                "X-Generation-Contract": "slides-v2",
             },
         )
 
@@ -210,6 +275,7 @@ if __name__ == "__main__":
 
     print("Starting PPT Generation API server...")
     print("Available endpoints:")
+    print("  POST /ppt/outline/generate  - 生成大纲")
     print("  POST /ppt/generate         - 一次性完整生成 PPT")
     print("  POST /ppt/slides/generate   - 从大纲生成幻灯片")
     print("  GET  /ppt/health            - 健康检查")

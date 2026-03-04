@@ -6,6 +6,7 @@ PPT Service - LangChain 版本
 
 import logging
 import os
+import re
 import uuid
 from typing import Optional, Dict, Any, List, AsyncGenerator
 
@@ -39,6 +40,7 @@ class PptGenerationServiceLangChain:
         self._api_key = os.getenv("OPENAI_API_KEY") or os.getenv("DEEPSEEK_API_KEY")
         self._base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("DEEPSEEK_BASE_URL")
         self._temperature = 0.7
+        self._llm_ready = bool(self._api_key)
 
         # 创建共享的 LLM 实例
         self._model = ChatOpenAI(
@@ -56,6 +58,18 @@ class PptGenerationServiceLangChain:
         logger.info(
             f"[PptGenerationServiceLangChain] Initialized with model: {self._model_name}, "
             f"quality_checks={self._enable_quality_checks}"
+        )
+
+        if not self._llm_ready:
+            logger.warning(
+                "[PptGenerationServiceLangChain] No OPENAI_API_KEY/DEEPSEEK_API_KEY detected. "
+                "Generation endpoints will return explicit configuration errors instead of placeholder output."
+            )
+
+    def _missing_llm_error(self) -> str:
+        return (
+            "未配置 LLM API Key（OPENAI_API_KEY 或 DEEPSEEK_API_KEY）。"
+            "请先配置可用模型密钥后再生成大纲或PPT。"
         )
 
     def _create_master_graph(self) -> MasterGraph:
@@ -79,6 +93,7 @@ class PptGenerationServiceLangChain:
         user_input: str,
         language: str = "zh-CN",
         model_name: str = None,
+        expected_cards: Optional[int] = None,
     ) -> AsyncGenerator[str, None]:
         """
         生成大纲
@@ -91,14 +106,15 @@ class PptGenerationServiceLangChain:
         Yields:
             生成的文本片段
         """
-        yield "正在解析需求并生成大纲..."
+        if not self._llm_ready:
+            yield f"错误：{self._missing_llm_error()}"
+            return
 
         try:
             # 直接使用需求解析和框架设计 Agent
             from agents.core.requirements.requirement_agent import create_requirement_parser
             from agents.core.planning.framework_agent import create_framework_designer
 
-            yield "正在分析需求..."
             requirement_agent = create_requirement_parser(self._model)
             requirement_state = create_initial_state(
                 user_input=user_input,
@@ -109,7 +125,10 @@ class PptGenerationServiceLangChain:
             parsed_state = await requirement_agent.run_node(requirement_state)
             requirements = parsed_state.get("structured_requirements", {})
 
-            yield "正在设计框架..."
+            if isinstance(expected_cards, int) and 1 <= expected_cards <= 50:
+                requirements["page_num"] = expected_cards
+                parsed_state["structured_requirements"] = requirements
+
             framework_agent = create_framework_designer(self._model)
             framework_state = await framework_agent.run_node(parsed_state)
 
@@ -121,22 +140,39 @@ class PptGenerationServiceLangChain:
                 yield "错误：未能生成框架"
                 return
 
-            # 生成大纲文本
-            outline_lines = [f"# {requirements.get('ppt_topic', framework.get('title', 'PPT大纲'))}"]
-            outline_lines.append("\n## 目录\n")
+            content_pages = [p for p in pages if p.get("page_type") == "content"]
+            generic_title_count = 0
+            generic_content_count = 0
+            for page in content_pages:
+                title = str(page.get("title") or "")
+                core_content = str(page.get("core_content") or "")
+                if re.match(r"^第\d+部分$", title):
+                    generic_title_count += 1
+                if "核心内容" in core_content:
+                    generic_content_count += 1
 
+            if (
+                content_pages
+                and generic_title_count == len(content_pages)
+                and generic_content_count == len(content_pages)
+            ):
+                logger.error("[generate_outline] Detected placeholder fallback framework")
+                yield "错误：模型返回了降级占位目录（可能是 API Key 无效或模型调用失败），请检查模型配置后重试。"
+                return
+
+            # 仅流式输出每一页标题，避免把状态文案或整段 markdown 混入前端卡片
+            emitted_count = 0
             for page in pages:
-                page_no = page.get("page_no", 1)
-                title = page.get("title", "")
-                content = page.get("core_content", "")
+                title = (page.get("title") or "").strip()
+                if not title:
+                    continue
+                emitted_count += 1
+                yield f"# {title}\n"
 
-                if title:
-                    outline_lines.append(f"{page_no}. {title}")
-                    if content:
-                        outline_lines.append(f"   - {content[:100]}...")
-
-            outline_text = "\n".join(outline_lines)
-            yield outline_text
+            # 兜底：如果标题都为空，至少返回一个主题标题
+            if emitted_count == 0:
+                fallback_title = requirements.get("ppt_topic", framework.get("title", "PPT大纲"))
+                yield f"# {fallback_title}\n"
 
             logger.info("[generate_outline] 大纲生成成功")
 
@@ -167,6 +203,10 @@ class PptGenerationServiceLangChain:
         Yields:
             事件数据字典
         """
+        if not self._llm_ready:
+            yield {"type": "error", "message": self._missing_llm_error()}
+            return
+
         yield {"type": "status", "stage": "init", "message": "开始生成PPT..."}
 
         try:
@@ -244,6 +284,14 @@ class PptGenerationServiceLangChain:
         """
         task_id = f"ppt_{uuid.uuid4().hex[:8]}"
 
+        if not self._llm_ready:
+            yield {
+                "type": "error",
+                "task_id": task_id,
+                "message": self._missing_llm_error(),
+            }
+            return
+
         logger.info(f"[generate_ppt_full] 开始任务: {task_id}, user: {user_id}")
 
         yield {
@@ -261,11 +309,13 @@ class PptGenerationServiceLangChain:
 
             def on_progress(update):
                 """收集进度更新"""
-                progress_updates.append({
-                    "stage": update.stage,
-                    "progress": update.progress,
-                    "message": update.message,
-                })
+                progress_updates.append(
+                    {
+                        "stage": update.stage,
+                        "progress": update.progress,
+                        "message": update.message,
+                    }
+                )
 
             def on_stage_complete(stage, state):
                 """阶段完成回调"""
@@ -333,7 +383,7 @@ _global_service: Optional[PptGenerationServiceLangChain] = None
 
 
 def get_ppt_generation_service_langchain(
-    config: Optional[Dict[str, Any]] = None
+    config: Optional[Dict[str, Any]] = None,
 ) -> PptGenerationServiceLangChain:
     """获取全局 PPT 生成服务实例（LangChain 版本）"""
     global _global_service
