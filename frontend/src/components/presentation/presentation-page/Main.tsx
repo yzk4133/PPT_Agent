@@ -1,31 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { usePresentationState } from "@/states/presentation-state";
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 import {
-  type Themes,
-  themes,
   setThemeVariables,
   type ThemeProperties,
+  type Themes,
+  themes,
 } from "@/lib/presentation/themes";
 import { useTheme } from "next-themes";
 
-import { getCustomThemeById } from "@/app/_actions/presentation/theme-actions";
-import debounce from "lodash.debounce";
-import { PresentationSlidesView } from "./PresentationSlidesView";
-import { LoadingState } from "./Loading";
-import { PresentationLayout } from "./PresentationLayout";
-import { type Value } from "@udecode/plate-common";
+import { type ImageModelList } from "@/app/_actions/image/generate";
 import {
   getPresentation,
   updatePresentationTheme,
 } from "@/app/_actions/presentation/presentationActions";
+import { getCustomThemeById } from "@/app/_actions/presentation/theme-actions";
+import { type Value } from "@udecode/plate-common";
+import debounce from "lodash.debounce";
 import { type PlateNode, type PlateSlide } from "../utils/parser";
-import { type ImageModelList } from "@/app/_actions/image/generate";
 import { DetailPanel } from "./DetailPanel";
+import { LoadingState } from "./Loading";
+import { PresentationLayout } from "./PresentationLayout";
+import { PresentationSlidesView } from "./PresentationSlidesView";
 
 export default function PresentationPage() {
   const params = useParams();
@@ -105,7 +105,7 @@ export default function PresentationPage() {
           console.error("Error updating theme:", error);
         });
     }, 600),
-    []
+    [],
   );
 
   // Update presentation state when data is fetched
@@ -129,8 +129,9 @@ export default function PresentationPage() {
       setSlides(presentationContent?.slides ?? []);
 
       // Set outline
-      if (presentationData.presentation?.outline) {
-        setOutline(presentationData.presentation.outline);
+      const storedOutline = presentationData.presentation?.outline;
+      if (Array.isArray(storedOutline)) {
+        setOutline(storedOutline.map((item) => String(item)));
       }
 
       // Set theme if available
@@ -166,7 +167,7 @@ export default function PresentationPage() {
       // Set imageModel if available
       if (presentationData?.presentation?.imageModel) {
         setImageModel(
-          presentationData?.presentation?.imageModel as ImageModelList
+          presentationData?.presentation?.imageModel as ImageModelList,
         );
       }
 

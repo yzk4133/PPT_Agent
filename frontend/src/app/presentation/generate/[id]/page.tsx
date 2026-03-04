@@ -1,25 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Wand2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { usePresentationState } from "@/states/presentation-state";
-import {
-  type Themes,
-  themes,
-  type ThemeProperties,
-} from "@/lib/presentation/themes";
-import { Spinner } from "@/components/ui/spinner";
-import { getCustomThemeById } from "@/app/_actions/presentation/theme-actions";
-import { getPresentation } from "@/app/_actions/presentation/presentationActions";
 import { type ImageModelList } from "@/app/_actions/image/generate";
+import { getPresentation } from "@/app/_actions/presentation/presentationActions";
+import { getCustomThemeById } from "@/app/_actions/presentation/theme-actions";
+import { Header } from "@/components/presentation/outline/Header";
+import { OutlineList } from "@/components/presentation/outline/OutlineList";
+import { PromptInput } from "@/components/presentation/outline/PromptInput";
 import { ThemeBackground } from "@/components/presentation/theme/ThemeBackground";
 import { ThemeSettings } from "@/components/presentation/theme/ThemeSettings";
-import { Header } from "@/components/presentation/outline/Header";
-import { PromptInput } from "@/components/presentation/outline/PromptInput";
-import { OutlineList } from "@/components/presentation/outline/OutlineList";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  themes,
+  type ThemeProperties,
+  type Themes,
+} from "@/lib/presentation/themes";
+import { usePresentationState } from "@/states/presentation-state";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Wand2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 export default function PresentationGenerateWithIdPage() {
   const router = useRouter();
@@ -31,6 +32,9 @@ export default function PresentationGenerateWithIdPage() {
     startPresentationGeneration,
     isGeneratingPresentation,
     isGeneratingOutline,
+    outlineError,
+    outline,
+    numSlides,
     setOutline,
     setShouldStartOutlineGeneration,
     setTheme,
@@ -56,7 +60,7 @@ export default function PresentationGenerateWithIdPage() {
         return result.presentation;
       },
       enabled: !!id,
-    }
+    },
   );
 
   // This effect handles the immediate startup of generation upon first mount
@@ -86,8 +90,9 @@ export default function PresentationGenerateWithIdPage() {
       setCurrentPresentation(presentationData.id, presentationData.title);
       setPresentationInput(presentationData.title);
 
-      if (presentationData.presentation?.outline) {
-        setOutline(presentationData.presentation.outline);
+      const storedOutline = presentationData.presentation?.outline;
+      if (Array.isArray(storedOutline)) {
+        setOutline(storedOutline.map((item) => String(item)));
       }
 
       // Set theme if available
@@ -124,7 +129,7 @@ export default function PresentationGenerateWithIdPage() {
       // Set imageModel if available
       if (presentationData?.presentation?.imageModel) {
         setImageModel(
-          presentationData?.presentation?.imageModel as ImageModelList
+          presentationData?.presentation?.imageModel as ImageModelList,
         );
       }
 
@@ -139,7 +144,7 @@ export default function PresentationGenerateWithIdPage() {
       }
 
       if (presentationData.presentation?.numSlides) {
-          setNumSlides(presentationData.presentation.numSlides);
+        setNumSlides(presentationData.presentation.numSlides);
       }
     }
   }, [
@@ -155,6 +160,13 @@ export default function PresentationGenerateWithIdPage() {
   ]);
 
   const handleGenerate = () => {
+    if (outline.length !== numSlides) {
+      toast.error(
+        `目录页数需与目标页数一致：当前 ${outline.length} / 目标 ${numSlides}`,
+      );
+      return;
+    }
+
     router.push(`/presentation/${id}`);
     startPresentationGeneration();
   };
@@ -203,12 +215,22 @@ export default function PresentationGenerateWithIdPage() {
           size="lg"
           className="gap-2 px-8"
           onClick={handleGenerate}
-          disabled={isGeneratingPresentation}
+          disabled={
+            isGeneratingPresentation ||
+            isGeneratingOutline ||
+            outline.length !== numSlides
+          }
         >
           <Wand2 className="h-5 w-5" />
           {isGeneratingPresentation ? "Generating..." : "生成演示文稿"}
         </Button>
       </div>
+
+      {outlineError && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
+          {outlineError}
+        </div>
+      )}
     </ThemeBackground>
   );
 }

@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import { type Themes, type ThemeProperties } from "@/lib/presentation/themes";
 import { type ImageModelList } from "@/app/_actions/image/generate";
 import { type PlateSlide } from "@/components/presentation/utils/parser";
+import { type ThemeProperties, type Themes } from "@/lib/presentation/themes";
+import { create } from "zustand";
 
 interface PresentationState {
   currentPresentationId: string | null;
@@ -31,6 +31,7 @@ interface PresentationState {
   shouldStartPresentationGeneration: boolean;
   isGeneratingOutline: boolean;
   isGeneratingPresentation: boolean;
+  outlineError: string | null;
   outline: string[];
   slides: PlateSlide[]; // This now holds the new object structure
 
@@ -42,7 +43,7 @@ interface PresentationState {
   setTheme: (
     // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
     theme: Themes | string,
-    customData?: ThemeProperties | null
+    customData?: ThemeProperties | null,
   ) => void;
   shouldShowExitHeader: boolean;
   setShouldShowExitHeader: (udpdate: boolean) => void;
@@ -65,6 +66,7 @@ interface PresentationState {
   setShouldStartPresentationGeneration: (shouldStart: boolean) => void;
   setIsGeneratingOutline: (isGenerating: boolean) => void;
   setIsGeneratingPresentation: (isGenerating: boolean) => void;
+  setOutlineError: (error: string | null) => void;
   startOutlineGeneration: () => void;
   startPresentationGeneration: () => void;
   resetGeneration: () => void;
@@ -76,13 +78,12 @@ interface PresentationState {
   selectAllPresentations: (ids: string[]) => void;
   deselectAllPresentations: () => void;
   togglePresentationSelection: (id: string) => void;
-  detailLogs: { data: any, metadata: any }[];
-  setDetailLogs: (logs: { data: any, metadata: any }[]) => void;
-  appendDetailLog: (log: { data: any, metadata: any }) => void;
+  detailLogs: { data: any; metadata: any }[];
+  setDetailLogs: (logs: { data: any; metadata: any }[]) => void;
+  appendDetailLog: (log: { data: any; metadata: any }) => void;
   //引用文献
   references: string[];
   setReferences: (references: string[]) => void;
-  
 }
 
 export const usePresentationState = create<PresentationState>((set) => ({
@@ -108,10 +109,12 @@ export const usePresentationState = create<PresentationState>((set) => ({
   currentSlideIndex: 0,
   isThemeCreatorOpen: false,
   imageGenerationModelOpen: false,
-  setImageGenerationModelOpen: (open) => set({ imageGenerationModelOpen: open }),
+  setImageGenerationModelOpen: (open) =>
+    set({ imageGenerationModelOpen: open }),
   detailLogs: [],
   setDetailLogs: (logs) => set({ detailLogs: logs }),
-  appendDetailLog: (log) => set((state) => ({ detailLogs: [...state.detailLogs, log] })),
+  appendDetailLog: (log) =>
+    set((state) => ({ detailLogs: [...state.detailLogs, log] })),
   references: [],
   setReferences: (references) => set({ references }),
 
@@ -120,6 +123,7 @@ export const usePresentationState = create<PresentationState>((set) => ({
   shouldStartPresentationGeneration: false,
   isGeneratingOutline: false,
   isGeneratingPresentation: false,
+  outlineError: null,
 
   setSlides: (slides) => {
     console.log("[setSlides] slides:", slides);
@@ -149,7 +153,7 @@ export const usePresentationState = create<PresentationState>((set) => ({
     set((state) => ({
       currentSlideIndex: Math.min(
         state.currentSlideIndex + 1,
-        state.slides.length - 1
+        state.slides.length - 1,
       ),
     })),
   previousSlide: () =>
@@ -166,12 +170,14 @@ export const usePresentationState = create<PresentationState>((set) => ({
     set({ isGeneratingOutline: isGenerating }),
   setIsGeneratingPresentation: (isGenerating) =>
     set({ isGeneratingPresentation: isGenerating }),
+  setOutlineError: (error) => set({ outlineError: error }),
   startOutlineGeneration: () =>
     set({
       shouldStartOutlineGeneration: true,
       isGeneratingOutline: true,
       shouldStartPresentationGeneration: false,
       isGeneratingPresentation: false,
+      outlineError: null,
       outline: [],
     }),
   startPresentationGeneration: () =>

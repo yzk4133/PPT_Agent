@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
 import { LangChainAdapter } from "ai";
-import crypto from "node:crypto";
+import { NextResponse } from "next/server";
 
 interface OutlineRequest {
   prompt: string;
@@ -8,8 +7,8 @@ interface OutlineRequest {
   language: string;
 }
 
-function generateId() {
-  return crypto.randomUUID();
+interface OutlineSSEPayload {
+  content?: string;
 }
 
 // FastAPI 统一网关 URL
@@ -24,7 +23,9 @@ console.log("FastAPI Gateway URL:", FASTAPI_URL);
  * @yields Each chunk of text received from the gateway.
  */
 
-function iteratorToStream(iterator: AsyncGenerator<string>): ReadableStream<string> {
+function iteratorToStream(
+  iterator: AsyncGenerator<string>,
+): ReadableStream<string> {
   return new ReadableStream({
     async pull(controller) {
       const { value, done } = await iterator.next();
@@ -37,7 +38,12 @@ function iteratorToStream(iterator: AsyncGenerator<string>): ReadableStream<stri
   });
 }
 
-async function* generateOutlineStream(serverUrl: string, content: string, language: string) {
+async function* generateOutlineStream(
+  serverUrl: string,
+  content: string,
+  language: string,
+  numberOfCards: number,
+) {
   try {
     const response = await fetch(`${serverUrl}/api/ppt/outline/generate`, {
       method: "POST",
@@ -46,7 +52,7 @@ async function* generateOutlineStream(serverUrl: string, content: string, langua
       },
       body: JSON.stringify({
         prompt: content,
-        numberOfCards: 10,
+        numberOfCards,
         language: language,
       }),
     });
@@ -55,6 +61,12 @@ async function* generateOutlineStream(serverUrl: string, content: string, langua
       const errorText = await response.text();
       console.error("FastAPI error response:", errorText);
       yield `Error: Failed to generate outline. Status: ${response.status}`;
+      return;
+    }
+
+    const contract = response.headers.get("x-generation-contract");
+    if (contract !== "outline-v2") {
+      yield "Error: 检测到旧版后端服务（缺少 outline-v2 协议）。请重启最新后端，或将 FASTAPI_URL 指向正确实例后重试。";
       return;
     }
 
@@ -74,15 +86,19 @@ async function* generateOutlineStream(serverUrl: string, content: string, langua
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
+      buffer = lines.pop() ?? "";
 
       for (const line of lines) {
         if (line.startsWith("data: ")) {
           try {
-            const data = JSON.parse(line.slice(6));
-            if (data.content) {
-              console.log("Yielding content chunk:", data.content);
-              yield data.content;
+            const data: unknown = JSON.parse(line.slice(6));
+            const payload = data as OutlineSSEPayload;
+            if (
+              typeof payload.content === "string" &&
+              payload.content.length > 0
+            ) {
+              console.log("Yielding content chunk:", payload.content);
+              yield payload.content;
             }
           } catch (e) {
             console.error("Failed to parse SSE data:", e);
@@ -92,25 +108,32 @@ async function* generateOutlineStream(serverUrl: string, content: string, langua
     }
   } catch (error) {
     console.error("Error communicating with FastAPI gateway:", error);
-    yield `Error: Failed to communicate with gateway. ${error}`;
+    const message = error instanceof Error ? error.message : String(error);
+    yield `Error: Failed to communicate with gateway. ${message}`;
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const { prompt, numberOfCards, language } = (await request.json()) as OutlineRequest;
+    const { prompt, numberOfCards, language } =
+      (await request.json()) as OutlineRequest;
 
     if (!prompt || !numberOfCards || !language) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
-    const stream = iteratorToStream(generateOutlineStream(FASTAPI_URL, prompt, language));
+    const stream = iteratorToStream(
+      generateOutlineStream(FASTAPI_URL, prompt, language, numberOfCards),
+    );
     return LangChainAdapter.toDataStreamResponse(stream);
   } catch (error) {
     console.error("Error in presentation outline:", error);
     return NextResponse.json(
       { error: "Failed to generate presentation outline" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

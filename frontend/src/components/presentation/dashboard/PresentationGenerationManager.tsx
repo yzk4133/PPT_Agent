@@ -1,11 +1,83 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { usePresentationState } from "@/states/presentation-state";
-import { SlideParser } from "../utils/parser";
 import { updatePresentation } from "@/app/_actions/presentation/presentationActions";
+import { usePresentationState } from "@/states/presentation-state";
 import { useCompletion } from "ai/react";
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { SlideParser } from "../utils/parser";
+
+type StreamEvent = {
+  type?: string;
+  data?: unknown;
+  metadata?: {
+    author?: string;
+    references?: unknown;
+  };
+};
+
+function isStreamEvent(value: unknown): value is StreamEvent {
+  return typeof value === "object" && value !== null;
+}
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return String(error);
+}
+
+function parseOutlineTitlesFromCompletion(completion: string): string[] {
+  const lines = completion
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const isStatusOrError = (line: string): boolean => {
+    return (
+      line.startsWith("正在") ||
+      line.startsWith("Error:") ||
+      line.startsWith("错误") ||
+      line.startsWith("Failed to")
+    );
+  };
+
+  const numberedTitles = lines
+    .map((line) => {
+      const match = line.match(/^\d+[.)、\s-]+(.+)$/);
+      return match?.[1]?.trim() ?? "";
+    })
+    .filter((title) => title && !isStatusOrError(title));
+
+  if (numberedTitles.length > 0) {
+    return Array.from(new Set(numberedTitles));
+  }
+
+  const headingTitles = lines
+    .map((line) => {
+      const match = line.match(/^#+\s*(.+)$/);
+      return match?.[1]?.trim() ?? "";
+    })
+    .filter((title) => title && !isStatusOrError(title));
+
+  if (headingTitles.length > 0) {
+    return Array.from(new Set(headingTitles));
+  }
+
+  const plainTitles = lines.filter((line) => !isStatusOrError(line));
+  return plainTitles.length > 0 ? plainTitles : [];
+}
+
+function extractBackendError(completion: string): string | null {
+  const lines = completion
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const errLine = lines.find(
+    (line) => line.startsWith("错误：") || line.startsWith("Error:"),
+  );
+  return errLine ?? null;
+}
 
 export function PresentationGenerationManager() {
   const {
@@ -22,6 +94,7 @@ export function PresentationGenerationManager() {
     setSlides,
     setIsGeneratingPresentation,
     setDetailLogs, // 新增解构
+    setOutlineError,
   } = usePresentationState();
 
   // Create a ref for the streaming parser to persist between renders
@@ -86,21 +159,41 @@ export function PresentationGenerationManager() {
         }
 
         // Now, perform a final parse and update of the outline from the complete response
-        const sections = completion.split(/^# /gm).filter(Boolean);
-        const finalOutline: string[] =
-          sections.length > 0
-            ? sections.map((section) => `# ${section}`.trim())
-            : [completion];
+        const backendError = extractBackendError(completion);
+        if (backendError) {
+          setOutline([]);
+          setOutlineError(backendError);
+          toast.error(backendError);
+          setIsGeneratingOutline(false);
+          setShouldStartOutlineGeneration(false);
+          return;
+        }
+
+        const finalOutline = parseOutlineTitlesFromCompletion(completion);
+        if (finalOutline.length !== numSlides) {
+          const mismatchMessage = `目录页数不匹配：期望 ${numSlides} 页，实际 ${finalOutline.length} 页。请重试或手动调整到 ${numSlides} 页。`;
+          setOutline(finalOutline);
+          setOutlineError(mismatchMessage);
+          toast.error(mismatchMessage);
+          setIsGeneratingOutline(false);
+          setShouldStartOutlineGeneration(false);
+          return;
+        }
+
+        setOutlineError(null);
         setOutline(finalOutline);
 
         // Update generation status
         setIsGeneratingOutline(false);
         setShouldStartOutlineGeneration(false);
-        setShouldStartPresentationGeneration(false);
 
         // Get other state values needed for saving
-        const { currentPresentationId, currentPresentationTitle, theme, language } =
-          usePresentationState.getState();
+        const {
+          currentPresentationId,
+          currentPresentationTitle,
+          theme,
+          language,
+        } = usePresentationState.getState();
 
         // Save the final presentation outline
         if (currentPresentationId) {
@@ -114,7 +207,9 @@ export function PresentationGenerationManager() {
         }
       },
       onError: (error) => {
-        toast.error("Failed to generate outline: " + error.message);
+        const errorMessage = "Failed to generate outline: " + error.message;
+        setOutlineError(errorMessage);
+        toast.error(errorMessage);
         resetGeneration();
 
         // Cancel any pending outline animation frame
@@ -127,12 +222,15 @@ export function PresentationGenerationManager() {
 
   useEffect(() => {
     if (outlineCompletion && typeof outlineCompletion === "string") {
-      // Parse the outline into sections
-      const sections = outlineCompletion.split(/^# /gm).filter(Boolean);
-      const outlineItems: string[] =
-        sections.length > 0
-          ? sections.map((section) => `# ${section}`.trim())
-          : [outlineCompletion];
+      if (extractBackendError(outlineCompletion)) {
+        outlineBufferRef.current = [];
+        if (outlineRafIdRef.current === null) {
+          outlineRafIdRef.current = requestAnimationFrame(updateOutlineWithRAF);
+        }
+        return;
+      }
+
+      const outlineItems = parseOutlineTitlesFromCompletion(outlineCompletion);
 
       // Store the latest outline in the buffer
       outlineBufferRef.current = outlineItems;
@@ -152,6 +250,7 @@ export function PresentationGenerationManager() {
       if (shouldStartOutlineGeneration) {
         try {
           setIsGeneratingOutline(true);
+          setOutlineError(null);
 
           // Start the RAF cycle for outline updates
           if (outlineRafIdRef.current === null) {
@@ -198,36 +297,56 @@ export function PresentationGenerationManager() {
       const response = await fetch("/api/presentation/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, outline, language: targetLanguage, tone, numSlides}),
+        body: JSON.stringify({
+          title,
+          outline,
+          language: targetLanguage,
+          tone,
+          numSlides,
+        }),
       });
       console.log("[前端] fetch /api/presentation/generate 返回", response);
       if (!response.body) throw new Error("No response body");
-  
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let bufferedText = "";
       let done = false;
       while (!done) {
         const { value, done: streamDone } = await reader.read();
-        console.log(`[前端] 读取到chunk, 长度:`, bufferedText?.length, "done:", done);
+        console.log(
+          `[前端] 读取到chunk, 长度:`,
+          bufferedText?.length,
+          "done:",
+          done,
+        );
         done = streamDone;
-  
+
         if (value) {
           bufferedText += decoder.decode(value, { stream: true });
-  
-          let lines = bufferedText.split("\n");
+
+          const lines = bufferedText.split("\n");
           bufferedText = lines.pop() ?? "";
-  
+
           for (const line of lines) {
             if (!line.trim()) continue;
             try {
-              const { type, data, metadata } = JSON.parse(line);
+              const parsed: unknown = JSON.parse(line);
+              if (!isStreamEvent(parsed)) {
+                continue;
+              }
+
+              const { type, data, metadata } = parsed;
               const author = metadata?.author ?? "AIAgent";
               if (type === "status-update") {
-                parser.parseChunk(data);
+                parser.parseChunk(typeof data === "string" ? data : "");
                 //这里获取metadata的references，然后存起来
-                if (metadata && Array.isArray(metadata.references)) {
-                  usePresentationState.getState().setReferences(metadata.references);
+                if (Array.isArray(metadata?.references)) {
+                  usePresentationState
+                    .getState()
+                    .setReferences(
+                      metadata.references.map((item) => String(item)),
+                    );
                 }
               } else {
                 setDetailLogs([
@@ -236,25 +355,35 @@ export function PresentationGenerationManager() {
                 ]);
               }
               //注意：⚠️在 setSlides 前强制生成新数组引用，如果同一个引用，它就不会触发 items.map(...) 渲染。
-              const slides = parser.getAllSlides().map(slide => ({ ...slide }));
+              const slides = parser
+                .getAllSlides()
+                .map((slide) => ({ ...slide }));
               slidesBufferRef.current = slides;
-              slidesRafIdRef.current = requestAnimationFrame(updateSlidesWithRAF);
+              slidesRafIdRef.current =
+                requestAnimationFrame(updateSlidesWithRAF);
             } catch (e) {
               console.error("Failed to parse JSON line:", line, e);
             }
           }
         }
       }
-  
+
       // 处理剩余行
       if (bufferedText.trim()) {
         try {
-          const { type, data, metadata } = JSON.parse(bufferedText.trim());
+          const parsed: unknown = JSON.parse(bufferedText.trim());
+          if (!isStreamEvent(parsed)) {
+            return;
+          }
+
+          const { type, data, metadata } = parsed;
           const author = metadata?.author ?? "AIAgent";
           if (type === "status-update") {
-            parser.parseChunk(data);
-            if (metadata && Array.isArray(metadata.references)) {
-              usePresentationState.getState().setReferences(metadata.references);
+            parser.parseChunk(typeof data === "string" ? data : "");
+            if (Array.isArray(metadata?.references)) {
+              usePresentationState
+                .getState()
+                .setReferences(metadata.references.map((item) => String(item)));
             }
           } else {
             setDetailLogs([
@@ -263,19 +392,28 @@ export function PresentationGenerationManager() {
             ]);
           }
         } catch (e) {
-          console.error("Failed to parse final stream chunk:", bufferedText.trim(), e);
+          console.error(
+            "Failed to parse final stream chunk:",
+            bufferedText.trim(),
+            e,
+          );
         }
       }
-  
+
       parser.finalize();
       parser.clearAllGeneratingMarks();
-  
+
       const slides = parser.getAllSlides();
       console.log("slides 内容：", slides);
       slidesBufferRef.current = slides;
       slidesRafIdRef.current = requestAnimationFrame(updateSlidesWithRAF);
-  
-      const { currentPresentationId, currentPresentationTitle, theme, language } = usePresentationState.getState();
+
+      const {
+        currentPresentationId,
+        currentPresentationTitle,
+        theme,
+        language,
+      } = usePresentationState.getState();
       if (currentPresentationId) {
         void updatePresentation({
           id: currentPresentationId,
@@ -285,15 +423,15 @@ export function PresentationGenerationManager() {
           language,
         });
       }
-  
+
       setIsGeneratingPresentation(false);
       setShouldStartPresentationGeneration(false);
       if (slidesRafIdRef.current !== null) {
         cancelAnimationFrame(slidesRafIdRef.current);
         slidesRafIdRef.current = null;
       }
-    } catch (error: any) {
-      toast.error("Failed to generate presentation: " + error.message);
+    } catch (error: unknown) {
+      toast.error("Failed to generate presentation: " + toErrorMessage(error));
       resetGeneration();
       parser.reset();
       if (slidesRafIdRef.current !== null) {
@@ -302,7 +440,6 @@ export function PresentationGenerationManager() {
       }
     }
   };
-  
 
   useEffect(() => {
     if (shouldStartPresentationGeneration) {

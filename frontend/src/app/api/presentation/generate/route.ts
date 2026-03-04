@@ -11,7 +11,10 @@ interface SlidesRequest {
 // FastAPI 统一网关 URL
 const FASTAPI_URL = process.env.FASTAPI_URL ?? "http://localhost:8000";
 
-async function* generateSlidesStream(serverUrl: string, slidesRequest: SlidesRequest): AsyncGenerator<string> {
+async function* generateSlidesStream(
+  serverUrl: string,
+  slidesRequest: SlidesRequest,
+): AsyncGenerator<string> {
   try {
     const response = await fetch(`${serverUrl}/api/ppt/slides/generate`, {
       method: "POST",
@@ -24,13 +27,26 @@ async function* generateSlidesStream(serverUrl: string, slidesRequest: SlidesReq
         language: slidesRequest.language,
         tone: slidesRequest.tone,
         numSlides: slidesRequest.numSlides,
+        num_slides: slidesRequest.numSlides,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("FastAPI error response:", errorText);
-      yield JSON.stringify({ type: "error", data: `Failed to generate slides. Status: ${response.status}` }) + "\n";
+      yield JSON.stringify({
+        type: "error",
+        data: `Failed to generate slides. Status: ${response.status}`,
+      }) + "\n";
+      return;
+    }
+
+    const contract = response.headers.get("x-generation-contract");
+    if (contract !== "slides-v2") {
+      yield JSON.stringify({
+        type: "error",
+        data: "检测到旧版后端服务（缺少 slides-v2 协议）。请重启最新后端，或将 FASTAPI_URL 指向正确实例后重试。",
+      }) + "\n";
       return;
     }
 
@@ -69,16 +85,21 @@ async function* generateSlidesStream(serverUrl: string, slidesRequest: SlidesReq
     }
   } catch (error) {
     console.error("Error communicating with FastAPI gateway:", error);
-    yield JSON.stringify({ type: "error", data: (error as Error).message }) + "\n";
+    yield JSON.stringify({ type: "error", data: (error as Error).message }) +
+      "\n";
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const { title, outline, language, tone, numSlides } = (await req.json()) as SlidesRequest;
+    const { title, outline, language, tone, numSlides } =
+      (await req.json()) as SlidesRequest;
 
     if (!title || !outline || !Array.isArray(outline) || !language) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
     const stream = new ReadableStream({
@@ -103,11 +124,14 @@ export async function POST(req: Request) {
         "Content-Type": "application/json; charset=utf-8",
         "Transfer-Encoding": "chunked",
         "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        Connection: "keep-alive",
       },
     });
   } catch (error) {
     console.error("Error in presentation generation:", error);
-    return NextResponse.json({ error: "Failed to generate presentation slides" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to generate presentation slides" },
+      { status: 500 },
+    );
   }
 }
