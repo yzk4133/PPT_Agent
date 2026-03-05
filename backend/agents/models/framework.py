@@ -6,8 +6,9 @@ PPT 结构框架模型
 """
 
 from typing import List, Optional, Dict, Any
-from dataclasses import dataclass, field
 from enum import Enum
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class PageType(str, Enum):
@@ -31,8 +32,7 @@ class ContentType(str, Enum):
     CHART_ONLY = "chart_only"          # 纯图表
 
 
-@dataclass
-class PageDefinition:
+class PageDefinition(BaseModel):
     """
     页面定义
 
@@ -52,17 +52,40 @@ class PageDefinition:
         layout_suggestion: 布局建议
     """
 
-    page_no: int
-    title: str
-    page_type: PageType = PageType.CONTENT
-    core_content: str = ""
-    is_need_chart: bool = False
-    is_need_research: bool = False
-    is_need_image: bool = False
-    content_type: ContentType = ContentType.TEXT_ONLY
-    keywords: List[str] = field(default_factory=list)
-    estimated_word_count: int = 100
-    layout_suggestion: str = ""
+    page_no: int = Field(ge=1, description="页码")
+    title: str = Field(min_length=1, description="页面标题")
+    page_type: PageType = Field(default=PageType.CONTENT, description="页面类型")
+    core_content: str = Field(default="", description="核心内容描述")
+    is_need_chart: bool = Field(default=False, description="是否需要图表")
+    is_need_research: bool = Field(default=False, description="是否需要研究资料")
+    is_need_image: bool = Field(default=False, description="是否需要配图")
+    content_type: ContentType = Field(default=ContentType.TEXT_ONLY, description="内容类型")
+    keywords: List[str] = Field(default_factory=list, description="关键词列表")
+    estimated_word_count: int = Field(default=100, ge=0, description="预估字数")
+    layout_suggestion: str = Field(default="", description="布局建议")
+
+    @field_validator('keywords')
+    @classmethod
+    def validate_keywords(cls, v, info):
+        """验证关键词：研究页面必须有关键词"""
+        if info and info.data.get('is_need_research') and not v:
+            raise ValueError("研究页面必须提供关键词")
+        return v
+
+    @field_validator('page_type', 'content_type', mode='before')
+    @classmethod
+    def validate_enums(cls, v):
+        """验证枚举值"""
+        if isinstance(v, str):
+            # 尝试转换为枚举
+            try:
+                if v in PageType.__members__:
+                    return PageType(v)
+                elif v in ContentType.__members__:
+                    return ContentType(v)
+            except (ValueError, KeyError):
+                pass
+        return v
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
@@ -84,28 +107,31 @@ class PageDefinition:
     def from_dict(cls, data: Dict[str, Any]) -> "PageDefinition":
         """从字典创建实例"""
         page_type_str = data.get("page_type", "content")
-        page_type = PageType(page_type_str) if isinstance(page_type_str, str) else page_type_str
+        page_type = PageType(page_type_str) if isinstance(page_type_str, str) and page_type_str in PageType.__members__ else page_type_str
+        if isinstance(page_type, str) and page_type not in PageType.__members__:
+            page_type = PageType.CONTENT
 
         content_type_str = data.get("content_type", "text_only")
-        content_type = ContentType(content_type_str) if isinstance(content_type_str, str) else content_type_str
+        content_type = ContentType(content_type_str) if isinstance(content_type_str, str) and content_type_str in ContentType.__members__ else content_type_str
+        if isinstance(content_type, str) and content_type not in ContentType.__members__:
+            content_type = ContentType.TEXT_ONLY
 
         return cls(
             page_no=data.get("page_no", 1),
             title=data.get("title", ""),
-            page_type=page_type,
+            page_type=page_type if isinstance(page_type, PageType) else PageType(page_type),
             core_content=data.get("core_content", ""),
             is_need_chart=data.get("is_need_chart", False),
             is_need_research=data.get("is_need_research", False),
             is_need_image=data.get("is_need_image", False),
-            content_type=content_type,
+            content_type=content_type if isinstance(content_type, ContentType) else ContentType(content_type),
             keywords=data.get("keywords", []),
             estimated_word_count=data.get("estimated_word_count", 100),
             layout_suggestion=data.get("layout_suggestion", "")
         )
 
 
-@dataclass
-class PPTFramework:
+class PPTFramework(BaseModel):
     """
     PPT框架模型
 
@@ -124,20 +150,22 @@ class PPTFramework:
         framework_type: 框架类型（线性/分支/混合）
     """
 
-    total_page: int
-    pages: List[PageDefinition] = field(default_factory=list)
-    cover_page: Optional[PageDefinition] = None
-    directory_page: Optional[PageDefinition] = None
-    summary_page: Optional[PageDefinition] = None
-    has_research_pages: bool = False
-    research_page_indices: List[int] = field(default_factory=list)
-    chart_page_indices: List[int] = field(default_factory=list)
-    image_page_indices: List[int] = field(default_factory=list)
-    framework_type: str = "linear"
+    total_page: int = Field(ge=0, description="总页数")
+    pages: List[PageDefinition] = Field(default_factory=list, description="页面定义列表")
+    cover_page: Optional[PageDefinition] = Field(default=None, description="封面页")
+    directory_page: Optional[PageDefinition] = Field(default=None, description="目录页")
+    summary_page: Optional[PageDefinition] = Field(default=None, description="总结页")
+    has_research_pages: bool = Field(default=False, description="是否包含需要研究的页面")
+    research_page_indices: List[int] = Field(default_factory=list, description="需要研究的页面索引列表")
+    chart_page_indices: List[int] = Field(default_factory=list, description="需要图表的页面索引列表")
+    image_page_indices: List[int] = Field(default_factory=list, description="需要配图的页面索引列表")
+    framework_type: str = Field(default="linear", description="框架类型（线性/分支/混合）")
 
-    def __post_init__(self):
-        """初始化后处理"""
+    @model_validator(mode='after')
+    def update_indices(self):
+        """自动更新索引（替代 __post_init__）"""
         self._update_indices()
+        return self
 
     def add_page(self, page: PageDefinition) -> None:
         """添加页面"""
@@ -178,8 +206,11 @@ class PPTFramework:
             # 第一页通常是封面
             if self.pages[0].page_type == PageType.COVER:
                 self.cover_page = self.pages[0]
+            else:
+                self.cover_page = None
 
             # 查找目录页
+            self.directory_page = None
             for page in self.pages[1:3]:  # 目录通常在第2-3页
                 if page.page_type == PageType.DIRECTORY:
                     self.directory_page = page
@@ -188,6 +219,8 @@ class PPTFramework:
             # 最后一页通常是总结或致谢
             if self.pages[-1].page_type in (PageType.SUMMARY, PageType.THANKS):
                 self.summary_page = self.pages[-1]
+            else:
+                self.summary_page = None
 
     def _update_indices(self) -> None:
         """更新索引列表"""

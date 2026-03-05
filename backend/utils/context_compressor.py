@@ -7,19 +7,27 @@
 import re
 import logging
 from typing import List, Dict, Set
-from dataclasses import dataclass, field
+
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
-@dataclass
-class SlideInfo:
+class SlideInfo(BaseModel):
     """压缩后的单页信息"""
-    page_number: int
-    title: str
-    layout: str
-    key_points: List[str]
-    images: List[str]
-    keywords: Set[str] = field(default_factory=set)
+    page_number: int = Field(ge=1, description="页码")
+    title: str = Field(min_length=1, description="页面标题")
+    layout: str = Field(default="vertical", description="布局类型")
+    key_points: List[str] = Field(default_factory=list, description="关键要点")
+    images: List[str] = Field(default_factory=list, description="图片URL列表")
+    keywords: Set[str] = Field(default_factory=set, description="关键词集合")
+
+    @field_validator('keywords', mode='before')
+    @classmethod
+    def validate_keywords(cls, v):
+        """验证并转换关键词"""
+        if isinstance(v, list):
+            return set(v)
+        return v
 
     def to_summary(self) -> str:
         """转换为简洁的摘要文本"""
@@ -31,6 +39,22 @@ class SlideInfo:
         if self.images:
             summary += f"图片: {len(self.images)}张\n"
         return summary.strip()
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "SlideInfo":
+        """从字典创建实例（向后兼容）"""
+        keywords = data.get("keywords", set())
+        if isinstance(keywords, list):
+            keywords = set(keywords)
+
+        return cls(
+            page_number=data.get("page_number", 1),
+            title=data.get("title", ""),
+            layout=data.get("layout", "vertical"),
+            key_points=data.get("key_points", []),
+            images=data.get("images", []),
+            keywords=keywords
+        )
 
 class ContextCompressor:
     """
