@@ -67,7 +67,7 @@ docker run --name postgresdb -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_
 
 **启动 FastAPI 统一网关**（端口 8000）：
 
-```bash
+```*bash*
 cd backend/api
 python main.py
 ```
@@ -287,13 +287,16 @@ docker compose up
 ## 📚 文档
 
 ### 核心文档
+
 - **[记忆系统文档](docs/memory-system/README.md)** - 记忆系统架构和使用指南
 - **[快速开始指南](QUICK_START.md)** - 5分钟快速上手
 
 ### 技术报告
+
 - **[项目报告存档](docs/reports/README.md)** - 架构优化、重构记录、分析报告等
 
 ### 架构优化
+
 - **[架构优化报告](docs/memory-system/adapter-layer/ARCHITECTURE_OPTIMIZATION_REPORT.md)** - 记忆系统从三层简化为两层
 
 ---
