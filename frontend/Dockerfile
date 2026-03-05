@@ -10,7 +10,7 @@ RUN apk add --no-cache openssl
 
 COPY . .
 
-ENV DATABASE_URL=postgresql://postgres:welcome@localhost:5432/presentation_ai
+ENV DATABASE_URL=mysql://root:postgres@localhost:3306/multiagent_ppt
 ENV A2A_AGENT_OUTLINE_URL=http://127.0.0.1:10001
 ENV A2A_AGENT_SLIDES_URL=http://127.0.0.1:10012
 

@@ -1,14 +1,14 @@
 services:
   db:
-    image: postgres:15
-    container_name: postgresdb
+    image: mysql:8.0
+    container_name: mysqldb
     restart: always
     ports:
-      - "5432:5432"
+      - "3306:3306"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: welcome
-      POSTGRES_DB: presentation_ai
+      MYSQL_ROOT_PASSWORD: postgres
+      MYSQL_DATABASE: multiagent_ppt
+    command: --default-authentication-plugin=mysql_native_password
 
   app:
     build: .
@@ -19,11 +19,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://postgres:welcome@db:5432/presentation_ai
+      DATABASE_URL: mysql://root:postgres@db:3306/multiagent_ppt
       A2A_AGENT_OUTLINE_URL: http://127.0.0.1:10001
       A2A_AGENT_SLIDES_URL: http://127.0.0.1:10012
     command: ["pnpm", "start"]  # 如果你用于本地开发
     # command: ["pnpm", "start"] # 如果你 build 之后运行
 
 volumes:
-  postgres_data:
+  mysql_data:

@@ -1,29 +1,43 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.user.create({
-    data: {
-      id: "01",
-      name: 'Admin User',
-      email: 'admin@example.com',
-      password: 'hashed_password_here',
+  const user = await prisma.user.upsert({
+    where: {
+      email: "admin@example.com",
+    },
+    update: {
+      name: "Admin User",
+      password: "hashed_password_here",
       emailVerified: new Date(),
-      headline: 'Administrator',
-      bio: 'Default admin account',
-      interests: ['admin', 'manager'],
-      location: 'Global',
-      website: 'https://example.com',
-      role: 'ADMIN',
+      headline: "Administrator",
+      bio: "Default admin account",
+      interests: ["admin", "manager"],
+      location: "Global",
+      website: "https://example.com",
+      role: "ADMIN",
+      hasAccess: true,
+    },
+    create: {
+      name: "Admin User",
+      email: "admin@example.com",
+      password: "hashed_password_here",
+      emailVerified: new Date(),
+      headline: "Administrator",
+      bio: "Default admin account",
+      interests: ["admin", "manager"],
+      location: "Global",
+      website: "https://example.com",
+      role: "ADMIN",
       hasAccess: true,
     },
   });
-  console.log('插入第一个测试用户插入成功');
+  console.log(`管理员用户已就绪: ${user.email}`);
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     console.error(e);
     process.exit(1);
   })

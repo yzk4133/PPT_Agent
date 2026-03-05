@@ -54,11 +54,7 @@ class NativeToolRegistry:
             self.GENERAL: [],
         }
 
-    def register_tool(
-        self,
-        tool: BaseTool,
-        category: str = GENERAL
-    ) -> None:
+    def register_tool(self, tool: BaseTool, category: str = GENERAL) -> None:
         """
         Register a LangChain tool
 
@@ -74,10 +70,7 @@ class NativeToolRegistry:
             self._categories[category] = []
         self._categories[category].append(tool_name)
 
-        logger.debug(
-            f"[NativeToolRegistry] Registered: {tool_name} "
-            f"(category: {category})"
-        )
+        logger.debug(f"[NativeToolRegistry] Registered: {tool_name} " f"(category: {category})")
 
     def get_tool(self, name: str) -> Optional[BaseTool]:
         """
@@ -102,11 +95,7 @@ class NativeToolRegistry:
             List of tools in the category
         """
         tool_names = self._categories.get(category, [])
-        return [
-            self._tools[name]
-            for name in tool_names
-            if name in self._tools
-        ]
+        return [self._tools[name] for name in tool_names if name in self._tools]
 
     def get_all_tools(self) -> List[BaseTool]:
         """
@@ -143,10 +132,7 @@ class NativeToolRegistry:
             Dict mapping category names to lists of tool names
         """
         return {
-            category: [
-                name for name in tool_names
-                if name in self._tools
-            ]
+            category: [name for name in tool_names if name in self._tools]
             for category, tool_names in self._categories.items()
         }
 
@@ -165,9 +151,7 @@ class NativeToolRegistry:
             tools = self.get_tools_by_category(category)
             if tools:
                 tool_names = [t.name for t in tools]
-                logger.info(
-                    f"  {category}: {len(tools)} tools - {', '.join(tool_names)}"
-                )
+                logger.info(f"  {category}: {len(tools)} tools - {', '.join(tool_names)}")
 
 
 # Global registry singleton
@@ -210,63 +194,66 @@ def _auto_register_tools():
         if use_mcp_web_search:
             try:
                 from backend.tools.domain.search.web_search_mcp import web_search_mcp_tool
+
                 _global_registry.register_tool(web_search_mcp_tool, category="SEARCH")
                 logger.info("[NativeToolRegistry] Using MCP version of web_search")
             except ImportError as e:
                 logger.warning(f"[NativeToolRegistry] MCP web_search not available: {e}")
                 logger.warning("[NativeToolRegistry] Falling back to LangChain version")
                 # Fallback to LangChain version
-                from backend.tools.domain.search import web_search_tool
+                from backend.tools.domain.search.web_search_tool import tool as web_search_tool
+
                 _global_registry.register_tool(web_search_tool, category="SEARCH")
         else:
-            from backend.tools.domain.search import web_search_tool
+            from backend.tools.domain.search.web_search_tool import tool as web_search_tool
+
             _global_registry.register_tool(web_search_tool, category="SEARCH")
 
         # Import other search tools
-        from backend.tools.domain.search import (
-            fetch_url_tool,
-            weixin_search_tool
-        )
+        from backend.tools.domain.search.fetch_url_tool import tool as fetch_url_tool
+        from backend.tools.domain.search.weixin_search_tool import tool as weixin_search_tool
+
         _global_registry.register_tool(fetch_url_tool, category="SEARCH")
         _global_registry.register_tool(weixin_search_tool, category="SEARCH")
 
         # Import media tools
-        from backend.tools.domain.media import search_images_tool
+        from backend.tools.domain.media.search_images_tool import tool as search_images_tool
+
+        _global_registry.register_tool(search_images_tool, category="MEDIA")
 
         # Import utility tools
-        from backend.tools.domain.utility import (
-            create_pptx_tool,
-            xml_converter_tool,
-            a2a_client_tool
-        )
+        from backend.tools.domain.utility.create_pptx_tool import tool as create_pptx_tool
+        from backend.tools.domain.utility.xml_converter_tool import tool as xml_converter_tool
+        from backend.tools.domain.utility.a2a_client_tool import tool as a2a_client_tool
+
+        _global_registry.register_tool(create_pptx_tool, category="UTILITY")
+        _global_registry.register_tool(xml_converter_tool, category="UTILITY")
+        _global_registry.register_tool(a2a_client_tool, category="UTILITY")
 
         # Import database tools
-        from backend.tools.domain.database import (
-            state_store_tool,
-            vector_search_tool
-        )
+        from backend.tools.domain.database.state_store_tool import tool as state_store_tool
+        from backend.tools.domain.database.vector_search_tool import tool as vector_search_tool
+
+        _global_registry.register_tool(state_store_tool, category="DATABASE")
+        _global_registry.register_tool(vector_search_tool, category="VECTOR")
 
         # Register Python Skills as LangChain Tools (Directly - without adapter)
         try:
             # 直接导入所有 skill tools
-            from backend.tools.skills.python_skills.research_workflow import (
-                research_workflow_tool
-            )
+            from backend.tools.skills.python_skills.research_workflow import research_workflow_tool
             from backend.tools.skills.python_skills.content_generation import (
                 content_generation_tool,
                 content_optimization_tool,
-                content_quality_check_tool
+                content_quality_check_tool,
             )
             from backend.tools.skills.python_skills.framework_design import (
                 framework_design_tool,
                 topic_decomposition_tool,
-                section_planning_tool
+                section_planning_tool,
             )
-            from backend.tools.skills.python_skills.layout_selection import (
-                layout_selection_tool
-            )
+            from backend.tools.skills.python_skills.layout_selection import layout_selection_tool
             from backend.tools.skills.python_skills.content_optimization import (
-                content_optimization_tool as content_opt_tool
+                content_optimization_tool as content_opt_tool,
             )
 
             # 直接注册所有 skill tools
@@ -279,13 +266,15 @@ def _auto_register_tools():
                 topic_decomposition_tool,
                 section_planning_tool,
                 layout_selection_tool,
-                content_opt_tool
+                content_opt_tool,
             ]
 
             for tool in skill_tools:
                 _global_registry.register_tool(tool, category="SKILL")
 
-            logger.info(f"[NativeToolRegistry] Registered {len(skill_tools)} Python Skills as tools")
+            logger.info(
+                f"[NativeToolRegistry] Registered {len(skill_tools)} Python Skills as tools"
+            )
 
         except Exception as e:
             logger.warning(f"[NativeToolRegistry] Failed to register Python Skills: {e}")
