@@ -231,6 +231,7 @@ Desktop.ini
 # Project specific
 main/
 openapi_snapshot.json
+opencode-dev/
 
 # Resume/CV folders
 简历/
