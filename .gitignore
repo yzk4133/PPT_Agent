@@ -231,3 +231,8 @@ Desktop.ini
 # Project specific
 main/
 openapi_snapshot.json
+
+# Resume/CV folders
+简历/
+resume/
+cv/
